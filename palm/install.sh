@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 set -e
 
@@ -24,7 +24,7 @@ install_project() {
     cd $original_path
 }
 
-cargo clean
+cargo clean &> /dev/null
 
 if [ $# -eq 0 ]; then
     printf "No projects specified. Installing default projects: ${YELLOW}${default_projects[*]}${NC}\n"

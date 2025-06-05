@@ -11,7 +11,7 @@ ARG TARGETARCH
 #     sed -i.bak 's|http://archive.ubuntu.com/ubuntu|<xxxxxxxx>|g' /etc/apt/sources.list.d/ubuntu.sources; \
 #     fi
 
-RUN apt update -y && apt upgrade -y \
+RUN apt update && apt upgrade -y \
     && apt install -y ca-certificates \
     # Install packages
     && apt install -y build-essential git curl wget vim \
@@ -32,12 +32,15 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     && echo 'source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh' >> ~/.zshrc \
     && echo 'source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh' >> ~/.zshrc \
     # Install rustup
-    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain=none \
     && . "$HOME/.cargo/env" \
     # Set mirror for crates.io
     # ...
     && rustup install nightly-2024-07-21 \
     && rustup component add --toolchain nightly-2024-07-21 rust-src rustc-dev llvm-tools-preview \
-    && cargo +stable install cargo-llvm-cov --locked
+    && host=$(rustc -vV | grep '^host:' | cut -d' ' -f2); \
+    curl --proto '=https' --tlsv1.2 -fsSL \
+    "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v0.6.16/cargo-llvm-cov-$host.tar.gz" \
+    | tar xzf - -C "$HOME/.cargo/bin"
 
 CMD ["/usr/bin/zsh"]
