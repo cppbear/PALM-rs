@@ -1,0 +1,135 @@
+// Answer 0
+
+#[cfg(test)]
+fn test_deserialize_seq_ok() {
+    struct VisitorMock {
+        count: usize,
+    }
+
+    impl<'de> de::Visitor<'de> for VisitorMock {
+        type Value = usize;
+
+        fn visit_seq<V>(self, _seq: &mut V) -> Result<Self::Value, V::Error>
+        where
+            V: de::SeqAccess<'de>, {
+            Ok(self.count)
+        }
+    }
+
+    let visitor = VisitorMock { count: 42 };
+    
+    struct MockIterator {
+        count: usize,
+    }
+  
+    impl Iterator for MockIterator {
+        type Item = (i32, i32);
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.count > 0 {
+                self.count -= 1;
+                Some((1, 2))
+            } else {
+                None
+            }
+        }
+    }
+    
+    let iter = MockIterator { count: 42 };
+    let deserializer = MapDeserializer {
+        iter: iter.fuse(),
+        value: None,
+        count: 0,
+        lifetime: PhantomData,
+        error: PhantomData,
+    };
+
+    let _ = deserializer.deserialize_seq(visitor);
+}
+
+#[cfg(test)]
+fn test_deserialize_seq_err_remaining() {
+    struct VisitorMock {
+        count: usize,
+    }
+
+    impl<'de> de::Visitor<'de> for VisitorMock {
+        type Value = usize;
+
+        fn visit_seq<V>(self, _seq: &mut V) -> Result<Self::Value, V::Error>
+        where
+            V: de::SeqAccess<'de>, {
+            Ok(self.count)
+        }
+    }
+
+    let visitor = VisitorMock { count: 42 };
+
+    struct MockIterator {
+        count: usize,
+    }
+
+    impl Iterator for MockIterator {
+        type Item = (i32, i32);
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.count > 0 {
+                self.count -= 1;
+                Some((1, 2))
+            } else {
+                None
+            }
+        }
+    }
+
+    let iter = MockIterator { count: 101 }; // Exceeding the expected size
+    let deserializer = MapDeserializer {
+        iter: iter.fuse(),
+        value: None,
+        count: 0,
+        lifetime: PhantomData,
+        error: PhantomData,
+    };
+
+    let _ = deserializer.deserialize_seq(visitor);
+}
+
+#[cfg(test)]
+fn test_deserialize_seq_err_zero() {
+    struct VisitorMock;
+
+    impl<'de> de::Visitor<'de> for VisitorMock {
+        type Value = usize;
+
+        fn visit_seq<V>(self, _seq: &mut V) -> Result<Self::Value, V::Error>
+        where
+            V: de::SeqAccess<'de>, {
+            Ok(0)
+        }
+    }
+
+    let visitor = VisitorMock;
+
+    // Using an empty iterator to trigger the edge case
+    struct MockIterator;
+
+    impl Iterator for MockIterator {
+        type Item = (i32, i32);
+
+        fn next(&mut self) -> Option<Self::Item> {
+            None
+        }
+    }
+
+    let iter = MockIterator;
+    let deserializer = MapDeserializer {
+        iter: iter.fuse(),
+        value: None,
+        count: 0,
+        lifetime: PhantomData,
+        error: PhantomData,
+    };
+
+    let _ = deserializer.deserialize_seq(visitor);
+}
+

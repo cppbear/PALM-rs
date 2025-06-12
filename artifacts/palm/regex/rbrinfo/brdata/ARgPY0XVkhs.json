@@ -1,0 +1,5524 @@
+{
+  "name": "regex::literal::literal::Matcher::new",
+  "name_with_impl": "regex::literal::{impl#1}::new",
+  "mod_info": {
+    "name": "literal",
+    "loc": "src/lib.rs:656:1:656:13"
+  },
+  "visible": false,
+  "loc": "src/literal/mod.rs:209:5:262:6",
+  "doc": "",
+  "code": [
+    "fn new(lits: &Literals, sset: SingleByteSet) -> Self {",
+    "    if lits.literals().is_empty() {",
+    "        return Matcher::Empty;",
+    "    }",
+    "    if sset.dense.len() >= 26 {",
+    "        // Avoid trying to match a large number of single bytes.",
+    "        // This is *very* sensitive to a frequency analysis comparison",
+    "        // between the bytes in sset and the composition of the haystack.",
+    "        // No matter the size of sset, if its members all are rare in the",
+    "        // haystack, then it'd be worth using it. How to tune this... IDK.",
+    "        // ---AG",
+    "        return Matcher::Empty;",
+    "    }",
+    "    if sset.complete {",
+    "        return Matcher::Bytes(sset);",
+    "    }",
+    "    if lits.literals().len() == 1 {",
+    "        let lit = lits.literals()[0].to_vec();",
+    "        if BoyerMooreSearch::should_use(lit.as_slice()) {",
+    "            return Matcher::BoyerMoore(BoyerMooreSearch::new(lit));",
+    "        } else {",
+    "            return Matcher::FreqyPacked(FreqyPacked::new(lit));",
+    "        }",
+    "    }",
+    "    let is_aho_corasick_fast = sset.dense.len() == 1 && sset.all_ascii;",
+    "    if TeddyAVX2::available() && !is_aho_corasick_fast {",
+    "        const MAX_TEDDY_LITERALS: usize = 32;",
+    "        if lits.literals().len() <= MAX_TEDDY_LITERALS {",
+    "            if let Some(ted) = TeddyAVX2::new(lits) {",
+    "                return Matcher::TeddyAVX2(ted);",
+    "            }",
+    "        }",
+    "    }",
+    "    if TeddySSSE3::available() && !is_aho_corasick_fast {",
+    "        // Only try Teddy if Aho-Corasick can't use memchr on an ASCII",
+    "        // byte. Also, in its current form, Teddy doesn't scale well to",
+    "        // lots of literals.",
+    "        //",
+    "        // We impose the ASCII restriction since an alternation of",
+    "        // non-ASCII string literals in the same language is likely to all",
+    "        // start with the same byte. Even worse, the corpus being searched",
+    "        // probably has a similar composition, which ends up completely",
+    "        // negating the benefit of memchr.",
+    "        const MAX_TEDDY_LITERALS: usize = 32;",
+    "        if lits.literals().len() <= MAX_TEDDY_LITERALS {",
+    "            if let Some(ted) = TeddySSSE3::new(lits) {",
+    "                return Matcher::TeddySSSE3(ted);",
+    "            }",
+    "        }",
+    "        // Fallthrough to ol' reliable Aho-Corasick...",
+    "    }",
+    "    let pats = lits.literals().to_owned();",
+    "    Matcher::AC(AcAutomaton::new(pats).into_full())",
+    "}"
+  ],
+  "size": {
+    "chain": 47,
+    "contra": 0,
+    "min_set": 9
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::Empty",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "true",
+          "line": 213,
+          "bound": "sset.dense.len() == 26",
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::Empty",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        6,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::Bytes(sset)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        8,
+        10,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "false",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "BoyerMooreSearch::should_use(lit.as_slice())",
+          "norm": null,
+          "value": "true",
+          "line": 227,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::BoyerMoore(BoyerMooreSearch::new(lit))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        67,
+        68,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "false",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "BoyerMooreSearch::should_use(lit.as_slice())",
+          "norm": null,
+          "value": "false",
+          "line": 227,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::FreqyPacked(FreqyPacked::new(lit))",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        24,
+        25,
+        26,
+        67,
+        68,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        55,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddySSSE3(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 253,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        55,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddySSSE3(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 253,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddyAVX2(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        55,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddySSSE3(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 253,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        55,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddySSSE3(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 253,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "false",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        29,
+        31,
+        32,
+        44,
+        45,
+        46,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        55,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddySSSE3(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 253,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        44,
+        45,
+        46,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        55,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddySSSE3(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 253,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 36,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        41,
+        43,
+        45,
+        46,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 37,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 236,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddyAVX2::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 237,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddyAVX2(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 38,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 39,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        55,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 40,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddySSSE3(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 41,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 253,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 42,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "true",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 236,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        42,
+        43,
+        45,
+        46,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 43,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        44,
+        45,
+        46,
+        47,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 44,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        55,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 45,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "true",
+          "line": 253,
+          "bound": "lits.literals().len() == MAX_TEDDY_LITERALS",
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(ted) = TeddySSSE3::new(lits)",
+          "norm": null,
+          "value": "true",
+          "line": 254,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::TeddySSSE3(ted)",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        66,
+        69,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 46,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "true",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_aho_corasick_fast",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() <= MAX_TEDDY_LITERALS",
+          "norm": "MAX_TEDDY_LITERALS >= lits.literals().len()",
+          "value": "false",
+          "line": 253,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        56,
+        57,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 47,
+      "conds": [
+        {
+          "cond": "lits.literals().is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 210,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() >= 26",
+          "norm": "26 <= sset.dense.len()",
+          "value": "false",
+          "line": 213,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.complete",
+          "norm": null,
+          "value": "false",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lits.literals().len() == 1",
+          "norm": "1 == lits.literals().len()",
+          "value": "true",
+          "line": 225,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "sset.dense.len() == 1",
+          "norm": "1 == sset.dense.len()",
+          "value": "true",
+          "line": 233,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddyAVX2::available()",
+          "norm": null,
+          "value": "false",
+          "line": 234,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "TeddySSSE3::available()",
+          "norm": null,
+          "value": "false",
+          "line": 242,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Matcher::AC(AcAutomaton::new(pats).into_full())",
+      "path": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        27,
+        28,
+        30,
+        31,
+        32,
+        44,
+        45,
+        46,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        70
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+// Answer 0
+
+#[test]
+fn test_cached_state_key_empty_sparse_set() {
+    let empty_sparse_set = SparseSet {
+        dense: Vec::new(),
+        sparse: Vec::new(),
+        size: 0,
+    };
+    
+    let mut state_flags = StateFlags(0);
+    let mut fsm = Fsm {
+        prog: &Program {
+            insts: Vec::new(),
+            matches: Vec::new(),
+            captures: Vec::new(),
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: Vec::new(),
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: false,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: false,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::new(),
+            dfa_size_limit: 0,
+        },
+        start: STATE_START,
+        at: 0,
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut CacheInner {
+            compiled: HashMap::new(),
+            trans: Transitions::new(),
+            states: Vec::new(),
+            start_states: Vec::new(),
+            stack: Vec::new(),
+            flush_count: 0,
+            size: 0,
+        },
+    };
+
+    fsm.cached_state_key(&empty_sparse_set, &mut state_flags);
+}
+
+#[test]
+fn test_cached_state_key_single_instruction_no_match() {
+    let sparse_set_single = SparseSet {
+        dense: vec![0],
+        sparse: vec![0],
+        size: 1,
+    };
+
+    let mut state_flags = StateFlags(0);
+    let inst = Inst::Bytes(InstBytes {
+        // Fill with appropriate data for InstBytes based on your schema
+    });
+
+    let mut fsm = Fsm {
+        prog: &Program {
+            insts: vec![inst],
+            matches: vec![],
+            captures: Vec::new(),
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: Vec::new(),
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: false,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: false,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::new(),
+            dfa_size_limit: 0,
+        },
+        start: STATE_START,
+        at: 0,
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut CacheInner {
+            compiled: HashMap::new(),
+            trans: Transitions::new(),
+            states: Vec::new(),
+            start_states: Vec::new(),
+            stack: Vec::new(),
+            flush_count: 0,
+            size: 0,
+        },
+    };
+
+    fsm.cached_state_key(&sparse_set_single, &mut state_flags);
+}
+
+#[test]
+fn test_cached_state_key_multiple_instructions_no_match() {
+    let sparse_set_multiple = SparseSet {
+        dense: vec![0, 1],
+        sparse: vec![0, 1],
+        size: 2,
+    };
+
+    let mut state_flags = StateFlags(0);
+    let inst1 = Inst::Bytes(InstBytes {
+        // Fill with appropriate data for InstBytes based on your schema
+    });
+    let inst2 = Inst::EmptyLook(InstEmptyLook {
+        // Fill with appropriate data for InstEmptyLook based on your schema
+    });
+
+    let mut fsm = Fsm {
+        prog: &Program {
+            insts: vec![inst1, inst2],
+            matches: vec![],
+            captures: Vec::new(),
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: Vec::new(),
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: false,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: false,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::new(),
+            dfa_size_limit: 0,
+        },
+        start: STATE_START,
+        at: 0,
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut CacheInner {
+            compiled: HashMap::new(),
+            trans: Transitions::new(),
+            states: Vec::new(),
+            start_states: Vec::new(),
+            stack: Vec::new(),
+            flush_count: 0,
+            size: 0,
+        },
+    };
+
+    fsm.cached_state_key(&sparse_set_multiple, &mut state_flags);
+}
+

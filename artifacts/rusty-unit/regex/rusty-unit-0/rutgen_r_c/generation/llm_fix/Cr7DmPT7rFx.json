@@ -1,0 +1,397 @@
+{
+  "name": "regex_syntax::ast::parse::ast::parse::ParserI<'s, P>::bump",
+  "name_with_impl": "regex_syntax::ast::parse::{impl#4}::bump",
+  "mod_info": {
+    "name": "ast::parse",
+    "loc": "regex-syntax/src/ast/mod.rs:21:1:21:15"
+  },
+  "visible": false,
+  "loc": "regex-syntax/src/ast/parse.rs:481:5:499:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.is_eof() is true\n",
+        "// expected return value/type: false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct DummyParser {",
+                  "        pos: Cell<Position>,",
+                  "        pattern: String,",
+                  "    }",
+                  "",
+                  "    impl DummyParser {",
+                  "        fn new(pattern: &str) -> Self {",
+                  "            Self {",
+                  "                pos: Cell::new(Position { offset: pattern.len(), line: 1, column: 1 }),",
+                  "                pattern: pattern.to_string(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn pos(&self) -> Position {",
+                  "            self.pos.get()",
+                  "        }",
+                  "",
+                  "        fn is_eof(&self) -> bool {",
+                  "            self.pos().offset >= self.pattern.len()",
+                  "        }",
+                  "",
+                  "        fn char(&self) -> char {",
+                  "            '\\0' // No character to return as we are at EOF",
+                  "        }",
+                  "",
+                  "        fn bump(&self) -> bool {",
+                  "            if self.is_eof() {",
+                  "                return false;",
+                  "            }",
+                  "            // Note: The actual implementation details are irrelevant for this case",
+                  "            true",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let parser = DummyParser::new(\"abc\");",
+                  "    assert_eq!(parser.bump(), false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.is_eof() is false\n",
+        "// constraint: self.char() == '\\n' is false\n",
+        "// may panic: line.checked_add(1).unwrap() may panic in certain situations\n",
+        "// may panic: self.pattern()[self.offset()..] may panic in certain situations\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockParser {",
+                  "        pos: Cell<Position>,",
+                  "        pattern: String,",
+                  "    }",
+                  "",
+                  "    impl MockParser {",
+                  "        fn new(pattern: &str) -> MockParser {",
+                  "            MockParser {",
+                  "                pos: Cell::new(Position { offset: 0, line: 1, column: 1 }),",
+                  "                pattern: pattern.to_string(),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mock_parser = MockParser::new(\"abc\");",
+                  "    let parser_i = ParserI {",
+                  "        parser: &mock_parser,",
+                  "        pattern: &mock_parser.pattern,",
+                  "    };",
+                  "",
+                  "    let result = parser_i.bump();",
+                  "    assert_eq!(result, true);",
+                  "    let new_pos = parser_i.pos();",
+                  "    assert_eq!(new_pos.offset, 1);",
+                  "    assert_eq!(new_pos.line, 1);",
+                  "    assert_eq!(new_pos.column, 2);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: the method `bump` exists for struct `ParserI<'_, &MockParser>`, but its trait bounds were not satisfied\n    --> regex-syntax/src/ast/parse.rs:5396:27\n     |\n276  | struct ParserI<'s, P> {\n     | --------------------- method `bump` not found for this struct\n...\n5396 |     let result = parser_i.bump();\n     |                           ^^^^ method cannot be called on `ParserI<'_, &MockParser>` due to unsatisfied trait bounds\n     |\nnote: trait bound `&MockParser: Borrow<parse::Parser>` was not satisfied\n    --> regex-syntax/src/ast/parse.rs:373:13\n     |\n373  | impl<'s, P: Borrow<Parser>> ParserI<'s, P> {\n     |             ^^^^^^^^^^^^^^  --------------\n     |             |\n     |             unsatisfied trait bound introduced here\n\nerror[E0599]: the method `pos` exists for struct `ParserI<'_, &MockParser>`, but its trait bounds were not satisfied\n    --> regex-syntax/src/ast/parse.rs:5398:28\n     |\n276  | struct ParserI<'s, P> {\n     | --------------------- method `pos` not found for this struct\n...\n5398 |     let new_pos = parser_i.pos();\n     |                            ^^^ method cannot be called on `ParserI<'_, &MockParser>` due to unsatisfied trait bounds\n     |\nnote: trait bound `&MockParser: Borrow<parse::Parser>` was not satisfied\n    --> regex-syntax/src/ast/parse.rs:373:13\n     |\n373  | impl<'s, P: Borrow<Parser>> ParserI<'s, P> {\n     |             ^^^^^^^^^^^^^^  --------------\n     |             |\n     |             unsatisfied trait bound introduced here\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 17 warnings\nerror: could not compile `regex-syntax` (lib test) due to 2 previous errors; 17 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockParser {",
+                  "        pos: Cell<Position>,",
+                  "        pattern: String,",
+                  "    }",
+                  "",
+                  "    impl MockParser {",
+                  "        fn new(pattern: &str) -> MockParser {",
+                  "            MockParser {",
+                  "                pos: Cell::new(Position { offset: 0, line: usize::MAX, column: 1 }),",
+                  "                pattern: pattern.to_string(),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mock_parser = MockParser::new(\"a\\nb\");",
+                  "    let parser_i = ParserI {",
+                  "        parser: &mock_parser,",
+                  "        pattern: &mock_parser.pattern,",
+                  "    };",
+                  "",
+                  "    let _ = parser_i.bump();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: the method `bump` exists for struct `ParserI<'_, &MockParser>`, but its trait bounds were not satisfied\n    --> regex-syntax/src/ast/parse.rs:5397:22\n     |\n276  | struct ParserI<'s, P> {\n     | --------------------- method `bump` not found for this struct\n...\n5397 |     let _ = parser_i.bump();\n     |                      ^^^^ method cannot be called on `ParserI<'_, &MockParser>` due to unsatisfied trait bounds\n     |\nnote: trait bound `&MockParser: Borrow<parse::Parser>` was not satisfied\n    --> regex-syntax/src/ast/parse.rs:373:13\n     |\n373  | impl<'s, P: Borrow<Parser>> ParserI<'s, P> {\n     |             ^^^^^^^^^^^^^^  --------------\n     |             |\n     |             unsatisfied trait bound introduced here\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 17 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 17 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockParser {",
+                  "        pos: Cell<Position>,",
+                  "        pattern: String,",
+                  "    }",
+                  "",
+                  "    impl MockParser {",
+                  "        fn new(pattern: &str) -> MockParser {",
+                  "            MockParser {",
+                  "                pos: Cell::new(Position { offset: 0, line: 1, column: 1 }),",
+                  "                pattern: pattern.to_string(),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mock_parser = MockParser::new(\"\");",
+                  "    let parser_i = ParserI {",
+                  "        parser: &mock_parser,",
+                  "        pattern: &mock_parser.pattern,",
+                  "    };",
+                  "",
+                  "    let _ = parser_i.bump();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: the method `bump` exists for struct `ParserI<'_, &MockParser>`, but its trait bounds were not satisfied\n    --> regex-syntax/src/ast/parse.rs:5397:22\n     |\n276  | struct ParserI<'s, P> {\n     | --------------------- method `bump` not found for this struct\n...\n5397 |     let _ = parser_i.bump();\n     |                      ^^^^ method cannot be called on `ParserI<'_, &MockParser>` due to unsatisfied trait bounds\n     |\nnote: trait bound `&MockParser: Borrow<parse::Parser>` was not satisfied\n    --> regex-syntax/src/ast/parse.rs:373:13\n     |\n373  | impl<'s, P: Borrow<Parser>> ParserI<'s, P> {\n     |             ^^^^^^^^^^^^^^  --------------\n     |             |\n     |             unsatisfied trait bound introduced here\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 17 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 17 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.is_eof() is false\n",
+        "// constraint: self.char() == '\\n' is true\n",
+        "// may panic: column.checked_add(1).unwrap() may panic in certain situations\n",
+        "// may panic: self.pattern()[self.offset()..] may panic in certain situations\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestParser {",
+                  "        pos: Cell<Position>,",
+                  "        pattern: String,",
+                  "    }",
+                  "",
+                  "    impl TestParser {",
+                  "        fn new(pattern: &str) -> Self {",
+                  "            Self {",
+                  "                pos: Cell::new(Position { offset: 0, line: 1, column: 1 }),",
+                  "                pattern: pattern.to_string(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn pos(&self) -> Position {",
+                  "            self.pos.get()",
+                  "        }",
+                  "",
+                  "        fn is_eof(&self) -> bool {",
+                  "            self.pos.get().offset >= self.pattern.len()",
+                  "        }",
+                  "",
+                  "        fn char(&self) -> char {",
+                  "            self.pattern.chars().nth(self.pos.get().offset).unwrap_or('\\0')",
+                  "        }",
+                  "",
+                  "        fn bump(&self) -> bool {",
+                  "            if self.is_eof() {",
+                  "                return false;",
+                  "            }",
+                  "            let Position { mut offset, mut line, mut column } = self.pos();",
+                  "            if self.char() == '\\n' {",
+                  "                line = line.checked_add(1).unwrap();",
+                  "                column = 1;",
+                  "            } else {",
+                  "                column = column.checked_add(1).unwrap();",
+                  "            }",
+                  "            offset += self.char().len_utf8();",
+                  "            self.pos.set(Position {",
+                  "                offset: offset,",
+                  "                line: line,",
+                  "                column: column,",
+                  "            });",
+                  "            self.pattern[self.pos().offset..].chars().next().is_some()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let parser = TestParser::new(\"abc\\ndef\");",
+                  "    let result = parser.bump();",
+                  "    assert!(result);",
+                  "    assert_eq!(parser.pos().line, 1);",
+                  "    assert_eq!(parser.pos().column, 4);",
+                  "    assert_eq!(parser.pos().offset, 3);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestParser {",
+                  "        pos: Cell<Position>,",
+                  "        pattern: String,",
+                  "    }",
+                  "",
+                  "    impl TestParser {",
+                  "        fn new(pattern: &str) -> Self {",
+                  "            Self {",
+                  "                pos: Cell::new(Position { offset: pattern.len(), line: 1, column: 1 }),",
+                  "                pattern: pattern.to_string(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn pos(&self) -> Position {",
+                  "            self.pos.get()",
+                  "        }",
+                  "",
+                  "        fn is_eof(&self) -> bool {",
+                  "            self.pos.get().offset >= self.pattern.len()",
+                  "        }",
+                  "",
+                  "        fn char(&self) -> char {",
+                  "            self.pattern.chars().nth(self.pos.get().offset).unwrap_or('\\0')",
+                  "        }",
+                  "",
+                  "        fn bump(&self) -> bool {",
+                  "            if self.is_eof() {",
+                  "                return false;",
+                  "            }",
+                  "            let Position { mut offset, mut line, mut column } = self.pos();",
+                  "            if self.char() == '\\n' {",
+                  "                line = line.checked_add(1).unwrap();",
+                  "                column = 1;",
+                  "            } else {",
+                  "                column = column.checked_add(1).unwrap();",
+                  "            }",
+                  "            offset += self.char().len_utf8();",
+                  "            self.pos.set(Position {",
+                  "                offset: offset,",
+                  "                line: line,",
+                  "                column: column,",
+                  "            });",
+                  "            self.pattern[self.pos().offset..].chars().next().is_some()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let parser = TestParser::new(\"abc\");",
+                  "    // Move to end of input",
+                  "    for _ in 0..3 {",
+                  "        parser.bump();",
+                  "    }",
+                  "    let result = parser.bump();",
+                  "    assert!(!result);",
+                  "    assert_eq!(parser.pos().line, 1);",
+                  "    assert_eq!(parser.pos().column, 4);",
+                  "    assert_eq!(parser.pos().offset, 3);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+fn deref_mut(&mut self) -> &mut Vec<u8> { &mut self.v }

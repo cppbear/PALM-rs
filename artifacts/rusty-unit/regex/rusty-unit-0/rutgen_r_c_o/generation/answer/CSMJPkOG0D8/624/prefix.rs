@@ -1,0 +1,49 @@
+// Answer 0
+
+#[test]
+fn test_exec_at_no_match_quit_condition() {
+    let prog = Program {
+        insts: vec![],
+        matches: vec![],
+        captures: vec![],
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: 0,
+        byte_classes: (0..256).collect(),
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: true,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher::new(),
+        dfa_size_limit: 10,
+    };
+
+    let mut cache = CacheInner {
+        compiled: HashMap::new(),
+        trans: Transitions::new(),
+        states: vec![State { data: Box::new([0; 256]) }],
+        start_states: vec![STATE_DEAD],
+        stack: vec![],
+        flush_count: 0,
+        size: 0,
+    };
+
+    let mut fsm = Fsm {
+        prog: &prog,
+        start: STATE_UNKNOWN,
+        at: 256,
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut cache,
+    };
+
+    let mut qcur = SparseSet { dense: vec![], sparse: vec![], size: 0 };
+    let mut qnext = SparseSet { dense: vec![], sparse: vec![], size: 0 };
+    let text: Vec<u8> = (0..300).collect(); // Length exceeds 255
+
+    let _result = unsafe { fsm.exec_at(&mut qcur, &mut qnext, &text) };
+}
+

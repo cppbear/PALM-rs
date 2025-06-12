@@ -1,0 +1,167 @@
+{
+  "name": "bytes::buf::chain::<buf::chain::Chain<T, U> as buf::buf_impl::Buf>::chunks_vectored",
+  "name_with_impl": "bytes::buf::chain::{impl#1}::chunks_vectored",
+  "mod_info": {
+    "name": "buf::chain",
+    "loc": "src/buf/mod.rs:19:1:19:11"
+  },
+  "visible": true,
+  "loc": "src/buf/chain.rs:166:5:170:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// may panic: dst[n..] may panic in certain situations\n",
+        "// expected return value/type: n\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct EmptyBuf;",
+                  "",
+                  "    impl Buf for EmptyBuf {",
+                  "        fn remaining(&self) -> usize { 0 }",
+                  "        fn chunk(&self) -> &[u8] { &[] }",
+                  "        fn advance(&mut self, _: usize) {}",
+                  "        fn has_remaining(&self) -> bool { false }",
+                  "        fn copy_to_slice(&mut self, _: &mut [u8]) {}",
+                  "        fn get_u8(&mut self) -> u8 { 0 }",
+                  "        fn get_i8(&mut self) -> i8 { 0 }",
+                  "        fn get_u16(&mut self) -> u16 { 0 }",
+                  "        fn get_u32(&mut self) -> u32 { 0 }",
+                  "        fn get_u64(&mut self) -> u64 { 0 }",
+                  "        fn get_u128(&mut self) -> u128 { 0 }",
+                  "       fn try_copy_to_slice(&mut self, _: &mut [u8]) -> Result<(), crate::TryGetError> { Ok(()) }  ",
+                  "       fn try_get_u8(&mut self) -> Result<u8, crate::TryGetError> { Ok(0) }  ",
+                  "       fn try_get_u16(&mut self) -> Result<u16, crate::TryGetError> { Ok(0) }  ",
+                  "       fn try_get_u32(&mut self) -> Result<u32, crate::TryGetError> { Ok(0) }  ",
+                  "       fn try_get_u64(&mut self) -> Result<u64, crate::TryGetError> { Ok(0) }  ",
+                  "       fn try_get_u128(&mut self) -> Result<u128, crate::TryGetError> { Ok(0) }  ",
+                  "        // rest of the methods omitted for brevity",
+                  "    }",
+                  "",
+                  "    let buf_a = EmptyBuf;",
+                  "    let buf_b = EmptyBuf;",
+                  "    let chain_buf = Chain { a: buf_a, b: buf_b };",
+                  "   let mut dst: [IoSlice<'_>; 1] = [IoSlice::new(&[])];  ",
+                  " ",
+                  "   let result = chain_buf.chunks_vectored(&mut dst);  ",
+                  "    assert_eq!(result, 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct NonEmptyBuf {",
+                  "        data: Vec<u8>,",
+                  "        pos: usize,",
+                  "    }",
+                  "",
+                  "    impl Buf for NonEmptyBuf {",
+                  "        fn remaining(&self) -> usize { self.data.len() - self.pos }",
+                  "        fn chunk(&self) -> &[u8] { &self.data[self.pos..] }",
+                  "        fn advance(&mut self, cnt: usize) { self.pos += cnt; }",
+                  "        fn has_remaining(&self) -> bool { self.pos < self.data.len() }",
+                  "        fn copy_to_slice(&mut self, dst: &mut [u8]) { dst.copy_from_slice(&self.data[self.pos..self.pos + dst.len()]); }",
+                  "        fn get_u8(&mut self) -> u8 { self.data[self.pos] }",
+                  "        fn get_u16(&mut self) -> u16 { 0 }",
+                  "        fn get_u32(&mut self) -> u32 { 0 }",
+                  "        fn get_u64(&mut self) -> u64 { 0 }",
+                  "        fn get_u128(&mut self) -> u128 { 0 }",
+                  "        // rest of the methods omitted for brevity",
+                  "    }",
+                  "",
+                  "    let buf_a = NonEmptyBuf { data: vec![1, 2, 3], pos: 0 };",
+                  "    let buf_b = NonEmptyBuf { data: vec![4, 5], pos: 0 };",
+                  "    let chain_buf = Chain { a: buf_a, b: buf_b };",
+                  "   let mut dst: [IoSlice<'_>; 2] = [IoSlice::new(&mut [0; 3]), IoSlice::new(&mut [0; 2])];",
+                  "   ",
+                  "   let result = chain_buf.chunks_vectored(&mut dst);",
+                  "    assert_eq!(result, 2);",
+                  "    assert_eq!(&dst[0], &IoSlice::new(&[1, 2, 3]));",
+                  "    assert_eq!(&dst[1], &IoSlice::new(&[4, 5]));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0369]: binary operation `==` cannot be applied to type `&std::io::IoSlice<'_>`\n    --> src/buf/chain.rs:277:5\n     |\n277  |     assert_eq!(&dst[0], &IoSlice::new(&[1, 2, 3]));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     &std::io::IoSlice<'_>\n     |     &std::io::IoSlice<'_>\n     |\nnote: the foreign item type `std::io::IoSlice<'_>` doesn't implement `PartialEq<std::io::IoSlice<'_>>`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/io/mod.rs:1359:1\n     |\n1359 | pub struct IoSlice<'a>(sys::io::IoSlice<'a>);\n     | ^^^^^^^^^^^^^^^^^^^^^^ not implement `PartialEq<std::io::IoSlice<'_>>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nerror[E0369]: binary operation `==` cannot be applied to type `&std::io::IoSlice<'_>`\n    --> src/buf/chain.rs:278:5\n     |\n278  |     assert_eq!(&dst[1], &IoSlice::new(&[4, 5]));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     &std::io::IoSlice<'_>\n     |     &std::io::IoSlice<'_>\n     |\nnote: the foreign item type `std::io::IoSlice<'_>` doesn't implement `PartialEq<std::io::IoSlice<'_>>`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/io/mod.rs:1359:1\n     |\n1359 | pub struct IoSlice<'a>(sys::io::IoSlice<'a>);\n     | ^^^^^^^^^^^^^^^^^^^^^^ not implement `PartialEq<std::io::IoSlice<'_>>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct BufWithOneElement {",
+                  "        data: Vec<u8>,",
+                  "        pos: usize,",
+                  "    }",
+                  "",
+                  "    impl Buf for BufWithOneElement {",
+                  "        fn remaining(&self) -> usize { self.data.len() - self.pos }",
+                  "        fn chunk(&self) -> &[u8] { &self.data[self.pos..] }",
+                  "        fn advance(&mut self, cnt: usize) { self.pos += cnt; }",
+                  "        fn has_remaining(&self) -> bool { self.pos < self.data.len() }",
+                  "        fn copy_to_slice(&mut self, _: &mut [u8]) {}",
+                  "        fn get_u8(&mut self) -> u8 { 0 }",
+                  "        // rest of the methods omitted for brevity",
+                  "    }",
+                  "",
+                  "    let buf_a = BufWithOneElement { data: vec![1], pos: 0 };",
+                  "    let buf_b = BufWithOneElement { data: vec![2], pos: 0 };",
+                  "    let chain_buf = Chain { a: buf_a, b: buf_b };",
+                  "   let mut dst: [IoSlice<'_>; 2] = [IoSlice::new(&mut [0; 1]), IoSlice::new(&mut [])];  ",
+                  " ",
+                  "   chain_buf.chunks_vectored(&mut dst);  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0716]: temporary value dropped while borrowed\n   --> src/buf/chain.rs:270:55\n    |\n270 |    let mut dst: [IoSlice<'_>; 2] = [IoSlice::new(&mut [0; 1]), IoSlice::new(&mut [])];  \n    |                                                       ^^^^^^                         - temporary value is freed at the end of this statement\n    |                                                       |\n    |                                                       creates a temporary value which is freed while still in use\n271 |  \n272 |    chain_buf.chunks_vectored(&mut dst);  \n    |                              -------- borrow later used here\n    |\nhelp: consider using a `let` binding to create a longer lived value\n    |\n270 ~    let binding = [0; 1];\n271 ~    let mut dst: [IoSlice<'_>; 2] = [IoSlice::new(&mut binding), IoSlice::new(&mut [])];  \n    |\n\nFor more information about this error, try `rustc --explain E0716`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

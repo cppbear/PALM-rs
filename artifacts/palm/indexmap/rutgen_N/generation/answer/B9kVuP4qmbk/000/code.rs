@@ -1,0 +1,42 @@
+// Answer 0
+
+#[test]
+fn test_into_entries() {
+    struct TestBucket<K, V> {
+        key: K,
+        value: V,
+    }
+    
+    struct TestMap<K, V> {
+        buckets: Vec<TestBucket<K, V>>,
+    }
+
+    impl<K, V> TestMap<K, V> {
+        fn into_boxed(self) -> Box<Self> {
+            Box::new(self)
+        }
+
+        fn into_vec(self: Box<Self>) -> Vec<TestBucket<K, V>> {
+            self.buckets
+        }
+        
+        fn into_entries(self: Box<Self>) -> Vec<TestBucket<K, V>> {
+            self.into_boxed().into_vec()
+        }
+    }
+
+    let map = TestMap {
+        buckets: vec![
+            TestBucket { key: 1, value: "a" },
+            TestBucket { key: 2, value: "b" },
+        ],
+    };
+
+    let entries = Box::new(map).into_entries();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[0].key, 1);
+    assert_eq!(entries[0].value, "a");
+    assert_eq!(entries[1].key, 2);
+    assert_eq!(entries[1].value, "b");
+}
+

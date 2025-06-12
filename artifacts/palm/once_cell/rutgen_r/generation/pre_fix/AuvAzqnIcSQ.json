@@ -1,0 +1,147 @@
+{
+  "name": "once_cell::race::once_box::race::once_box::OnceBox<T>::get",
+  "name_with_impl": "once_cell::race::once_box::{impl#3}::get",
+  "mod_info": {
+    "name": "race::once_box",
+    "loc": "src/race.rs:354:1:498:2"
+  },
+  "visible": true,
+  "loc": "src/race.rs:399:9:405:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: ptr.is_null() is true\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": true,
+          "common": [
+            "    struct OnceCell<T> {",
+            "        inner: AtomicPtr<T>,",
+            "    }",
+            "",
+            "    impl<T> OnceCell<T> {",
+            "        pub fn new() -> Self {",
+            "            Self {",
+            "                inner: AtomicPtr::new(std::ptr::null_mut()),",
+            "            }",
+            "        }",
+            "",
+            "        pub fn get(&self) -> Option<&T> {",
+            "            let ptr = self.inner.load(Ordering::Acquire);",
+            "            if ptr.is_null() {",
+            "                return None;",
+            "            }",
+            "            Some(unsafe { &*ptr })",
+            "        }",
+            "    }"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let cell: OnceCell<i32> = OnceCell::new();",
+                  "    assert_eq!(cell.get(), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: ptr.is_null() is false\n",
+        "// expected return value/type: Some(unsafe { &*ptr })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    struct TestStruct {",
+                  "        value: usize,",
+                  "    }",
+                  "",
+                  "    struct TestInner {",
+                  "        inner: AtomicPtr<TestStruct>,",
+                  "    }",
+                  "",
+                  "    impl TestInner {",
+                  "        pub fn get(&self) -> Option<&TestStruct> {",
+                  "            let ptr = self.inner.load(Ordering::Acquire);",
+                  "            if ptr.is_null() {",
+                  "                return None;",
+                  "            }",
+                  "            Some(unsafe { &*ptr })",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Create a TestStruct and store its pointer in AtomicPtr",
+                  "    let test_value = TestStruct { value: 42 };",
+                  "    let ptr = Box::into_raw(Box::new(test_value));",
+                  "",
+                  "    let test_inner = TestInner {",
+                  "        inner: AtomicPtr::new(ptr),",
+                  "    };",
+                  "",
+                  "    // Test that get returns Some reference to TestStruct",
+                  "    let result = test_inner.get();",
+                  "    assert!(result.is_some());",
+                  "    assert_eq!(result.unwrap().value, 42);",
+                  "",
+                  "    // Clean up",
+                  "    unsafe { Box::from_raw(ptr); } // Recovers the Box to safely free the memory",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

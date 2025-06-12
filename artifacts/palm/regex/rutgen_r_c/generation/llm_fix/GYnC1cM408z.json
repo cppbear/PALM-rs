@@ -1,0 +1,296 @@
+{
+  "name": "regex::compile::compile::Compiler::compile_many",
+  "name_with_impl": "regex::compile::{impl#0}::compile_many",
+  "mod_info": {
+    "name": "compile",
+    "loc": "src/lib.rs:649:1:649:13"
+  },
+  "visible": false,
+  "loc": "src/compile.rs:160:5:196:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: exprs.len() > 1 is true\n",
+        "// constraint: self.compiled.needs_dotstar() is true\n",
+        "// constraint: self.c_dotstar()? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use syntax::hir;",
+            "use syntax::hir::Repetition;",
+            "use syntax::hir::Hir;",
+            "use syntax::hir::RepetitionKind;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use syntax::hir::{self, Hir, Repetition, RepetitionKind};",
+                  "",
+                  "    let expr1 = Hir::repetition(Repetition {",
+                  "        kind: RepetitionKind::ZeroOrOne,",
+                  "        greedy: false,",
+                  "        hir: Box::new(Hir::any(true)),",
+                  "    });",
+                  "",
+                  "    let expr2 = Hir::repetition(Repetition {",
+                  "        kind: RepetitionKind::ZeroOrMore,",
+                  "        greedy: false,",
+                  "        hir: Box::new(Hir::any(true)),",
+                  "    });",
+                  "",
+                  "    let mut compiler = Compiler::new()",
+                  "        .dfa(true) // Set DFA mode, which should cause needs_dotstar to be true",
+                  "        .only_utf8(false); // Set any other relevant fields as necessary",
+                  "",
+                  "    let result = compiler.compile_many(&[expr1, expr2]);",
+                  "",
+                  "    assert!(result.is_err()); // Check that we receive an error due to the dotstar logic failure",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use syntax::hir::{self, Hir, Repetition, RepetitionKind};",
+                  "",
+                  "    let expr1 = Hir::repetition(Repetition {",
+                  "        kind: RepetitionKind::ZeroOrMore,",
+                  "        greedy: true,",
+                  "        hir: Box::new(Hir::any(true)),",
+                  "    });",
+                  "",
+                  "    let expr2 = Hir::repetition(Repetition {",
+                  "        kind: RepetitionKind::ZeroOrMore,",
+                  "        greedy: false,",
+                  "        hir: Box::new(Hir::any(true)),",
+                  "    });",
+                  "",
+                  "    let mut compiler = Compiler::new()",
+                  "        .dfa(true) // Set DFA mode, which should cause needs_dotstar to be true",
+                  "        .only_utf8(false); // Force a situation where needs_dotstar is satisfied",
+                  "        ",
+                  "    // Invoke the compile_many method, which should also internally call c_dotstar",
+                  "    let result = compiler.compile_many(&[expr1, expr2]);",
+                  "",
+                  "    assert!(result.is_err()); // Result should indicate an error due to c_dotstar failing",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "// constraint: exprs.len() > 1 is true\n",
+        "// constraint: self.compiled.needs_dotstar() is true\n",
+        "// constraint: self.c_dotstar()? is Ok/Some\n",
+        "// may panic: exprs[0..exprs.len() - 1] may panic in certain situations\n",
+        "// constraint: (i, expr) in exprs[0..exprs.len() - 1].iter().enumerate() is false\n",
+        "// constraint: self.c_capture(0, &exprs[i])? is Ok/Some\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use syntax::hir::RepetitionKind;",
+            "use syntax::hir::Hir;",
+            "use syntax::hir::Repetition;",
+            "use syntax::hir;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "// constraint: exprs.len() > 1 is true\n",
+        "// constraint: self.compiled.needs_dotstar() is false\n",
+        "// may panic: exprs[0..exprs.len() - 1] may panic in certain situations\n",
+        "// constraint: (i, expr) in exprs[0..exprs.len() - 1].iter().enumerate() is true\n",
+        "// constraint: self.c_capture(0, expr)? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 9,
+      "prompt_conds": [
+        "// constraint: exprs.len() > 1 is true\n",
+        "// constraint: self.compiled.needs_dotstar() is false\n",
+        "// may panic: exprs[0..exprs.len() - 1] may panic in certain situations\n",
+        "// constraint: (i, expr) in exprs[0..exprs.len() - 1].iter().enumerate() is true\n",
+        "// constraint: self.c_capture(0, expr)? is Ok/Some\n",
+        "// constraint: (i, expr) in exprs[0..exprs.len() - 1].iter().enumerate() is false\n",
+        "// constraint: self.c_capture(0, &exprs[i])? is Ok/Some\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 10,
+      "prompt_conds": [
+        "// constraint: exprs.len() > 1 is true\n",
+        "// constraint: self.compiled.needs_dotstar() is false\n",
+        "// may panic: exprs[0..exprs.len() - 1] may panic in certain situations\n",
+        "// constraint: (i, expr) in exprs[0..exprs.len() - 1].iter().enumerate() is false\n",
+        "// constraint: self.c_capture(0, &exprs[i])? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 12,
+      "prompt_conds": [
+        "// constraint: exprs.len() > 1 is false, with bound exprs.len() == 1\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use syntax::hir::RepetitionKind;",
+            "use syntax::hir::Repetition;",
+            "use syntax::hir::Hir;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"assertion failed: exprs.len() > 1\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use syntax::hir::{Hir, Repetition, RepetitionKind};",
+                  "    ",
+                  "    // Create a single expression to trigger the panic.",
+                  "    let exprs: Vec<Hir> = vec![",
+                  "        Hir::repetition(Repetition {",
+                  "            kind: RepetitionKind::ZeroOrMore,",
+                  "            greedy: false,",
+                  "            hir: Box::new(Hir::any(true)),",
+                  "        })",
+                  "    ];",
+                  "    ",
+                  "    let compiler = Compiler::new();",
+                  "    let result = compiler.compile_many(&exprs);",
+                  "    ",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use syntax::hir::{Hir, Repetition, RepetitionKind};",
+                  "",
+                  "    // Create two expressions to satisfy the constraint.",
+                  "    let expr1 = Hir::repetition(Repetition {",
+                  "        kind: RepetitionKind::ZeroOrMore,",
+                  "        greedy: false,",
+                  "        hir: Box::new(Hir::any(true)),",
+                  "    });",
+                  "    ",
+                  "    let expr2 = Hir::repetition(Repetition {",
+                  "        kind: RepetitionKind::OneOrMore,",
+                  "        greedy: true,",
+                  "        hir: Box::new(Hir::any(false)),",
+                  "    });",
+                  "    ",
+                  "    let exprs: Vec<Hir> = vec![expr1, expr2];",
+                  "    ",
+                  "    let compiler = Compiler::new();",
+                  "    let result = compiler.compile_many(&exprs);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

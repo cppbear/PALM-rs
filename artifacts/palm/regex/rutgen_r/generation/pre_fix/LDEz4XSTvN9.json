@@ -1,0 +1,693 @@
+{
+  "name": "regex_syntax::hir::interval::hir::interval::IntervalSet<I>::negate",
+  "name_with_impl": "regex_syntax::hir::interval::{impl#0}::negate",
+  "mod_info": {
+    "name": "hir::interval",
+    "loc": "regex-syntax/src/hir/mod.rs:26:1:26:14"
+  },
+  "visible": true,
+  "loc": "regex-syntax/src/hir/interval.rs:241:5:270:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.ranges.is_empty() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Bound {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    impl Bound {",
+                  "        fn min_value() -> Self {",
+                  "            Bound { value: i32::MIN }",
+                  "        }",
+                  "",
+                  "        fn max_value() -> Self {",
+                  "            Bound { value: i32::MAX }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Interval {",
+                  "        lower: Bound,",
+                  "        upper: Bound,",
+                  "    }",
+                  "",
+                  "    impl Interval {",
+                  "        fn create(lower: Bound, upper: Bound) -> Self {",
+                  "            Interval { lower, upper }",
+                  "        }",
+                  "",
+                  "        fn lower(&self) -> &Bound {",
+                  "            &self.lower",
+                  "        }",
+                  "",
+                  "        fn upper(&self) -> &Bound {",
+                  "            &self.upper",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct IntervalSet {",
+                  "        ranges: Vec<Interval>,",
+                  "    }",
+                  "",
+                  "    impl IntervalSet {",
+                  "        fn new() -> Self {",
+                  "            IntervalSet { ranges: Vec::new() }",
+                  "        }",
+                  "",
+                  "        fn negate(&mut self) {",
+                  "            if self.ranges.is_empty() {",
+                  "                let (min, max) = (Bound::min_value(), Bound::max_value());",
+                  "                self.ranges.push(Interval::create(min, max));",
+                  "                return;",
+                  "            }",
+                  "",
+                  "            let drain_end = self.ranges.len();",
+                  "",
+                  "            if self.ranges[0].lower().value > Bound::min_value().value {",
+                  "                let upper = Bound { value: self.ranges[0].lower().value - 1 };",
+                  "                self.ranges.push(Interval::create(Bound::min_value(), upper));",
+                  "            }",
+                  "            for i in 1..drain_end {",
+                  "                let lower = Bound { value: self.ranges[i - 1].upper().value + 1 };",
+                  "                let upper = Bound { value: self.ranges[i].lower().value - 1 };",
+                  "                self.ranges.push(Interval::create(lower, upper));",
+                  "            }",
+                  "            if self.ranges[drain_end - 1].upper().value < Bound::max_value().value {",
+                  "                let lower = Bound { value: self.ranges[drain_end - 1].upper().value + 1 };",
+                  "                self.ranges.push(Interval::create(lower, Bound::max_value()));",
+                  "            }",
+                  "            self.ranges.drain(..drain_end);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut interval_set = IntervalSet::new();",
+                  "    interval_set.negate();",
+                  "",
+                  "    assert_eq!(interval_set.ranges.len(), 1);",
+                  "    assert_eq!(interval_set.ranges[0].lower().value, i32::MIN);",
+                  "    assert_eq!(interval_set.ranges[0].upper().value, i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: self.ranges.is_empty() is false\n",
+        "// may panic: self.ranges[0] may panic in certain situations\n",
+        "// constraint: self.ranges[0].lower() > I::Bound::min_value() is true\n",
+        "// may panic: self.ranges[0] may panic in certain situations\n",
+        "// constraint: i in 1..drain_end is false\n",
+        "// may panic: self.ranges[drain_end - 1] may panic in certain situations\n",
+        "// constraint: self.ranges[drain_end - 1].upper() < I::Bound::max_value() is true\n",
+        "// may panic: self.ranges[drain_end - 1] may panic in certain situations\n",
+        "// may panic: self.ranges.drain(..drain_end) may panic in certain situations\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct Bound {",
+            "    value: i32,",
+            "}",
+            "",
+            "impl Bound {",
+            "    fn min_value() -> Self {",
+            "        Bound { value: i32::MIN }",
+            "    }",
+            "    ",
+            "    fn max_value() -> Self {",
+            "        Bound { value: i32::MAX }",
+            "    }",
+            "    ",
+            "    fn increment(&self) -> Self {",
+            "        Bound { value: self.value + 1 }",
+            "    }",
+            "    ",
+            "    fn decrement(&self) -> Self {",
+            "        Bound { value: self.value - 1 }",
+            "    }",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "struct Range {",
+            "    lower: Bound,",
+            "    upper: Bound,",
+            "}",
+            "",
+            "impl Range {",
+            "    fn new(lower: Bound, upper: Bound) -> Self {",
+            "        Range { lower, upper }",
+            "    }",
+            "    ",
+            "    fn lower(&self) -> &Bound {",
+            "        &self.lower",
+            "    }",
+            "    ",
+            "    fn upper(&self) -> &Bound {",
+            "        &self.upper",
+            "    }",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "struct IntervalSet {",
+            "    ranges: Vec<Range>,",
+            "}",
+            "",
+            "impl IntervalSet {",
+            "    fn new() -> Self {",
+            "        IntervalSet { ranges: Vec::new() }",
+            "    }",
+            "",
+            "    fn add_range(&mut self, range: Range) {",
+            "        self.ranges.push(range);",
+            "    }",
+            "    ",
+            "    pub fn negate(&mut self) {",
+            "        if self.ranges.is_empty() {",
+            "            let (min, max) = (Bound::min_value(), Bound::max_value());",
+            "            self.ranges.push(Range::new(min, max));",
+            "            return;",
+            "        }",
+            "",
+            "        let drain_end = self.ranges.len();",
+            "",
+            "        if self.ranges[0].lower().value > Bound::min_value().value {",
+            "            let upper = self.ranges[0].lower().decrement();",
+            "            self.ranges.push(Range::new(Bound::min_value(), upper));",
+            "        }",
+            "        for i in 1..drain_end {",
+            "            let lower = self.ranges[i - 1].upper().increment();",
+            "            let upper = self.ranges[i].lower().decrement();",
+            "            self.ranges.push(Range::new(lower, upper));",
+            "        }",
+            "        if self.ranges[drain_end - 1].upper().value < Bound::max_value().value {",
+            "            let lower = self.ranges[drain_end - 1].upper().increment();",
+            "            self.ranges.push(Range::new(lower, Bound::max_value()));",
+            "        }",
+            "        self.ranges.drain(..drain_end);",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut interval_set = IntervalSet::new();",
+                  "    interval_set.negate();",
+                  "    assert_eq!(interval_set.ranges.len(), 1);",
+                  "    assert_eq!(interval_set.ranges[0].lower.value, i32::MIN);",
+                  "    assert_eq!(interval_set.ranges[0].upper.value, i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut interval_set = IntervalSet::new();",
+                  "    interval_set.add_range(Range::new(Bound { value: 0 }, Bound { value: 10 }));",
+                  "    interval_set.negate();",
+                  "    assert_eq!(interval_set.ranges.len(), 3);",
+                  "    assert_eq!(interval_set.ranges[0].lower.value, i32::MIN);",
+                  "    assert_eq!(interval_set.ranges[0].upper.value, -1);",
+                  "    assert_eq!(interval_set.ranges[1].lower.value, 11);",
+                  "    assert_eq!(interval_set.ranges[1].upper.value, i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut interval_set = IntervalSet::new();",
+                  "    interval_set.add_range(Range::new(Bound { value: 0 }, Bound { value: 5 }));",
+                  "    interval_set.add_range(Range::new(Bound { value: 10 }, Bound { value: 15 }));",
+                  "    interval_set.negate();",
+                  "    assert_eq!(interval_set.ranges.len(), 4);",
+                  "    assert_eq!(interval_set.ranges[0].lower.value, i32::MIN);",
+                  "    assert_eq!(interval_set.ranges[0].upper.value, 4);",
+                  "    assert_eq!(interval_set.ranges[1].lower.value, 6);",
+                  "    assert_eq!(interval_set.ranges[1].upper.value, 9);",
+                  "    assert_eq!(interval_set.ranges[2].lower.value, 16);",
+                  "    assert_eq!(interval_set.ranges[2].upper.value, i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "// constraint: self.ranges.is_empty() is false\n",
+        "// may panic: self.ranges[0] may panic in certain situations\n",
+        "// constraint: self.ranges[0].lower() > I::Bound::min_value() is false, with bound self.ranges[0].lower() == I::Bound::min_value()\n",
+        "// constraint: i in 1..drain_end is true\n",
+        "// may panic: self.ranges[i - 1] may panic in certain situations\n",
+        "// may panic: self.ranges[i] may panic in certain situations\n",
+        "// constraint: i in 1..drain_end is false\n",
+        "// may panic: self.ranges[drain_end - 1] may panic in certain situations\n",
+        "// constraint: self.ranges[drain_end - 1].upper() < I::Bound::max_value() is false, with bound self.ranges[drain_end - 1].upper() == I::Bound::max_value()\n",
+        "// may panic: self.ranges.drain(..drain_end) may panic in certain situations\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Bound(i32);",
+                  "    ",
+                  "    impl Bound {",
+                  "        fn min_value() -> Self {",
+                  "            Bound(i32::MIN)",
+                  "        }",
+                  "",
+                  "        fn max_value() -> Self {",
+                  "            Bound(i32::MAX)",
+                  "        }",
+                  "        ",
+                  "        fn decrement(&self) -> Self {",
+                  "            Bound(self.0 - 1)",
+                  "        }",
+                  "",
+                  "        fn increment(&self) -> Self {",
+                  "            Bound(self.0 + 1)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Range {",
+                  "        lower: Bound,",
+                  "        upper: Bound,",
+                  "    }",
+                  "",
+                  "    impl Range {",
+                  "        fn create(lower: Bound, upper: Bound) -> Self {",
+                  "            Range { lower, upper }",
+                  "        }",
+                  "",
+                  "        fn lower(&self) -> &Bound {",
+                  "            &self.lower",
+                  "        }",
+                  "",
+                  "        fn upper(&self) -> &Bound {",
+                  "            &self.upper",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct IntervalSet {",
+                  "        ranges: Vec<Range>,",
+                  "    }",
+                  "",
+                  "    impl IntervalSet {",
+                  "        fn new() -> Self {",
+                  "            IntervalSet { ranges: Vec::new() }",
+                  "        }",
+                  "        ",
+                  "        fn negate(&mut self) {",
+                  "            if self.ranges.is_empty() {",
+                  "                let (min, max) = (Bound::min_value(), Bound::max_value());",
+                  "                self.ranges.push(Range::create(min, max));",
+                  "                return;",
+                  "            }",
+                  "",
+                  "            let drain_end = self.ranges.len();",
+                  "",
+                  "            if self.ranges[0].lower().0 > Bound::min_value().0 {",
+                  "                let upper = self.ranges[0].lower().decrement();",
+                  "                self.ranges.push(Range::create(Bound::min_value(), upper));",
+                  "            }",
+                  "            for i in 1..drain_end {",
+                  "                let lower = self.ranges[i - 1].upper().increment();",
+                  "                let upper = self.ranges[i].lower().decrement();",
+                  "                self.ranges.push(Range::create(lower, upper));",
+                  "            }",
+                  "            if self.ranges[drain_end - 1].upper().0 < Bound::max_value().0 {",
+                  "                let lower = self.ranges[drain_end - 1].upper().increment();",
+                  "                self.ranges.push(Range::create(lower, Bound::max_value()));",
+                  "            }",
+                  "            self.ranges.drain(..drain_end);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut interval_set = IntervalSet::new();",
+                  "    interval_set.ranges.push(Range::create(Bound(i32::MIN), Bound(i32::MIN + 10)));",
+                  "",
+                  "    interval_set.negate();",
+                  "    assert_eq!(interval_set.ranges.len(), 1);",
+                  "    assert_eq!(interval_set.ranges[0].lower().0, i32::MIN);",
+                  "    assert_eq!(interval_set.ranges[0].upper().0, i32::MIN + 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Bound(i32); // Same definition as before, omitted for brevity",
+                  "",
+                  "    struct Range; // Same definition as before, omitted for brevity",
+                  "",
+                  "    struct IntervalSet {",
+                  "        ranges: Vec<Range>,",
+                  "    } // Same definition as before, omitted for brevity",
+                  "",
+                  "    let mut interval_set = IntervalSet::new();",
+                  "    interval_set.negate();",
+                  "    ",
+                  "    assert_eq!(interval_set.ranges.len(), 1);",
+                  "    assert_eq!(interval_set.ranges[0].lower().0, i32::MIN);",
+                  "    assert_eq!(interval_set.ranges[0].upper().0, i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/interval.rs:494:8\n    |\n494 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no function or associated item named `new` found for struct `llmtests::test_negate_05::IntervalSet` in the current scope\n   --> regex-syntax/src/hir/interval.rs:506:41\n    |\n502 |     struct IntervalSet {\n    |     ------------------ function or associated item `new` not found for this struct\n...\n506 |     let mut interval_set = IntervalSet::new();\n    |                                         ^^^ function or associated item not found in `IntervalSet`\n\nwarning: unused import: `super`\n   --> regex-syntax/src/hir/interval.rs:493:8\n    |\n493 |    use super::*;\n    |        ^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 19 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 19 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Bound(i32); // Same definition as before, omitted for brevity",
+                  "",
+                  "    struct Range; // Same definition as before, omitted for brevity",
+                  "",
+                  "    struct IntervalSet {",
+                  "        ranges: Vec<Range>,",
+                  "    } // Same definition as before, omitted for brevity",
+                  "",
+                  "    let mut interval_set = IntervalSet::new();",
+                  "    // Populate in such a way to trigger panic conditions",
+                  "    interval_set.ranges.push(Range::create(Bound(i32::MIN), Bound(i32::MAX)));",
+                  "    interval_set.negate(); // Depending on the state may panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/interval.rs:494:8\n    |\n494 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no function or associated item named `new` found for struct `llmtests::test_negate_06::IntervalSet` in the current scope\n   --> regex-syntax/src/hir/interval.rs:507:41\n    |\n503 |     struct IntervalSet {\n    |     ------------------ function or associated item `new` not found for this struct\n...\n507 |     let mut interval_set = IntervalSet::new();\n    |                                         ^^^ function or associated item not found in `IntervalSet`\n\nerror[E0599]: no function or associated item named `create` found for struct `llmtests::test_negate_06::Range` in the current scope\n   --> regex-syntax/src/hir/interval.rs:509:37\n    |\n501 |     struct Range; // Same definition as before, omitted for brevity\n    |     ------------ function or associated item `create` not found for this struct\n...\n509 |     interval_set.ranges.push(Range::create(Bound(i32::MIN), Bound(i32::MAX)));\n    |                                     ^^^^^^ function or associated item not found in `Range`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Interval` defines an item `create`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:326:1\n    |\n326 | / pub trait Interval:\n327 | |     Clone + Copy + Debug + Default + Eq + PartialEq + PartialOrd + Ord\n    | |______________________________________________________________________^\n\nwarning: unused import: `super`\n   --> regex-syntax/src/hir/interval.rs:493:8\n    |\n493 |    use super::*;\n    |        ^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 19 warnings\nerror: could not compile `regex-syntax` (lib test) due to 2 previous errors; 19 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 9,
+      "prompt_conds": [
+        "// constraint: self.ranges.is_empty() is false\n",
+        "// may panic: self.ranges[0] may panic in certain situations\n",
+        "// constraint: self.ranges[0].lower() > I::Bound::min_value() is false, with bound self.ranges[0].lower() == I::Bound::min_value()\n",
+        "// constraint: i in 1..drain_end is false\n",
+        "// may panic: self.ranges[drain_end - 1] may panic in certain situations\n",
+        "// constraint: self.ranges[drain_end - 1].upper() < I::Bound::max_value() is false, with bound self.ranges[drain_end - 1].upper() == I::Bound::max_value()\n",
+        "// may panic: self.ranges.drain(..drain_end) may panic in certain situations\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct Interval {",
+            "    lower: i32,",
+            "    upper: i32,",
+            "}",
+            "",
+            "impl Interval {",
+            "    fn create(lower: i32, upper: i32) -> Self {",
+            "        Interval { lower, upper }",
+            "    }",
+            "    ",
+            "    fn lower(&self) -> i32 {",
+            "        self.lower",
+            "    }",
+            "    ",
+            "    fn upper(&self) -> i32 {",
+            "        self.upper",
+            "    }",
+            "    ",
+            "    fn increment(&self) -> i32 {",
+            "        self.upper + 1",
+            "    }",
+            "    ",
+            "    fn decrement(&self) -> i32 {",
+            "        self.lower - 1",
+            "    }",
+            "}",
+            "",
+            "struct IntervalSet {",
+            "    ranges: Vec<Interval>,",
+            "}",
+            "",
+            "impl IntervalSet {",
+            "    fn new() -> Self {",
+            "        IntervalSet { ranges: Vec::new() }",
+            "    }",
+            "    ",
+            "    fn negate(&mut self) {",
+            "        if self.ranges.is_empty() {",
+            "            let (min, max) = (i32::MIN, i32::MAX);",
+            "            self.ranges.push(Interval::create(min, max));",
+            "            return;",
+            "        }",
+            "        ",
+            "        let drain_end = self.ranges.len();",
+            "",
+            "        if self.ranges[0].lower() > i32::MIN {",
+            "            let upper = self.ranges[0].lower().decrement();",
+            "            self.ranges.push(Interval::create(i32::MIN, upper));",
+            "        }",
+            "        for i in 1..drain_end {",
+            "            let lower = self.ranges[i - 1].upper().increment();",
+            "            let upper = self.ranges[i].lower().decrement();",
+            "            self.ranges.push(Interval::create(lower, upper));",
+            "        }",
+            "        if self.ranges[drain_end - 1].upper() < i32::MAX {",
+            "            let lower = self.ranges[drain_end - 1].upper().increment();",
+            "            self.ranges.push(Interval::create(lower, i32::MAX));",
+            "        }",
+            "        self.ranges.drain(..drain_end);",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut set = IntervalSet::new();",
+                  "    set.negate();",
+                  "    assert_eq!(set.ranges.len(), 1);",
+                  "    assert_eq!(set.ranges[0].lower(), i32::MIN);",
+                  "    assert_eq!(set.ranges[0].upper(), i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/interval.rs:494:8\n    |\n494 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `decrement` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:542:48\n    |\n542 |             let upper = self.ranges[0].lower().decrement();\n    |                         --------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `decrement` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `decrement`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `increment` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:546:52\n    |\n546 |             let lower = self.ranges[i - 1].upper().increment();\n    |                         ------------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `increment` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `increment`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `decrement` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:547:48\n    |\n547 |             let upper = self.ranges[i].lower().decrement();\n    |                         --------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `decrement` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `decrement`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `increment` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:551:60\n    |\n551 |             let lower = self.ranges[drain_end - 1].upper().increment();\n    |                         --------------------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `increment` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `increment`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 18 warnings\nerror: could not compile `regex-syntax` (lib test) due to 4 previous errors; 18 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut set = IntervalSet { ranges: vec![Interval::create(1, 5)] };",
+                  "    set.negate();",
+                  "    assert_eq!(set.ranges.len(), 2);",
+                  "    assert_eq!(set.ranges[0].lower(), i32::MIN);",
+                  "    assert_eq!(set.ranges[0].upper(), 0);",
+                  "    assert_eq!(set.ranges[1].lower(), 6);",
+                  "    assert_eq!(set.ranges[1].upper(), i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/interval.rs:494:8\n    |\n494 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `decrement` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:542:48\n    |\n542 |             let upper = self.ranges[0].lower().decrement();\n    |                         --------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `decrement` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `decrement`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `increment` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:546:52\n    |\n546 |             let lower = self.ranges[i - 1].upper().increment();\n    |                         ------------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `increment` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `increment`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `decrement` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:547:48\n    |\n547 |             let upper = self.ranges[i].lower().decrement();\n    |                         --------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `decrement` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `decrement`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `increment` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:551:60\n    |\n551 |             let lower = self.ranges[drain_end - 1].upper().increment();\n    |                         --------------------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `increment` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `increment`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 18 warnings\nerror: could not compile `regex-syntax` (lib test) due to 4 previous errors; 18 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut set = IntervalSet { ranges: vec![Interval::create(1, 3), Interval::create(5, 7)] };",
+                  "    set.negate();",
+                  "    assert_eq!(set.ranges.len(), 3);",
+                  "    assert_eq!(set.ranges[0].lower(), i32::MIN);",
+                  "    assert_eq!(set.ranges[0].upper(), 0);",
+                  "    assert_eq!(set.ranges[1].lower(), 4);",
+                  "    assert_eq!(set.ranges[1].upper(), 4);",
+                  "    assert_eq!(set.ranges[2].lower(), 8);",
+                  "    assert_eq!(set.ranges[2].upper(), i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/interval.rs:494:8\n    |\n494 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `decrement` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:542:48\n    |\n542 |             let upper = self.ranges[0].lower().decrement();\n    |                         --------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `decrement` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `decrement`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `increment` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:546:52\n    |\n546 |             let lower = self.ranges[i - 1].upper().increment();\n    |                         ------------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `increment` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `increment`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `decrement` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:547:48\n    |\n547 |             let upper = self.ranges[i].lower().decrement();\n    |                         --------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `decrement` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `decrement`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `increment` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:551:60\n    |\n551 |             let lower = self.ranges[drain_end - 1].upper().increment();\n    |                         --------------------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `increment` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `increment`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 18 warnings\nerror: could not compile `regex-syntax` (lib test) due to 4 previous errors; 18 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut set = IntervalSet { ranges: vec![Interval::create(i32::MIN + 1, 5), Interval::create(6, i32::MAX - 1)] };",
+                  "    set.negate();",
+                  "    assert_eq!(set.ranges.len(), 4);",
+                  "    assert_eq!(set.ranges[0].lower(), i32::MIN);",
+                  "    assert_eq!(set.ranges[0].upper(), i32::MIN);",
+                  "    assert_eq!(set.ranges[1].lower(), 5);",
+                  "    assert_eq!(set.ranges[1].upper(), 5);",
+                  "    assert_eq!(set.ranges[2].lower(), 7);",
+                  "    assert_eq!(set.ranges[2].upper(), i32::MAX - 1);",
+                  "    assert_eq!(set.ranges[3].lower(), i32::MAX);",
+                  "    assert_eq!(set.ranges[3].upper(), i32::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/interval.rs:494:8\n    |\n494 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `decrement` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:542:48\n    |\n542 |             let upper = self.ranges[0].lower().decrement();\n    |                         --------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `decrement` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `decrement`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `increment` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:546:52\n    |\n546 |             let lower = self.ranges[i - 1].upper().increment();\n    |                         ------------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `increment` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `increment`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `decrement` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:547:48\n    |\n547 |             let upper = self.ranges[i].lower().decrement();\n    |                         --------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `decrement` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `decrement`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `increment` found for type `i32` in the current scope\n   --> regex-syntax/src/hir/interval.rs:551:60\n    |\n551 |             let lower = self.ranges[drain_end - 1].upper().increment();\n    |                         --------------------------         ^^^^^^^^^ method not found in `i32`\n    |                         |\n    |                         method `increment` is available on `&llmtests::Interval`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `interval::Bound` defines an item `increment`, perhaps you need to implement it\n   --> regex-syntax/src/hir/interval.rs:454:1\n    |\n454 | pub trait Bound: Copy + Clone + Debug + Eq + PartialEq + PartialOrd + Ord {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 18 warnings\nerror: could not compile `regex-syntax` (lib test) due to 4 previous errors; 18 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

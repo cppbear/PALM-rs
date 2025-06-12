@@ -1,0 +1,50 @@
+// Answer 0
+
+#[test]
+fn test_new_with_single_literal_and_single_byte_set() {
+    let literals = Literals::new(vec![b"test".to_vec()]);
+    let single_byte_set = SingleByteSet {
+        sparse: vec![false; 256],
+        dense: (0..25).map(|x| x as u8).collect(),
+        complete: false,
+        all_ascii: true,
+    };
+    Matcher::new(&literals, single_byte_set);
+}
+
+#[test]
+fn test_new_with_single_literal_and_full_dense_set() {
+    let literals = Literals::new(vec![b"example".to_vec()]);
+    let single_byte_set = SingleByteSet {
+        sparse: vec![false; 256],
+        dense: (0..25).map(|x| x as u8).collect(),
+        complete: false,
+        all_ascii: true,
+    };
+    Matcher::new(&literals, single_byte_set);
+}
+
+#[test]
+fn test_new_with_single_literal_and_partial_dense_set() {
+    let literals = Literals::new(vec![b"hello".to_vec()]);
+    let single_byte_set = SingleByteSet {
+        sparse: vec![false; 256],
+        dense: (0..20).map(|x| x as u8).collect(),
+        complete: false,
+        all_ascii: true,
+    };
+    Matcher::new(&literals, single_byte_set);
+}
+
+#[test]
+fn test_new_with_single_literal_and_custom_dense_set() {
+    let literals = Literals::new(vec![b"world".to_vec()]);
+    let single_byte_set = SingleByteSet {
+        sparse: vec![false; 256],
+        dense: vec![b'a', b'b', b'c', b'd', b'e', b'f', b'g', b'h', b'i', b'j', b'k', b'l', b'm', b'n', b'o', b'p', b'q', b'r', b's', b't', b'u', b'v', b'w', b'x', b'y', b'z'],
+        complete: false,
+        all_ascii: true,
+    };
+    Matcher::new(&literals, single_byte_set);
+}
+

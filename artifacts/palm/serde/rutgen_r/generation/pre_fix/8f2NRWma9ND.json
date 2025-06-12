@@ -1,0 +1,197 @@
+{
+  "name": "serde::__private::ser::<__private::ser::FlatMapSerializer<'a, M> as ser::Serializer>::serialize_struct_variant",
+  "name_with_impl": "serde::__private::ser::{impl#4}::serialize_struct_variant",
+  "mod_info": {
+    "name": "__private::ser",
+    "loc": "serde/src/private/mod.rs:4:1:4:13"
+  },
+  "visible": true,
+  "loc": "serde/src/private/ser.rs:1168:5:1180:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.0.serialize_key(inner_variant) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestSerializer {",
+                  "        should_fail: bool,",
+                  "    }",
+                  "",
+                  "    impl TestSerializer {",
+                  "        fn serialize_key(&self, _: &'static str) -> Result<(), &'static str> {",
+                  "            if self.should_fail {",
+                  "                Err(\"serialization error\")",
+                  "            } else {",
+                  "                Ok(())",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializeStructVariant {",
+                  "        serializer: TestSerializer,",
+                  "    }",
+                  "",
+                  "    impl TestSerializeStructVariant {",
+                  "        fn new(serializer: TestSerializer) -> Self {",
+                  "            Self { serializer }",
+                  "        }",
+                  "        ",
+                  "        fn serialize_struct_variant(",
+                  "            self,",
+                  "            _: &'static str,",
+                  "            _: u32,",
+                  "            inner_variant: &'static str,",
+                  "            _: usize,",
+                  "        ) -> Result<(), &'static str> {",
+                  "            self.serializer.serialize_key(inner_variant)?;",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let serializer = TestSerializer { should_fail: true };",
+                  "    let test_variant = TestSerializeStructVariant::new(serializer);",
+                  "    ",
+                  "    let result = test_variant.serialize_struct_variant(\"variant\", 0, \"inner_variant\", 0);",
+                  "    assert_eq!(result, Err(\"serialization error\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.0.serialize_key(inner_variant) matches Ok(val) is true\n",
+        "// expected return value/type: Ok(FlatMapSerializeStructVariantAsMapValue::new(\n            self.0,\n            inner_variant,\n        ))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct TestSerializer;",
+            "",
+            "impl TestSerializer {",
+            "    fn serialize_key(&self, key: &'static str) -> Result<(), &'static str> {",
+            "        if key.is_empty() {",
+            "            Err(\"Key cannot be empty\")",
+            "        } else {",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "struct SerializeStructVariantHelper<'a>(&'a TestSerializer);",
+            "",
+            "impl SerializeStructVariantHelper<'_> {",
+            "    fn serialize_struct_variant(",
+            "        self,",
+            "        _: &'static str,",
+            "        _: u32,",
+            "        inner_variant: &'static str,",
+            "        _: usize,",
+            "    ) -> Result<FlatMapSerializeStructVariantAsMapValue, &'static str> {",
+            "        self.0.serialize_key(inner_variant)?;",
+            "        Ok(FlatMapSerializeStructVariantAsMapValue::new(self.0, inner_variant))",
+            "    }",
+            "}",
+            "",
+            "struct FlatMapSerializeStructVariantAsMapValue<'a> {",
+            "    serializer: &'a TestSerializer,",
+            "    inner_variant: &'static str,",
+            "}",
+            "",
+            "impl<'a> FlatMapSerializeStructVariantAsMapValue<'a> {",
+            "    fn new(serializer: &'a TestSerializer, inner_variant: &'static str) -> Self {",
+            "        FlatMapSerializeStructVariantAsMapValue {",
+            "            serializer,",
+            "            inner_variant,",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let serializer = TestSerializer::default();",
+                  "    let helper = SerializeStructVariantHelper(&serializer);",
+                  "    ",
+                  "    let result = helper.serialize_struct_variant(\"root\", 0, \"inner_variant\", 0);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nerror[E0106]: missing lifetime specifier\n    --> serde/src/private/ser.rs:1391:17\n     |\n1387 |         _: &'static str,\n     |            ------------\n1388 |         _: u32,\n1389 |         inner_variant: &'static str,\n     |                        ------------\n1390 |         _: usize,\n1391 |     ) -> Result<FlatMapSerializeStructVariantAsMapValue, &'static str> {\n     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter\n     |\n     = help: this function's return type contains a borrowed value with an elided lifetime, but the lifetime cannot be derived from the arguments\nhelp: consider using the `'static` lifetime, but this is uncommon unless you're returning a borrowed value from a `const` or a `static`, or if you will only have owned values\n     |\n1391 |     ) -> Result<FlatMapSerializeStructVariantAsMapValue<'static>, &'static str> {\n     |                                                        +++++++++\n\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1368:8\n     |\n1368 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror: lifetime may not live long enough\n    --> serde/src/private/ser.rs:1393:9\n     |\n1386 |         self,\n     |         ---- has type `SerializeStructVariantHelper<'1>`\n...\n1393 |         Ok(FlatMapSerializeStructVariantAsMapValue::new(self.0, inner_variant))\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ returning this value requires that `'1` must outlive `'static`\n\nFor more information about this error, try `rustc --explain E0106`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Key cannot be empty\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let serializer = TestSerializer::default();",
+                  "    let helper = SerializeStructVariantHelper(&serializer);",
+                  "    ",
+                  "    let _ = helper.serialize_struct_variant(\"root\", 0, \"\", 0).unwrap();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nerror[E0106]: missing lifetime specifier\n    --> serde/src/private/ser.rs:1391:17\n     |\n1387 |         _: &'static str,\n     |            ------------\n1388 |         _: u32,\n1389 |         inner_variant: &'static str,\n     |                        ------------\n1390 |         _: usize,\n1391 |     ) -> Result<FlatMapSerializeStructVariantAsMapValue, &'static str> {\n     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected named lifetime parameter\n     |\n     = help: this function's return type contains a borrowed value with an elided lifetime, but the lifetime cannot be derived from the arguments\nhelp: consider using the `'static` lifetime, but this is uncommon unless you're returning a borrowed value from a `const` or a `static`, or if you will only have owned values\n     |\n1391 |     ) -> Result<FlatMapSerializeStructVariantAsMapValue<'static>, &'static str> {\n     |                                                        +++++++++\n\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1368:8\n     |\n1368 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror: lifetime may not live long enough\n    --> serde/src/private/ser.rs:1393:9\n     |\n1386 |         self,\n     |         ---- has type `SerializeStructVariantHelper<'1>`\n...\n1393 |         Ok(FlatMapSerializeStructVariantAsMapValue::new(self.0, inner_variant))\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ returning this value requires that `'1` must outlive `'static`\n\nFor more information about this error, try `rustc --explain E0106`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

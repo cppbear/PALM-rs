@@ -1,0 +1,241 @@
+{
+  "name": "serde::__private::de::<__private::de::FlatMapDeserializer<'a, 'de, E> as de::Deserializer<'de>>::deserialize_enum",
+  "name_with_impl": "serde::__private::de::{impl#8}::deserialize_enum",
+  "mod_info": {
+    "name": "__private::de",
+    "loc": "serde/src/private/mod.rs:2:1:2:12"
+  },
+  "visible": true,
+  "loc": "serde/src/private/de.rs:2535:5:2554:6",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: entry in self.0 is true\n",
+        "// constraint: let Some((key, value)) = flat_map_take_entry(entry, variants) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct DummyDeserializer<'de>(&'de [&'de str]);",
+            "",
+            "impl<'de> DummyDeserializer<'de> {",
+            "    fn deserialize_enum<V>(",
+            "        self,",
+            "        name: &'static str,",
+            "        variants: &'static [&'static str],",
+            "        visitor: V,",
+            "    ) -> Result<V::Value, String>",
+            "    where",
+            "        V: Visitor<'de>,",
+            "    {",
+            "        for entry in self.0 {",
+            "            if let Some((key, value)) = flat_map_take_entry(entry, variants) {",
+            "                return visitor.visit_enum(EnumDeserializer::new(key, Some(value)));",
+            "            }",
+            "        }",
+            "",
+            "        Err(format!(\"no variant of enum {} found in flattened data\", name))",
+            "    }",
+            "}",
+            "",
+            "fn flat_map_take_entry(entry: &str, variants: &'static [&'static str]) -> Option<(&'static str, &'static str)> {",
+            "    if variants.contains(&entry) {",
+            "        Some((entry, entry))",
+            "    } else {",
+            "        None",
+            "    }",
+            "}",
+            "",
+            "struct EnumDeserializer<'de> {",
+            "    key: &'static str,",
+            "    value: Option<&'static str>,",
+            "}",
+            "",
+            "impl<'de> EnumDeserializer<'de> {",
+            "    fn new(key: &'static str, value: Option<&'static str>) -> Self {",
+            "        Self { key, value }",
+            "    }",
+            "}",
+            "",
+            "trait Visitor<'de> {",
+            "    type Value;",
+            "",
+            "    fn visit_enum(self, deserializer: EnumDeserializer<'de>) -> Result<Self::Value, String>;",
+            "}",
+            "",
+            "struct DummyVisitor;",
+            "",
+            "impl<'de> Visitor<'de> for DummyVisitor {",
+            "    type Value = &'static str;",
+            "",
+            "    fn visit_enum(self, deserializer: EnumDeserializer<'de>) -> Result<Self::Value, String> {",
+            "        Ok(deserializer.key)",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let variants = &[\"variant1\", \"variant2\", \"variant3\"];",
+                  "    let entries = &[\"variant1\", \"not_a_variant\", \"variant2\"];",
+                  "    let deserializer = DummyDeserializer(entries);",
+                  "    let visitor = DummyVisitor;",
+                  "",
+                  "    let result = deserializer.deserialize_enum(\"TestEnum\", variants, visitor).unwrap();",
+                  "    ",
+                  "    assert_eq!(result, \"variant1\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/de.rs:2808:8\n     |\n2808 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0392]: lifetime parameter `'de` is never used\n    --> serde/src/private/de.rs:2840:25\n     |\n2840 | struct EnumDeserializer<'de> {\n     |                         ^^^ unused lifetime parameter\n     |\n     = help: consider removing `'de`, referring to it in a field, or using a marker such as `std::marker::PhantomData`\n\nerror: lifetime may not live long enough\n    --> serde/src/private/de.rs:2834:9\n     |\n2832 | fn flat_map_take_entry(entry: &str, variants: &'static [&'static str]) -> Option<(&'static str, &'static str)> {\n     |                               - let's call the lifetime of this reference `'1`\n2833 |     if variants.contains(&entry) {\n2834 |         Some((entry, entry))\n     |         ^^^^^^^^^^^^^^^^^^^^ returning this value requires that `'1` must outlive `'static`\n\nFor more information about this error, try `rustc --explain E0392`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let variants = &[\"variant1\", \"variant2\", \"variant3\"];",
+                  "    let entries = &[\"not_a_variant\"];",
+                  "    let deserializer = DummyDeserializer(entries);",
+                  "    let visitor = DummyVisitor;",
+                  "",
+                  "    let result = deserializer.deserialize_enum(\"TestEnum\", variants, visitor);",
+                  "    ",
+                  "    assert_eq!(result.unwrap_err(), \"no variant of enum TestEnum found in flattened data\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/de.rs:2808:8\n     |\n2808 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0392]: lifetime parameter `'de` is never used\n    --> serde/src/private/de.rs:2840:25\n     |\n2840 | struct EnumDeserializer<'de> {\n     |                         ^^^ unused lifetime parameter\n     |\n     = help: consider removing `'de`, referring to it in a field, or using a marker such as `std::marker::PhantomData`\n\nerror: lifetime may not live long enough\n    --> serde/src/private/de.rs:2834:9\n     |\n2832 | fn flat_map_take_entry(entry: &str, variants: &'static [&'static str]) -> Option<(&'static str, &'static str)> {\n     |                               - let's call the lifetime of this reference `'1`\n2833 |     if variants.contains(&entry) {\n2834 |         Some((entry, entry))\n     |         ^^^^^^^^^^^^^^^^^^^^ returning this value requires that `'1` must outlive `'static`\n\nFor more information about this error, try `rustc --explain E0392`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: entry in self.0 is false\n",
+        "// expected return value/type: Err(Error::custom(format_args!(\n            \"no variant of enum {} found in flattened data\",\n            name\n        )))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestVisitor;",
+                  "",
+                  "    impl serde::de::Visitor<'static> for TestVisitor {",
+                  "        type Value = ();",
+                  "",
+                  "        fn visit_enum<V>(self, _visitor: V) -> Result<Self::Value, serde::de::Error>",
+                  "        where",
+                  "            V: serde::de::EnumAccess<'static>,",
+                  "        {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct DummyDeserializer<'de>(&'de [&'de str]);",
+                  "",
+                  "    impl<'de> serde::Deserializer<'de> for DummyDeserializer<'de> {",
+                  "        type Error = serde::de::Error;",
+                  "",
+                  "        fn deserialize_enum<V>(",
+                  "            self,",
+                  "            name: &'static str,",
+                  "            variants: &'static [&'static str],",
+                  "            visitor: V,",
+                  "        ) -> Result<V::Value, Self::Error>",
+                  "        where",
+                  "            V: serde::de::Visitor<'de>,",
+                  "        {",
+                  "            for entry in self.0 {",
+                  "                if let Some((key, _value)) = flat_map_take_entry(entry, variants) {",
+                  "                    return visitor.visit_enum(EnumDeserializer::new(key, None));",
+                  "                }",
+                  "            }",
+                  "",
+                  "            Err(serde::de::Error::custom(format_args!(",
+                  "                \"no variant of enum {} found in flattened data\",",
+                  "                name",
+                  "            )))",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn flat_map_take_entry(entry: &str, variants: &'static [&'static str]) -> Option<(&'static str, &'static str)> {",
+                  "        if variants.contains(&entry) {",
+                  "            Some((entry, \"some_value\"))",
+                  "        } else {",
+                  "            None",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct EnumDeserializer<'a> {",
+                  "        key: &'a str,",
+                  "        value: Option<&'a str>,",
+                  "    }",
+                  "",
+                  "    impl<'a> EnumDeserializer<'a> {",
+                  "        fn new(key: &'a str, value: Option<&'a str>) -> Self {",
+                  "            Self { key, value }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let deserializer = DummyDeserializer(&[\"non_variant_key\"]);",
+                  "    let result: Result<(), serde::de::Error> = deserializer.deserialize_enum(\"TestEnum\", &[\"variant1\", \"variant2\"], TestVisitor);",
+                  "",
+                  "    assert!(result.is_err());",
+                  "    assert_eq!(result.err().unwrap().to_string(), \"no variant of enum TestEnum found in flattened data\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde`\n    --> serde/src/private/de.rs:2814:10\n     |\n2814 |     impl serde::de::Visitor<'static> for TestVisitor {\n     |          ^^^^^ use of undeclared crate or module `serde`\n     |\nhelp: consider importing one of these modules\n     |\n2807 +    use crate::__private::de;\n     |\n2807 +    use crate::de;\n     |\nhelp: if you import `de`, refer to it directly\n     |\n2814 -     impl serde::de::Visitor<'static> for TestVisitor {\n2814 +     impl de::Visitor<'static> for TestVisitor {\n     |\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde`\n    --> serde/src/private/de.rs:2819:16\n     |\n2819 |             V: serde::de::EnumAccess<'static>,\n     |                ^^^^^ use of undeclared crate or module `serde`\n     |\nhelp: consider importing one of these modules\n     |\n2807 +    use crate::__private::de;\n     |\n2807 +    use crate::de;\n     |\nhelp: if you import `de`, refer to it directly\n     |\n2819 -             V: serde::de::EnumAccess<'static>,\n2819 +             V: de::EnumAccess<'static>,\n     |\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde`\n    --> serde/src/private/de.rs:2817:68\n     |\n2817 |         fn visit_enum<V>(self, _visitor: V) -> Result<Self::Value, serde::de::Error>\n     |                                                                    ^^^^^ use of undeclared crate or module `serde`\n     |\nhelp: consider importing one of these modules\n     |\n2807 +    use crate::__private::de;\n     |\n2807 +    use crate::de;\n     |\nhelp: if you import `de`, refer to it directly\n     |\n2817 -         fn visit_enum<V>(self, _visitor: V) -> Result<Self::Value, serde::de::Error>\n2817 +         fn visit_enum<V>(self, _visitor: V) -> Result<Self::Value, de::Error>\n     |\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde`\n    --> serde/src/private/de.rs:2828:22\n     |\n2828 |         type Error = serde::de::Error;\n     |                      ^^^^^ use of undeclared crate or module `serde`\n     |\nhelp: consider importing one of these modules\n     |\n2807 +    use crate::__private::de;\n     |\n2807 +    use crate::de;\n     |\nhelp: if you import `de`, refer to it directly\n     |\n2828 -         type Error = serde::de::Error;\n2828 +         type Error = de::Error;\n     |\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde`\n    --> serde/src/private/de.rs:2837:16\n     |\n2837 |             V: serde::de::Visitor<'de>,\n     |                ^^^^^ use of undeclared crate or module `serde`\n     |\nhelp: consider importing one of these modules\n     |\n2807 +    use crate::__private::de;\n     |\n2807 +    use crate::de;\n     |\nhelp: if you import `de`, refer to it directly\n     |\n2837 -             V: serde::de::Visitor<'de>,\n2837 +             V: de::Visitor<'de>,\n     |\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde`\n    --> serde/src/private/de.rs:2845:17\n     |\n2845 |             Err(serde::de::Error::custom(format_args!(\n     |                 ^^^^^ use of undeclared crate or module `serde`\n     |\nhelp: consider importing one of these items\n     |\n2807 +    use crate::__private::de::Error;\n     |\n2807 +    use crate::__private::de::error::Error;\n     |\n2807 +    use crate::__private::doc::Error;\n     |\n2807 +    use crate::__private::fmt::Error;\n     |\n       and 7 other candidates\nhelp: if you import `Error`, refer to it directly\n     |\n2845 -             Err(serde::de::Error::custom(format_args!(\n2845 +             Err(Error::custom(format_args!(\n     |\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde`\n    --> serde/src/private/de.rs:2872:28\n     |\n2872 |     let result: Result<(), serde::de::Error> = deserializer.deserialize_enum(\"TestEnum\", &[\"variant1\", \"variant2\"], TestVisitor);\n     |                            ^^^^^ use of undeclared crate or module `serde`\n     |\nhelp: consider importing one of these modules\n     |\n2807 +    use crate::__private::de;\n     |\n2807 +    use crate::de;\n     |\nhelp: if you import `de`, refer to it directly\n     |\n2872 -     let result: Result<(), serde::de::Error> = deserializer.deserialize_enum(\"TestEnum\", &[\"variant1\", \"variant2\"], TestVisitor);\n2872 +     let result: Result<(), de::Error> = deserializer.deserialize_enum(\"TestEnum\", &[\"variant1\", \"variant2\"], TestVisitor);\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/de.rs:2808:8\n     |\n2808 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0223]: ambiguous associated type\n    --> serde/src/private/de.rs:2817:55\n     |\n2817 |         fn visit_enum<V>(self, _visitor: V) -> Result<Self::Value, serde::de::Error>\n     |                                                       ^^^^^^^^^^^\n     |\nhelp: if there were a trait named `Example` with associated type `Value` implemented for `TestVisitor`, you could use the fully-qualified path\n     |\n2817 |         fn visit_enum<V>(self, _visitor: V) -> Result<<TestVisitor as Example>::Value, serde::de::Error>\n     |                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0220]: associated type `Value` not found for `V`\n    --> serde/src/private/de.rs:2835:24\n     |\n2835 |         ) -> Result<V::Value, Self::Error>\n     |                        ^^^^^ associated type `Value` not found\n\nerror[E0223]: ambiguous associated type\n    --> serde/src/private/de.rs:2835:31\n     |\n2835 |         ) -> Result<V::Value, Self::Error>\n     |                               ^^^^^^^^^^^\n     |\nhelp: use fully-qualified syntax\n     |\n2835 |         ) -> Result<V::Value, <DummyDeserializer<'de> as TryFrom>::Error>\n     |                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n2835 |         ) -> Result<V::Value, <DummyDeserializer<'de> as TryInto>::Error>\n     |                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde`\n    --> serde/src/private/de.rs:2827:15\n     |\n2827 |     impl<'de> serde::Deserializer<'de> for DummyDeserializer<'de> {\n     |               ^^^^^ use of undeclared crate or module `serde`\n\nSome errors have detailed explanations: E0220, E0223, E0433.\nFor more information about an error, try `rustc --explain E0220`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 11 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

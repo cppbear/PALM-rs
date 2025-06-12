@@ -1,0 +1,185 @@
+{
+  "name": "hashbrown::raw::raw::RawTableInner::reserve_rehash_inner",
+  "name_with_impl": "hashbrown::raw::{impl#13}::reserve_rehash_inner",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:2686:5:2737:6",
+  "doc": "/// Reserves or rehashes to make room for `additional` more elements.\n///\n/// This uses dynamic dispatch to reduce the amount of\n/// code generated, but it is eliminated by LLVM optimizations when inlined.\n///\n/// # Safety\n///\n/// If any of the following conditions are violated, the result is\n/// [`undefined behavior`]:\n///\n/// * The `alloc` must be the same [`Allocator`] as the `Allocator` used\n///   to allocate this table.\n///\n/// * The `layout` must be the same [`TableLayout`] as the `TableLayout`\n///   used to allocate this table.\n///\n/// * The `drop` function (`fn(*mut u8)`) must be the actual drop function of\n///   the elements stored in the table.\n///\n/// * The [`RawTableInner`] must have properly initialized control bytes.\n///\n/// [`undefined behavior`]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html\n",
+  "code": [
+    "unsafe fn reserve_rehash_inner<A>(",
+    "    &mut self,",
+    "    alloc: &A,",
+    "    additional: usize,",
+    "    hasher: &dyn Fn(&mut Self, usize) -> u64,",
+    "    fallibility: Fallibility,",
+    "    layout: TableLayout,",
+    "    drop: Option<unsafe fn(*mut u8)>,",
+    ") -> Result<(), TryReserveError>",
+    "where",
+    "    A: Allocator,",
+    "{",
+    "    // Avoid `Option::ok_or_else` because it bloats LLVM IR.",
+    "    let new_items = match self.items.checked_add(additional) {",
+    "        Some(new_items) => new_items,",
+    "        None => return Err(fallibility.capacity_overflow()),",
+    "    };",
+    "    let full_capacity = bucket_mask_to_capacity(self.bucket_mask);",
+    "    if new_items <= full_capacity / 2 {",
+    "        // Rehash in-place without re-allocating if we have plenty of spare",
+    "        // capacity that is locked up due to DELETED entries.",
+    "",
+    "        // SAFETY:",
+    "        // 1. We know for sure that `[`RawTableInner`]` has already been allocated",
+    "        //    (since new_items <= full_capacity / 2);",
+    "        // 2. The caller ensures that `drop` function is the actual drop function of",
+    "        //    the elements stored in the table.",
+    "        // 3. The caller ensures that `layout` matches the [`TableLayout`] that was",
+    "        //    used to allocate this table.",
+    "        // 4. The caller ensures that the control bytes of the `RawTableInner`",
+    "        //    are already initialized.",
+    "        self.rehash_in_place(hasher, layout.size, drop);",
+    "        Ok(())",
+    "    } else {",
+    "        // Otherwise, conservatively resize to at least the next size up",
+    "        // to avoid churning deletes into frequent rehashes.",
+    "        //",
+    "        // SAFETY:",
+    "        // 1. We know for sure that `capacity >= self.items`.",
+    "        // 2. The caller ensures that `alloc` and `layout` matches the [`Allocator`] and",
+    "        //    [`TableLayout`] that were used to allocate this table.",
+    "        // 3. The caller ensures that the control bytes of the `RawTableInner`",
+    "        //    are already initialized.",
+    "        self.resize_inner(",
+    "            alloc,",
+    "            usize::max(new_items, full_capacity + 1),",
+    "            hasher,",
+    "            fallibility,",
+    "            layout,",
+    "        )",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 3,
+    "contra": 0,
+    "min_set": 3
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.items.checked_add(additional) matches Some(new_items)",
+          "norm": null,
+          "value": "true",
+          "line": 2699,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.items.checked_add(additional) matches Some(new_items)",
+          "norm": null,
+          "value": "true",
+          "line": 2699,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "new_items <= full_capacity / 2",
+          "norm": "full_capacity / 2 >= new_items",
+          "value": "true",
+          "line": 2704,
+          "bound": "new_items == full_capacity / 2",
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        15,
+        16
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.items.checked_add(additional) matches Some(new_items)",
+          "norm": null,
+          "value": "true",
+          "line": 2699,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.items.checked_add(additional) matches Some(new_items)",
+          "norm": null,
+          "value": "true",
+          "line": 2699,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "new_items <= full_capacity / 2",
+          "norm": "full_capacity / 2 >= new_items",
+          "value": "false",
+          "line": 2704,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.items.checked_add(additional) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 2699,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Err(fallibility.capacity_overflow())",
+      "path": [
+        0,
+        1,
+        4,
+        6,
+        16
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,313 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[should_panic]",
+      "fn test_once_cell_sync_trait() {",
+      "    struct S(*mut ());",
+      "    unsafe impl Sync for S {}",
+      "    ",
+      "    fn share<T: Sync>(_: &T) {}",
+      "    share(&once_cell::sync::OnceCell::<S>::new());",
+      "}",
+      "",
+      "#[should_panic]",
+      "fn test_lazy_sync_trait() {",
+      "    struct S(*mut ());",
+      "    unsafe impl Sync for S {}",
+      "    ",
+      "    fn share<T: Sync>(_: &T) {}",
+      "    share(&once_cell::sync::Lazy::<S>::new(|| unimplemented!()));",
+      "} "
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+          "    // No assertion, just triggering the function call",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| unimplemented!());",
+            "    assert!(std::panic::catch_unwind(|| {"
+          ],
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| unimplemented!());",
+            "    share(&once_cell);",
+            "    }).is_err());",
+            "    assert!(std::panic::catch_unwind(|| {"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    // No assertion, just triggering the function call",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| unimplemented!());",
+            "    assert!(std::panic::catch_unwind(|| {",
+            "}"
+          ],
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    // No assertion, just triggering the function call",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| unimplemented!());",
+            "    share(&once_cell);",
+            "    }).is_err());",
+            "    assert!(std::panic::catch_unwind(|| {",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+          "    unsafe { once_cell.set(S(std::ptr::null_mut())); }",
+          "    // No assertion, just triggering the function call",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let s_ptr: *mut () = std::ptr::null_mut();",
+            "    let once_cell_instance = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(std::panic::catch_unwind(|| {"
+          ],
+          [
+            "    let s_ptr: *mut () = std::ptr::null_mut();",
+            "    let once_cell_instance = once_cell::sync::OnceCell::<S>::new();",
+            "    share(&once_cell_instance);",
+            "    }).is_err());",
+            "    let lazy_instance = once_cell::sync::Lazy::<S>::new(|| unimplemented!());",
+            "    assert!(std::panic::catch_unwind(|| {"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    unsafe { once_cell.set(S(std::ptr::null_mut())); }",
+            "    // No assertion, just triggering the function call",
+            "    let s_ptr: *mut () = std::ptr::null_mut();",
+            "    let once_cell_instance = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(std::panic::catch_unwind(|| {",
+            "}"
+          ],
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    unsafe { once_cell.set(S(std::ptr::null_mut())); }",
+            "    // No assertion, just triggering the function call",
+            "    let s_ptr: *mut () = std::ptr::null_mut();",
+            "    let once_cell_instance = once_cell::sync::OnceCell::<S>::new();",
+            "    share(&once_cell_instance);",
+            "    }).is_err());",
+            "    let lazy_instance = once_cell::sync::Lazy::<S>::new(|| unimplemented!());",
+            "    assert!(std::panic::catch_unwind(|| {",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+          "    unsafe { once_cell.set(S(std::ptr::null_mut())); }",
+          "    // No assertion, just triggering the function call",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(std::mem::size_of::<OnceCell<S>>() > 0);"
+          ],
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| S(std::ptr::null_mut()));",
+            "    assert!(std::mem::size_of::<Lazy<S>>() > 0);"
+          ],
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| S(std::ptr::null_mut()));",
+            "    assert!(std::ptr::null_mut() == once_cell.get().unwrap().0);"
+          ],
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| S(std::ptr::null_mut()));",
+            "    assert!(std::ptr::null_mut() == lazy.get().0);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    unsafe { once_cell.set(S(std::ptr::null_mut())); }",
+            "    // No assertion, just triggering the function call",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(std::mem::size_of::<OnceCell<S>>() > 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    unsafe { once_cell.set(S(std::ptr::null_mut())); }",
+            "    // No assertion, just triggering the function call",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| S(std::ptr::null_mut()));",
+            "    assert!(std::mem::size_of::<Lazy<S>>() > 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    unsafe { once_cell.set(S(std::ptr::null_mut())); }",
+            "    // No assertion, just triggering the function call",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| S(std::ptr::null_mut()));",
+            "    assert!(std::ptr::null_mut() == once_cell.get().unwrap().0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    unsafe { once_cell.set(S(std::ptr::null_mut())); }",
+            "    // No assertion, just triggering the function call",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let lazy = once_cell::sync::Lazy::<S>::new(|| S(std::ptr::null_mut()));",
+            "    assert!(std::ptr::null_mut() == lazy.get().0);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+          "    assert!(once_cell.set(S(std::ptr::null_mut())).is_ok());",
+          "    // Transitioning to initialized state",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(once_cell.set(S(std::ptr::null_mut())).is_ok());"
+          ],
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let result = once_cell.get();",
+            "    assert!(result.is_some());"
+          ],
+          [
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let result = once_cell.get();",
+            "    let value = result.unwrap();",
+            "    assert_eq!(value.0, std::ptr::null_mut());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(once_cell.set(S(std::ptr::null_mut())).is_ok());",
+            "    // Transitioning to initialized state",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(once_cell.set(S(std::ptr::null_mut())).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(once_cell.set(S(std::ptr::null_mut())).is_ok());",
+            "    // Transitioning to initialized state",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let result = once_cell.get();",
+            "    assert!(result.is_some());",
+            "}"
+          ],
+          [
+            "{",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    assert!(once_cell.set(S(std::ptr::null_mut())).is_ok());",
+            "    // Transitioning to initialized state",
+            "    let once_cell = once_cell::sync::OnceCell::<S>::new();",
+            "    let result = once_cell.get();",
+            "    let value = result.unwrap();",
+            "    assert_eq!(value.0, std::ptr::null_mut());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

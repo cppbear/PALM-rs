@@ -1,0 +1,114 @@
+{
+  "name": "bytes::bytes::promotable_odd_drop",
+  "name_with_impl": "bytes::bytes::promotable_odd_drop",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1323:1:1336:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::alloc::dealloc;",
+            "use std::sync::atomic::Ordering;",
+            "use std::alloc::Layout;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::alloc::alloc;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    const KIND_MASK: usize = 0x3; // Example mask for kind",
+                  "    const KIND_ARC: usize = 0x1; // Example kind value for ARC",
+                  "    const KIND_VEC: usize = 0x2; // Example kind value for VEC",
+                  "",
+                  "    let shared_ptr: *mut () = &mut 1 as *mut _; // Simulated reference",
+                  "    let data = AtomicPtr::new(shared_ptr);",
+                  "",
+                  "    // Assuming KIND_MASK can be emulated by directly modifying the shared pointer",
+                  "    unsafe {",
+                  "        let kinded_ptr: *mut () = (shared_ptr as usize & !KIND_MASK) as *mut (); // Adjusts pointer to simulate KIND_ARC",
+                  "        data.store(kinded_ptr, Ordering::SeqCst);",
+                  "",
+                  "        // Call the function under test",
+                  "        promotable_odd_drop(&mut data, std::ptr::null(), 0);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0606]: casting `&mut i32` as `*mut ()` is invalid\n    --> src/bytes.rs:1694:31\n     |\n1694 |     let shared_ptr: *mut () = &mut 1 as *mut _; // Simulated reference\n     |                               ^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0606`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use std::alloc::{alloc, dealloc, Layout};",
+                  "",
+                  "    const KIND_MASK: usize = 0x3; // Example mask for kind",
+                  "    const KIND_ARC: usize = 0x1; // Example kind value for ARC",
+                  "    const KIND_VEC: usize = 0x2; // Example kind value for VEC",
+                  "",
+                  "    let shared_ptr: *mut () = &mut 1 as *mut _; // Simulated reference",
+                  "    let data = AtomicPtr::new(shared_ptr);",
+                  "",
+                  "    // Allocate some memory to simulate a boxed slice",
+                  "    let layout = Layout::array::<u8>(10).unwrap();",
+                  "    unsafe {",
+                  "        let ptr = alloc(layout); // Allocate memory",
+                  "        if ptr.is_null() {",
+                  "            panic!(\"Failed to allocate memory\");",
+                  "        }",
+                  "",
+                  "        let kinded_ptr: *mut () = (shared_ptr as usize | KIND_VEC as usize) as *mut (); // Adjusts pointer to simulate KIND_VEC",
+                  "        data.store(kinded_ptr, Ordering::SeqCst);",
+                  "",
+                  "        // Call the function under test",
+                  "        promotable_odd_drop(&mut data, ptr, 10);",
+                  "",
+                  "        // Deallocate the memory after the operation",
+                  "        dealloc(ptr, layout);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0606]: casting `&mut i32` as `*mut ()` is invalid\n    --> src/bytes.rs:1695:31\n     |\n1695 |     let shared_ptr: *mut () = &mut 1 as *mut _; // Simulated reference\n     |                               ^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0606`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

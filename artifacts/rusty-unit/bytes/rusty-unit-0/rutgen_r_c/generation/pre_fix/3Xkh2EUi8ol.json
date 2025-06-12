@@ -1,0 +1,147 @@
+{
+  "name": "bytes::bytes::owned_clone",
+  "name_with_impl": "bytes::bytes::owned_clone",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1128:1:1142:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: old_cnt > usize::MAX >> 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null_mut;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "",
+                  "    struct TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let owned_lifetime = Box::new(TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+                  "    });",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(Box::into_raw(owned_lifetime) as _);",
+                  "    let data = &atomic_ptr;",
+                  "    let ptr: *const u8 = null_mut();",
+                  "    let len = 0;",
+                  "",
+                  "    unsafe {",
+                  "        // This should trigger the abort condition as old_cnt will exceed usize::MAX >> 1",
+                  "        let result = owned_clone(data, ptr, len);",
+                  "        assert_eq!(result.len, len);",
+                  "        assert_eq!(result.ptr, ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: old_cnt > usize::MAX >> 1 is false, with bound old_cnt == usize::MAX >> 1\n",
+        "// expected return value/type: Bytes {\n        ptr,\n        len,\n        data: AtomicPtr::new(owned as _),\n        vtable: &OWNED_VTABLE,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null;",
+            "use core::sync::atomic::AtomicPtr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null;",
+                  "    use core::sync::atomic::AtomicPtr;",
+                  "",
+                  "    // Set up a mock vtable to avoid undefined behavior",
+                  "    static MOCK_VTABLE: Vtable = Vtable {",
+                  "        clone: owned_clone,",
+                  "        into_vec: unsafe { panic!() },",
+                  "        into_mut: unsafe { panic!() },",
+                  "        is_unique: unsafe { panic!() },",
+                  "        drop: unsafe { panic!() },",
+                  "    };",
+                  "",
+                  "    // Create a mock OwnedLifetime with ref_cnt approaching half of usize::MAX",
+                  "    struct MockOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        // Drop function that does nothing",
+                  "        drop: unsafe fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    // Initialize the AtomicPtr with a valid reference for the OwnedLifetime instance",
+                  "    let owned_lifetime = MockOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new((usize::MAX >> 1)),",
+                  "        drop: unsafe { core::mem::transmute(0usize) },",
+                  "    };",
+                  "    ",
+                  "    let owned_ptr = AtomicPtr::new(&owned_lifetime as *const MockOwnedLifetime as *mut ());",
+                  "",
+                  "    // Invoke the owned_clone function",
+                  "    let result = unsafe { owned_clone(&owned_ptr, null(), 0) };",
+                  "",
+                  "    // Validate results",
+                  "    assert_eq!(result.len, 0);",
+                  "    assert_eq!(result.ptr, null());",
+                  "    assert_eq!(result.vtable, &MOCK_VTABLE);",
+                  "    ",
+                  "    // Check the reference count is incremented correctly",
+                  "    let ref_count = (&*owned_ptr.load(core::sync::atomic::Ordering::Relaxed).cast::<MockOwnedLifetime>()).ref_cnt.load(core::sync::atomic::Ordering::Relaxed);",
+                  "    assert_eq!(ref_count, (usize::MAX >> 1) + 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unnecessary parentheses around function argument\n    --> src/bytes.rs:1709:35\n     |\n1709 |         ref_cnt: AtomicUsize::new((usize::MAX >> 1)),\n     |                                   ^               ^\n     |\n     = note: `#[warn(unused_parens)]` on by default\nhelp: remove these parentheses\n     |\n1709 -         ref_cnt: AtomicUsize::new((usize::MAX >> 1)),\n1709 +         ref_cnt: AtomicUsize::new(usize::MAX >> 1),\n     |\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unreachable expression\n    --> src/bytes.rs:1695:19\n     |\n1694 |         into_vec: unsafe { panic!() },\n     |                            -------- any code following this expression is unreachable\n1695 |         into_mut: unsafe { panic!() },\n     |                   ^^^^^^^^^^^^^^^^^^^ unreachable expression\n     |\n     = note: `#[warn(unreachable_code)]` on by default\n\nerror[E0080]: could not evaluate static initializer\n    --> src/bytes.rs:1694:28\n     |\n1694 |         into_vec: unsafe { panic!() },\n     |                            ^^^^^^^^ the evaluated program panicked at 'explicit panic', src/bytes.rs:1694:28\n     |\n     = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nerror[E0369]: binary operation `==` cannot be applied to type `&bytes::Vtable`\n    --> src/bytes.rs:1721:5\n     |\n1721 |     assert_eq!(result.vtable, &MOCK_VTABLE);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     &bytes::Vtable\n     |     &bytes::Vtable\n     |\nnote: an implementation of `PartialEq` might be missing for `bytes::Vtable`\n    --> src/bytes.rs:110:1\n     |\n110  | pub(crate) struct Vtable {\n     | ^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `bytes::Vtable` with `#[derive(PartialEq)]`\n     |\n110  + #[derive(PartialEq)]\n111  | pub(crate) struct Vtable {\n     |\n\nwarning: unnecessary `unsafe` block\n    --> src/bytes.rs:1694:19\n     |\n1694 |         into_vec: unsafe { panic!() },\n     |                   ^^^^^^ unnecessary `unsafe` block\n     |\n     = note: `#[warn(unused_unsafe)]` on by default\n\nwarning: unnecessary `unsafe` block\n    --> src/bytes.rs:1695:19\n     |\n1695 |         into_mut: unsafe { panic!() },\n     |                   ^^^^^^ unnecessary `unsafe` block\n\nwarning: unnecessary `unsafe` block\n    --> src/bytes.rs:1696:20\n     |\n1696 |         is_unique: unsafe { panic!() },\n     |                    ^^^^^^ unnecessary `unsafe` block\n\nwarning: unnecessary `unsafe` block\n    --> src/bytes.rs:1697:15\n     |\n1697 |         drop: unsafe { panic!() },\n     |               ^^^^^^ unnecessary `unsafe` block\n\nSome errors have detailed explanations: E0080, E0369.\nFor more information about an error, try `rustc --explain E0080`.\nwarning: `bytes` (lib test) generated 8 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

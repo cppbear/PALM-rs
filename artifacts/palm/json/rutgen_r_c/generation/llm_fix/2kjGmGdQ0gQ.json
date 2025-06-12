@@ -1,0 +1,289 @@
+{
+  "name": "serde_json::ser::to_string",
+  "name_with_impl": "serde_json::ser::to_string",
+  "mod_info": {
+    "name": "ser",
+    "loc": "src/lib.rs:423:1:423:13"
+  },
+  "visible": true,
+  "loc": "src/ser.rs:2237:1:2247:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: to_vec(value) matches core::result::Result::Err(err) is true\n",
+        "// expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::collections::HashMap;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct NonSerializable;",
+                  "",
+                  "   impl Serialize for NonSerializable {",
+                  "       fn serialize<S>(&self, _: S) -> result::Result<(), S::Error>",
+                  "       where",
+                  "            S: ser::Serializer,",
+                  "        {",
+                  "            Err(ser::Error::custom(\"Not serializable\"))",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let value = NonSerializable;",
+                  "    let result: Result<String> = to_string(&value);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0433]: failed to resolve: use of undeclared crate or module `result`\n    --> src/ser.rs:2291:40\n     |\n2291 |        fn serialize<S>(&self, _: S) -> result::Result<(), S::Error>\n     |                                        ^^^^^^ use of undeclared crate or module `result`\n     |\nhelp: a type alias with a similar name exists\n     |\n2291 |        fn serialize<S>(&self, _: S) -> Result::Result<(), S::Error>\n     |                                        ~~~~~~\nhelp: consider importing this module\n     |\n2280 +    use std::result;\n     |\n\nFor more information about this error, try `rustc --explain E0433`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  use std::collections::HashMap;",
+                  "  ",
+                  "  #[derive(Hash)]",
+                  "  struct NonStringKey;",
+                  "  ",
+                  "  impl Serialize for NonStringKey {",
+                  "     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> where S: ser::Serializer {",
+                  "         serializer.serialize_unit() // Adjusted to call the serializer",
+                  "     }",
+                  "  }",
+                  "  ",
+                  "  let mut map = HashMap::new();",
+                  "  map.insert(NonStringKey, \"value\");",
+                  "  ",
+                  "  let result: crate::error::Result<String> = to_string(&map);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0277]: the trait bound `NonStringKey: std::cmp::Eq` is not satisfied\n    --> src/ser.rs:2300:7\n     |\n2300 |   map.insert(NonStringKey, \"value\");\n     |       ^^^^^^ the trait `std::cmp::Eq` is not implemented for `NonStringKey`\n     |\nnote: required by a bound in `HashMap::<K, V, S>::insert`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/collections/hash/map.rs:735:8\n     |\n735  |     K: Eq + Hash,\n     |        ^^ required by this bound in `HashMap::<K, V, S>::insert`\n...\n1105 |     pub fn insert(&mut self, k: K, v: V) -> Option<V> {\n     |            ------ required by a bound in this associated function\nhelp: consider annotating `NonStringKey` with `#[derive(Eq)]`\n     |\n2291 +   #[derive(Eq)]\n2292 |   struct NonStringKey;\n     |\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    #[derive(Serialize)]",
+                  "    struct Empty;",
+                  "",
+                  "    let value = Empty;",
+                  "    let result: Result<String> = to_string(&value);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(result.unwrap(), \"{}\"); // Expect an empty JSON object",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror: cannot find derive macro `Serialize` in this scope\n    --> src/ser.rs:2288:14\n     |\n2288 |     #[derive(Serialize)]\n     |              ^^^^^^^^^\n     |\nnote: `Serialize` is imported here, but it is only a trait, without a derive macro\n    --> src/ser.rs:2280:8\n     |\n2280 |    use super::*;\n     |        ^^^^^^^^\nhelp: consider importing one of these derive macros\n     |\n2280 +    use serde::Serialize;\n     |\n2280 +    use serde_derive::Serialize;\n     |\n\nerror[E0277]: the trait bound `ntest_callback::Empty: serde::Serialize` is not satisfied\n    --> src/ser.rs:2292:44\n     |\n2292 |     let result: Result<String> = to_string(&value);\n     |                                  --------- ^^^^^^ the trait `serde::Serialize` is not implemented for `ntest_callback::Empty`\n     |                                  |\n     |                                  required by a bound introduced by this call\n     |\n     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `ntest_callback::Empty` type\n     = note: for types from other crates check whether the crate offers a `serde` feature flag\n     = help: the following other types implement trait `serde::Serialize`:\n               &'a T\n               &'a mut T\n               ()\n               (T,)\n               (T0, T1)\n               (T0, T1, T2)\n               (T0, T1, T2, T3)\n               (T0, T1, T2, T3, T4)\n             and 144 others\nnote: required by a bound in `ser::to_string`\n    --> src/ser.rs:2239:17\n     |\n2237 | pub fn to_string<T>(value: &T) -> Result<String>\n     |        --------- required by a bound in this function\n2238 | where\n2239 |     T: ?Sized + Serialize,\n     |                 ^^^^^^^^^ required by this bound in `to_string`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `serde_json` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: to_vec(value) matches core::result::Result::Ok(val) is true\n",
+        "// expected return value/type: Ok(string)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let value = &42; // Valid integer",
+                  "   let result = to_string(value);",
+                  "   assert!(result.is_ok());",
+                  "   let string = result.unwrap();",
+                  "   assert_eq!(string, \"42\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = &\"test\"; // Valid string",
+                  "    let result = serde_json::to_string(value);",
+                  "    assert!(result.is_ok());",
+                  "    let string = result.unwrap();",
+                  "    assert_eq!(string, \"\\\"test\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nwarning: unused import: `super::*`\n    --> src/ser.rs:2280:8\n     |\n2280 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> src/ser.rs:2289:18\n     |\n2289 |     let result = serde_json::to_string(value);\n     |                  ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let value = &[\"one\", \"two\", \"three\"]; // Valid array",
+                  "   let result = to_string(value);",
+                  "   assert!(result.is_ok());",
+                  "   let string = result.unwrap();",
+                  "   assert_eq!(string, \"[\\\"one\\\",\\\"two\\\",\\\"three\\\"]\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = &serde_json::json!({",
+                  "        \"name\": \"Alice\",",
+                  "        \"age\": 30,",
+                  "       \"is_student\": false,  ",
+                  "   }); // Valid object  ",
+                  "   let result = to_string(value);  ",
+                  "   assert!(result.is_ok());  ",
+                  "   let string = result.unwrap();  ",
+                  "   assert_eq!(string, \"{\\\"name\\\":\\\"Alice\\\",\\\"age\\\":30,\\\"is_student\\\":false}\");  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> src/ser.rs:2288:18\n     |\n2288 |     let value = &serde_json::json!({\n     |                  ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nFor more information about this error, try `rustc --explain E0433`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value: &Vec<i32> = &vec![]; // Valid empty vector",
+                  "    let result = serde_json::to_string(value);",
+                  "    assert!(result.is_ok());",
+                  "    let string = result.unwrap();",
+                  "    assert_eq!(string, \"[]\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> src/ser.rs:2289:18\n     |\n2289 |     let result = serde_json::to_string(value);\n     |                  ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nFor more information about this error, try `rustc --explain E0433`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = &vec![vec![1, 2], vec![3, 4]]; // Valid nested array",
+                  "   let result = to_string(value);  ",
+                  "   assert!(result.is_ok());  ",
+                  "   let string = result.unwrap();  ",
+                  "   assert_eq!(string, \"[[1,2],[3,4]]\");  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

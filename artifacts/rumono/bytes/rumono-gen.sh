@@ -1,0 +1,2 @@
+cd /home/rumono/bytes
+fuzz-target-generator --edition=2018 --crate-type lib --crate-name bytes src/lib.rs -o /home/rumono/bytes/target/doc --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs)' --check-cfg 'cfg(feature, values("default", "extra-platforms", "serde", "std"))' --check-cfg 'cfg(loom)' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --warn=unexpected_cfgs -C metadata=4235765ec739cead -L dependency=/home/rumono/bytes/target/debug/deps --crate-version 1.10.1

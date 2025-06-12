@@ -1,0 +1,69 @@
+// Answer 0
+
+#[test]
+fn test_owned_to_vec_with_valid_pointer_and_length() {
+    use std::ptr::null; // For constructing a safe null pointer
+    use core::ptr::NonNull;
+    use alloc::vec::Vec;
+    use core::sync::atomic::AtomicPtr;
+    
+    // Create an AtomicPtr and a valid pointer
+    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(1u8))).unwrap().as_ptr() as *mut ());
+    let len = 1; // Valid length
+    let ptr = Box::into_raw(Box::new([1u8])) as *const u8; // Create a safe slice
+    
+    // Call the function
+    let result = unsafe { owned_to_vec(&data, ptr, len) };
+    
+    // Check the result
+    assert_eq!(result, vec![1]);
+    
+    // Clean up
+    unsafe {
+        drop(Box::from_raw(ptr as *mut [u8; 1])); // Reclaim the memory
+        drop(Box::from_raw(data.load(core::sync::atomic::Ordering::Relaxed) as *mut u8)); // Destroy AtomicPtr
+    }
+}
+
+#[test]
+#[should_panic]
+fn test_owned_to_vec_with_zero_length() {
+    use std::ptr::null;
+    use core::ptr::NonNull;
+    use alloc::vec::Vec;
+    use core::sync::atomic::AtomicPtr;
+
+    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(1u8))).unwrap().as_ptr() as *mut ());
+    let len = 0; // Zero length, which should cause a panic
+    let ptr = Box::into_raw(Box::new([1u8])) as *const u8;
+
+    // Call the function
+    unsafe {
+        let _result = owned_to_vec(&data, ptr, len);
+    }
+}
+
+#[test]
+fn test_owned_to_vec_with_multiple_bytes() {
+    use std::ptr::null;
+    use core::ptr::NonNull;
+    use alloc::vec::Vec;
+    use core::sync::atomic::AtomicPtr;
+
+    let data = AtomicPtr::new(NonNull::new(Box::into_raw(Box::new(1u8))).unwrap().as_ptr() as *mut ());
+    let len = 5; // Valid length
+    let ptr = Box::into_raw(Box::new([1u8, 2u8, 3u8, 4u8, 5u8])) as *const u8; // Create a pointer to 5 bytes
+
+    // Call the function
+    let result = unsafe { owned_to_vec(&data, ptr, len) };
+
+    // Check the result
+    assert_eq!(result, vec![1, 2, 3, 4, 5]);
+
+    // Clean up
+    unsafe {
+        drop(Box::from_raw(ptr as *mut [u8; 5])); // Reclaim the memory
+        drop(Box::from_raw(data.load(core::sync::atomic::Ordering::Relaxed) as *mut u8)); // Destroy AtomicPtr
+    }
+}
+

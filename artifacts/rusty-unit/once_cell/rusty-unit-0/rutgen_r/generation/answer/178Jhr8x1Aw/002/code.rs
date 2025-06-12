@@ -1,0 +1,65 @@
+// Answer 0
+
+#[derive(Default)]
+struct OnceCell<T> {
+    value: Option<T>,
+}
+
+impl<T> OnceCell<T> {
+    pub fn new() -> Self {
+        OnceCell { value: None }
+    }
+
+    pub fn get(&self) -> Option<&T> {
+        self.value.as_ref()
+    }
+
+    pub fn try_insert(&mut self, value: T) -> Result<&T, (&T, T)> {
+        let mut value = Some(value);
+        let res = self.get_or_init(|| unsafe { value.take().unwrap_unchecked() });
+        match value {
+            None => Ok(res),
+            Some(value) => Err((res, value)),
+        }
+    }
+    
+    fn get_or_init<F>(&mut self, init: F) -> &T 
+    where 
+        F: FnOnce() -> T,
+    {
+        if self.value.is_none() {
+            self.value = Some(init());
+        }
+        self.value.as_ref().unwrap()
+    }
+}
+
+#[test]
+fn test_try_insert_success() {
+    let mut cell = OnceCell::new();
+    assert!(cell.get().is_none());
+
+    assert_eq!(cell.try_insert(92), Ok(&92));
+    assert_eq!(cell.get(), Some(&92));
+}
+
+#[test]
+fn test_try_insert_failure() {
+    let mut cell = OnceCell::new();
+    assert!(cell.get().is_none());
+
+    assert_eq!(cell.try_insert(92), Ok(&92));
+    assert_eq!(cell.try_insert(62), Err((&92, 62)));
+    assert_eq!(cell.get(), Some(&92));
+}
+
+#[test]
+fn test_try_insert_with_none() {
+    let mut cell: OnceCell<i32> = OnceCell::new();
+    assert!(cell.get().is_none());
+
+    assert_eq!(cell.try_insert(100), Ok(&100));
+    assert_eq!(cell.try_insert(200), Err((&100, 200)));
+    assert_eq!(cell.get(), Some(&100));
+}
+

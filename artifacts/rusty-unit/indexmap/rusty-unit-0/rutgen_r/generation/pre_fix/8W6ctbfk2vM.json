@@ -1,0 +1,259 @@
+{
+  "name": "indexmap::map::core::map::core::IndexMapCore<K, V>::try_reserve_entries",
+  "name_with_impl": "indexmap::map::core::{impl#2}::try_reserve_entries",
+  "mod_info": {
+    "name": "map::core",
+    "loc": "src/map.rs:4:1:4:10"
+  },
+  "visible": false,
+  "loc": "src/map/core.rs:277:5:288:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: try_add > additional is true\n",
+        "// constraint: self.entries.try_reserve_exact(try_add).is_ok() is true\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct TestStruct {",
+            "    indices: Vec<usize>,",
+            "    entries: Vec<usize>,",
+            "}",
+            "",
+            "impl TestStruct {",
+            "    const MAX_ENTRIES_CAPACITY: usize = 100;",
+            "",
+            "    fn try_reserve_entries(&mut self, additional: usize) -> Result<(), String> {",
+            "        let new_capacity = std::cmp::min(self.indices.capacity(), Self::MAX_ENTRIES_CAPACITY);",
+            "        let try_add = new_capacity - self.entries.len();",
+            "        if try_add > additional && self.entries.try_reserve_exact(try_add).is_ok() {",
+            "            return Ok(());",
+            "        }",
+            "        Err(\"Allocation error\".to_string())",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut test_struct = TestStruct::default();",
+                  "    test_struct.indices.resize(100, 0); // Fill indices to max capacity",
+                  "    test_struct.entries.resize(50, 0); // Fill entries to half capacity",
+                  "    ",
+                  "    let additional = 30;",
+                  "    let result = test_struct.try_reserve_entries(additional);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut test_struct = TestStruct::default();",
+                  "    test_struct.indices.resize(100, 0); // Fill indices to max capacity",
+                  "    test_struct.entries.resize(70, 0); // Fill entries to close to max capacity",
+                  "    ",
+                  "    let additional = 30; // This should trigger the condition",
+                  "    let result = test_struct.try_reserve_entries(additional);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: try_add > additional is true\n",
+        "// constraint: self.entries.try_reserve_exact(try_add).is_ok() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        entries: std::collections::Vec<u32>,",
+                  "        indices: std::collections::Vec<u32>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        const MAX_ENTRIES_CAPACITY: usize = 10;",
+                  "",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                entries: std::collections::Vec::with_capacity(5),",
+                  "                indices: std::collections::Vec::with_capacity(15),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn try_reserve_entries(&mut self, additional: usize) -> Result<(), String> {",
+                  "            let new_capacity = self.indices.capacity().min(Self::MAX_ENTRIES_CAPACITY);",
+                  "            let try_add = new_capacity - self.entries.len();",
+                  "            if try_add > additional && self.entries.try_reserve_exact(try_add).is_ok() {",
+                  "                return Ok(());",
+                  "            }",
+                  "            Err(\"Failed to reserve entries\".to_string()) // Mocking TryReserveError",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::new();",
+                  "    let additional = 4;",
+                  "    ",
+                  "    // This satisfies try_add > additional",
+                  "    test_struct.entries.resize(6, 0); // Increase entries size to 6",
+                  "",
+                  "    // `try_reserve_exact` should fail since we attempt to reserve more than available capacity",
+                  "    assert_eq!(test_struct.try_reserve_entries(additional).unwrap_err(), \"Failed to reserve entries\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nerror[E0412]: cannot find type `Vec` in module `std::collections`\n   --> src/map/core.rs:747:36\n    |\n747 |         entries: std::collections::Vec<u32>,\n    |                                    ^^^ not found in `std::collections`\n    |\nhelp: consider importing one of these structs\n    |\n741 +    use crate::Vec;\n    |\n741 +    use std::vec::Vec;\n    |\n741 +    use alloc::vec::Vec;\n    |\nhelp: if you import `Vec`, refer to it directly\n    |\n747 -         entries: std::collections::Vec<u32>,\n747 +         entries: Vec<u32>,\n    |\n\nerror[E0412]: cannot find type `Vec` in module `std::collections`\n   --> src/map/core.rs:748:36\n    |\n748 |         indices: std::collections::Vec<u32>,\n    |                                    ^^^ not found in `std::collections`\n    |\nhelp: consider importing one of these structs\n    |\n741 +    use crate::Vec;\n    |\n741 +    use std::vec::Vec;\n    |\n741 +    use alloc::vec::Vec;\n    |\nhelp: if you import `Vec`, refer to it directly\n    |\n748 -         indices: std::collections::Vec<u32>,\n748 +         indices: Vec<u32>,\n    |\n\nerror[E0433]: failed to resolve: could not find `Vec` in `collections`\n   --> src/map/core.rs:756:44\n    |\n756 |                 entries: std::collections::Vec::with_capacity(5),\n    |                                            ^^^ could not find `Vec` in `collections`\n    |\nhelp: consider importing one of these structs\n    |\n741 +    use crate::Vec;\n    |\n741 +    use std::vec::Vec;\n    |\n741 +    use alloc::vec::Vec;\n    |\nhelp: if you import `Vec`, refer to it directly\n    |\n756 -                 entries: std::collections::Vec::with_capacity(5),\n756 +                 entries: Vec::with_capacity(5),\n    |\n\nerror[E0433]: failed to resolve: could not find `Vec` in `collections`\n   --> src/map/core.rs:757:44\n    |\n757 |                 indices: std::collections::Vec::with_capacity(15),\n    |                                            ^^^ could not find `Vec` in `collections`\n    |\nhelp: consider importing one of these structs\n    |\n741 +    use crate::Vec;\n    |\n741 +    use std::vec::Vec;\n    |\n741 +    use alloc::vec::Vec;\n    |\nhelp: if you import `Vec`, refer to it directly\n    |\n757 -                 indices: std::collections::Vec::with_capacity(15),\n757 +                 indices: Vec::with_capacity(15),\n    |\n\nwarning: unused import: `super::*`\n   --> src/map/core.rs:741:8\n    |\n741 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nSome errors have detailed explanations: E0412, E0433.\nFor more information about an error, try `rustc --explain E0412`.\nwarning: `indexmap` (lib test) generated 9 warnings\nerror: could not compile `indexmap` (lib test) due to 4 previous errors; 9 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: try_add > additional is false, with bound try_add == additional\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use indexmap::IndexMap;",
+            "use std::alloc::Layout;",
+            "use std::error::Error;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use indexmap::IndexMap;",
+                  "    use std::alloc::Layout;",
+                  "    use std::error::Error;",
+                  "    ",
+                  "    struct TryReserveError;",
+                  "",
+                  "    impl TryReserveError {",
+                  "        fn from_alloc(_layout: Layout) -> Self {",
+                  "            TryReserveError",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestMap {",
+                  "        entries: IndexMap<i32, i32>,",
+                  "        indices: IndexMap<i32, i32>,",
+                  "    }",
+                  "",
+                  "    impl TestMap {",
+                  "        const MAX_ENTRIES_CAPACITY: usize = 10;",
+                  "",
+                  "        fn new() -> Self {",
+                  "            TestMap {",
+                  "                entries: IndexMap::new(),",
+                  "                indices: IndexMap::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn try_reserve_entries(&mut self, additional: usize) -> Result<(), TryReserveError> {",
+                  "            let new_capacity = std::cmp::min(self.indices.capacity(), Self::MAX_ENTRIES_CAPACITY);",
+                  "            let try_add = new_capacity - self.entries.len();",
+                  "            if try_add > additional && self.entries.try_reserve_exact(try_add).is_ok() {",
+                  "                return Ok(());",
+                  "            }",
+                  "            self.entries",
+                  "                .try_reserve_exact(additional)",
+                  "                .map_err(TryReserveError::from_alloc)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut map = TestMap::new();",
+                  "    map.indices.insert(0, 0); // Make the capacity of indices 1",
+                  "",
+                  "    // Ensure entries have 0 capacity",
+                  "    assert_eq!(map.entries.len(), 0);",
+                  "    // Reserve capacity exactly equal to the allowed capacity",
+                  "    let result = map.try_reserve_entries(1); ",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(map.entries.len(), 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nerror[E0432]: unresolved import `indexmap`\n   --> src/map/core.rs:746:9\n    |\n746 |     use indexmap::IndexMap;\n    |         ^^^^^^^^ use of undeclared crate or module `indexmap`\n\nwarning: unused import: `super::*`\n   --> src/map/core.rs:741:8\n    |\n741 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/map/core.rs:748:9\n    |\n748 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0432`.\nwarning: `indexmap` (lib test) generated 10 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 10 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

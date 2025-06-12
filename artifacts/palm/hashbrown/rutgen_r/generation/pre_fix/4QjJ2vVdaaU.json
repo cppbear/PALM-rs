@@ -1,0 +1,219 @@
+{
+  "name": "hashbrown::raw::raw::ProbeSeq::move_next",
+  "name_with_impl": "hashbrown::raw::{impl#3}::move_next",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:180:5:190:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.stride <= bucket_mask is true, with bound self.stride == bucket_mask\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct Group {",
+            "    pub(crate) width: usize,",
+            "}",
+            "",
+            "impl Group {",
+            "    const WIDTH: usize = 1; // Assuming a WIDTH constant for the purpose of this example.",
+            "}",
+            "",
+            "struct TestStruct {",
+            "    stride: usize,",
+            "    pos: usize,",
+            "}",
+            "",
+            "impl TestStruct {",
+            "    fn new(stride: usize, pos: usize) -> Self {",
+            "        Self { stride, pos }",
+            "    }",
+            "",
+            "    fn move_next(&mut self, bucket_mask: usize) {",
+            "        debug_assert!(",
+            "            self.stride <= bucket_mask,",
+            "            \"Went past end of probe sequence\"",
+            "        );",
+            "",
+            "        self.stride += Group::WIDTH;",
+            "        self.pos += self.stride;",
+            "        self.pos &= bucket_mask;",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bucket_mask = 4; // Choose a bucket mask that allows testing of the edge case.",
+                  "    let mut test_struct = TestStruct::new(bucket_mask, 0); // Initialize with stride equal to bucket_mask.",
+                  "",
+                  "    test_struct.move_next(bucket_mask);",
+                  "",
+                  "    assert_eq!(test_struct.stride, bucket_mask + Group::WIDTH);",
+                  "    assert_eq!(test_struct.pos, test_struct.stride & bucket_mask);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Went past end of probe sequence\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bucket_mask = 2;",
+                  "    let mut test_struct = TestStruct::new(bucket_mask + 1, 0); // Set stride greater than bucket_mask to trigger panic.",
+                  "",
+                  "    test_struct.move_next(bucket_mask);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.stride <= bucket_mask is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        stride: usize,",
+                  "        pos: usize,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn move_next(&mut self, bucket_mask: usize) {",
+                  "            debug_assert!(",
+                  "                self.stride <= bucket_mask,",
+                  "                \"Went past end of probe sequence\"",
+                  "            );",
+                  "",
+                  "            self.stride += 8; // Assuming Group::WIDTH is 8.",
+                  "            self.pos += self.stride;",
+                  "            self.pos &= bucket_mask;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut instance = TestStruct { stride: 10, pos: 0 };",
+                  "    let bucket_mask = 5; // This will cause self.stride <= bucket_mask to panic as 10 > 5.",
+                  "",
+                  "    // This should panic due to the assertion failing.",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        instance.move_next(bucket_mask);",
+                  "    });",
+                  "",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling serde v1.0.219\n   Compiling rayon-core v1.12.1\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0277]: the type `&mut TestStruct` may not be safely transferred across an unwind boundary\n    --> src/raw/mod.rs:4511:43\n     |\n4511 |       let result = std::panic::catch_unwind(|| {\n     |                    ------------------------ ^-\n     |                    |                        |\n     |  __________________|________________________within this `{closure@src/raw/mod.rs:4511:43: 4511:45}`\n     | |                  |\n     | |                  required by a bound introduced by this call\n4512 | |         instance.move_next(bucket_mask);\n4513 | |     });\n     | |_____^ `&mut TestStruct` may not be safely transferred across an unwind boundary\n     |\n     = help: within `{closure@src/raw/mod.rs:4511:43: 4511:45}`, the trait `UnwindSafe` is not implemented for `&mut TestStruct`, which is required by `{closure@src/raw/mod.rs:4511:43: 4511:45}: UnwindSafe`\n     = note: `UnwindSafe` is implemented for `&TestStruct`, but not for `&mut TestStruct`\nnote: required because it's used within this closure\n    --> src/raw/mod.rs:4511:43\n     |\n4511 |     let result = std::panic::catch_unwind(|| {\n     |                                           ^^\nnote: required by a bound in `std::panic::catch_unwind`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n     |\n349  | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n     |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `hashbrown` (lib test) generated 13 warnings\nerror: could not compile `hashbrown` (lib test) due to 1 previous error; 13 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        stride: usize,",
+                  "        pos: usize,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn move_next(&mut self, bucket_mask: usize) {",
+                  "            debug_assert!(",
+                  "                self.stride <= bucket_mask,",
+                  "                \"Went past end of probe sequence\"",
+                  "            );",
+                  "",
+                  "            self.stride += 8; // Assuming Group::WIDTH is 8.",
+                  "            self.pos += self.stride;",
+                  "            self.pos &= bucket_mask;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut instance = TestStruct { stride: 4, pos: 0 };",
+                  "    let bucket_mask = 10; // This is valid since 4 <= 10.",
+                  "",
+                  "    // This should not panic.",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        instance.move_next(bucket_mask);",
+                  "    });",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(instance.pos, 4); // After first move_next call with stride incremented.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling crossbeam-utils v0.8.21\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling rayon-core v1.12.1\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0277]: the type `&mut TestStruct` may not be safely transferred across an unwind boundary\n    --> src/raw/mod.rs:4511:43\n     |\n4511 |       let result = std::panic::catch_unwind(|| {\n     |                    ------------------------ ^-\n     |                    |                        |\n     |  __________________|________________________within this `{closure@src/raw/mod.rs:4511:43: 4511:45}`\n     | |                  |\n     | |                  required by a bound introduced by this call\n4512 | |         instance.move_next(bucket_mask);\n4513 | |     });\n     | |_____^ `&mut TestStruct` may not be safely transferred across an unwind boundary\n     |\n     = help: within `{closure@src/raw/mod.rs:4511:43: 4511:45}`, the trait `UnwindSafe` is not implemented for `&mut TestStruct`, which is required by `{closure@src/raw/mod.rs:4511:43: 4511:45}: UnwindSafe`\n     = note: `UnwindSafe` is implemented for `&TestStruct`, but not for `&mut TestStruct`\nnote: required because it's used within this closure\n    --> src/raw/mod.rs:4511:43\n     |\n4511 |     let result = std::panic::catch_unwind(|| {\n     |                                           ^^\nnote: required by a bound in `std::panic::catch_unwind`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n     |\n349  | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n     |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `hashbrown` (lib test) generated 13 warnings\nerror: could not compile `hashbrown` (lib test) due to 1 previous error; 13 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

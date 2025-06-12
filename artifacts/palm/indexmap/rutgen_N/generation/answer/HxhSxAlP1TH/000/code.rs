@@ -1,0 +1,41 @@
+// Answer 0
+
+#[test]
+fn test_split_at_within_bounds() {
+    struct TestSlice {
+        entries: Vec<i32>,
+    }
+
+    impl TestSlice {
+        fn from_slice(slice: &[i32]) -> &Self {
+            unsafe { &*(slice as *const [i32] as *const Self) }
+        }
+    }
+
+    let slice = TestSlice {
+        entries: vec![1, 2, 3, 4, 5],
+    };
+    let (first, second) = slice.split_at(3);
+    assert_eq!(first.entries, vec![1, 2, 3]);
+    assert_eq!(second.entries, vec![4, 5]);
+}
+
+#[test]
+#[should_panic]
+fn test_split_at_out_of_bounds() {
+    struct TestSlice {
+        entries: Vec<i32>,
+    }
+
+    impl TestSlice {
+        fn from_slice(slice: &[i32]) -> &Self {
+            unsafe { &*(slice as *const [i32] as *const Self) }
+        }
+    }
+
+    let slice = TestSlice {
+        entries: vec![1, 2, 3, 4, 5],
+    };
+    let _ = slice.split_at(6);
+}
+

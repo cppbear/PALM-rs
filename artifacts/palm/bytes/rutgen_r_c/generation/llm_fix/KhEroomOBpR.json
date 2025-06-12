@@ -1,0 +1,226 @@
+{
+  "name": "bytes::bytes_mut::increment_shared",
+  "name_with_impl": "bytes::bytes_mut::increment_shared",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1425:1:1431:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: old_size > isize::MAX as usize is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestShared {",
+                  "        vec: Vec<u8>,",
+                  "        original_capacity_repr: usize,",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        let ref_count = AtomicUsize::new(isize::MAX as usize);",
+                  "        let shared = TestShared {",
+                  "            vec: Vec::new(),",
+                  "            original_capacity_repr: 0,",
+                  "            ref_count,",
+                  "        };",
+                  "        ",
+                  "        let ptr = &shared as *const TestShared as *mut TestShared;",
+                  "",
+                  "        increment_shared(ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n    --> src/bytes_mut.rs:1949:26\n     |\n1949 |         increment_shared(ptr);\n     |         ---------------- ^^^ expected `*mut Shared`, found `*mut TestShared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: expected raw pointer `*mut bytes_mut::Shared`\n                found raw pointer `*mut TestShared`\nnote: function defined here\n    --> src/bytes_mut.rs:1425:11\n     |\n1425 | unsafe fn increment_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestShared {  ",
+                  "       vec: Vec<u8>,  ",
+                  "       original_capacity_repr: usize,  ",
+                  "       ref_count: AtomicUsize,  ",
+                  "   }  ",
+                  " ",
+                  "   unsafe {  ",
+                  "       let ref_count = AtomicUsize::new(0);  ",
+                  "       let shared = TestShared {  ",
+                  "           vec: Vec::new(),  ",
+                  "           original_capacity_repr: 0,  ",
+                  "           ref_count,  ",
+                  "       };  ",
+                  " ",
+                  "       let ptr = &shared as *const TestShared as *mut Shared;  ",
+                  " ",
+                  "       increment_shared(ptr);  ",
+                  "       assert_eq!((*ptr).ref_count.load(Ordering::Relaxed), 1);  ",
+                  "       ",
+                  "       increment_shared(ptr);  ",
+                  "       assert_eq!((*ptr).ref_count.load(Ordering::Relaxed), 2);  ",
+                  "   }  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: old_size > isize::MAX as usize is false, with bound old_size == isize::MAX as usize\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::AtomicUsize;",
+            "use core::sync::atomic::Ordering;",
+            "use alloc::vec::Vec;",
+            "use core::ptr::NonNull;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::NonNull;",
+                  "    use core::sync::atomic::{AtomicUsize, Ordering};",
+                  "    use alloc::vec::Vec;",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "        original_capacity_repr: usize,",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn increment_shared(ptr: *mut Shared) {",
+                  "        let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);",
+                  "        if old_size > isize::MAX as usize {",
+                  "            crate::abort();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let shared = Shared {",
+                  "        vec: Vec::new(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(isize::MAX as usize),",
+                  "    };",
+                  "",
+                  "    let ptr = NonNull::from(&shared as *const Shared as *mut Shared);",
+                  "    unsafe {",
+                  "        increment_shared(ptr.as_ptr());",
+                  "        assert_eq!(shared.ref_count.load(Ordering::Relaxed), isize::MAX as usize + 1);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `NonNull<_>: From<*mut ntest_callback::Shared>` is not satisfied\n    --> src/bytes_mut.rs:1955:15\n     |\n1955 |     let ptr = NonNull::from(&shared as *const Shared as *mut Shared);\n     |               ^^^^^^^ the trait `From<*mut ntest_callback::Shared>` is not implemented for `NonNull<_>`\n     |\n     = help: the following other types implement trait `From<T>`:\n               `NonNull<T>` implements `From<&T>`\n               `NonNull<T>` implements `From<&mut T>`\n               `NonNull<T>` implements `From<Unique<T>>`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::NonNull;",
+                  "    use core::sync::atomic::{AtomicUsize, Ordering};",
+                  "    use alloc::vec::Vec;",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "        original_capacity_repr: usize,",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn increment_shared(ptr: *mut Shared) {",
+                  "        let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);",
+                  "        if old_size > isize::MAX as usize {",
+                  "            crate::abort();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let shared = Shared {",
+                  "        vec: Vec::new(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(isize::MAX as usize),",
+                  "    };",
+                  "",
+                  "    let ptr = NonNull::from(&shared as *const Shared as *mut Shared);",
+                  "    unsafe {",
+                  "        // Increment the ref_count to isize::MAX, which should trigger the panic on the next increment",
+                  "        shared.ref_count.fetch_add(1, Ordering::Relaxed);",
+                  "        increment_shared(ptr.as_ptr());",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `NonNull<_>: From<*mut ntest_callback::Shared>` is not satisfied\n    --> src/bytes_mut.rs:1956:15\n     |\n1956 |     let ptr = NonNull::from(&shared as *const Shared as *mut Shared);\n     |               ^^^^^^^ the trait `From<*mut ntest_callback::Shared>` is not implemented for `NonNull<_>`\n     |\n     = help: the following other types implement trait `From<T>`:\n               `NonNull<T>` implements `From<&T>`\n               `NonNull<T>` implements `From<&mut T>`\n               `NonNull<T>` implements `From<Unique<T>>`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

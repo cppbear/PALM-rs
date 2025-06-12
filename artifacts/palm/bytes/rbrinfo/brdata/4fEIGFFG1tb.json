@@ -1,0 +1,83 @@
+{
+  "name": "bytes::bytes::bytes::Bytes::from_owner",
+  "name_with_impl": "bytes::bytes::{impl#0}::from_owner",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": true,
+  "loc": "src/bytes.rs:251:5:290:6",
+  "doc": "/// Create [Bytes] with a buffer whose lifetime is controlled\n/// via an explicit owner.\n///\n/// A common use case is to zero-copy construct from mapped memory.\n///\n/// ```\n/// # struct File;\n/// #\n/// # impl File {\n/// #     pub fn open(_: &str) -> Result<Self, ()> {\n/// #         Ok(Self)\n/// #     }\n/// # }\n/// #\n/// # mod memmap2 {\n/// #     pub struct Mmap;\n/// #\n/// #     impl Mmap {\n/// #         pub unsafe fn map(_file: &super::File) -> Result<Self, ()> {\n/// #             Ok(Self)\n/// #         }\n/// #     }\n/// #\n/// #     impl AsRef<[u8]> for Mmap {\n/// #         fn as_ref(&self) -> &[u8] {\n/// #             b\"buf\"\n/// #         }\n/// #     }\n/// # }\n/// use bytes::Bytes;\n/// use memmap2::Mmap;\n///\n/// # fn main() -> Result<(), ()> {\n/// let file = File::open(\"upload_bundle.tar.gz\")?;\n/// let mmap = unsafe { Mmap::map(&file) }?;\n/// let b = Bytes::from_owner(mmap);\n/// # Ok(())\n/// # }\n/// ```\n///\n/// The `owner` will be transferred to the constructed [Bytes] object, which\n/// will ensure it is dropped once all remaining clones of the constructed\n/// object are dropped. The owner will then be responsible for dropping the\n/// specified region of memory as part of its [Drop] implementation.\n///\n/// Note that converting [Bytes] constructed from an owner into a [BytesMut]\n/// will always create a deep copy of the buffer into newly allocated memory.\n",
+  "code": [
+    "pub fn from_owner<T>(owner: T) -> Self",
+    "where",
+    "    T: AsRef<[u8]> + Send + 'static,",
+    "{",
+    "    // Safety & Miri:",
+    "    // The ownership of `owner` is first transferred to the `Owned` wrapper and `Bytes` object.",
+    "    // This ensures that the owner is pinned in memory, allowing us to call `.as_ref()` safely",
+    "    // since the lifetime of the owner is controlled by the lifetime of the new `Bytes` object,",
+    "    // and the lifetime of the resulting borrowed `&[u8]` matches that of the owner.",
+    "    // Note that this remains safe so long as we only call `.as_ref()` once.",
+    "    //",
+    "    // There are some additional special considerations here:",
+    "    //   * We rely on Bytes's Drop impl to clean up memory should `.as_ref()` panic.",
+    "    //   * Setting the `ptr` and `len` on the bytes object last (after moving the owner to",
+    "    //     Bytes) allows Miri checks to pass since it avoids obtaining the `&[u8]` slice",
+    "    //     from a stack-owned Box.",
+    "    // More details on this: https://github.com/tokio-rs/bytes/pull/742/#discussion_r1813375863",
+    "    //                  and: https://github.com/tokio-rs/bytes/pull/742/#discussion_r1813316032",
+    "",
+    "    let owned = Box::into_raw(Box::new(Owned {",
+    "        lifetime: OwnedLifetime {",
+    "            ref_cnt: AtomicUsize::new(1),",
+    "            drop: owned_box_and_drop::<T>,",
+    "        },",
+    "        owner,",
+    "    }));",
+    "",
+    "    let mut ret = Bytes {",
+    "        ptr: NonNull::dangling().as_ptr(),",
+    "        len: 0,",
+    "        data: AtomicPtr::new(owned.cast()),",
+    "        vtable: &OWNED_VTABLE,",
+    "    };",
+    "",
+    "    let buf = unsafe { &*owned }.owner.as_ref();",
+    "    ret.ptr = buf.as_ptr();",
+    "    ret.len = buf.len();",
+    "",
+    "    ret",
+    "}"
+  ],
+  "size": {
+    "chain": 1,
+    "contra": 0,
+    "min_set": 1
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [],
+      "ret": "ret",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

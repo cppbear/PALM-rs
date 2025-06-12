@@ -1,0 +1,253 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Debug)]",
+      "struct CustomError;",
+      "",
+      "impl std::fmt::Display for CustomError {",
+      "    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {",
+      "        write!(f, \"Custom error occurred\")",
+      "    }",
+      "}",
+      "",
+      "impl std::error::Error for CustomError {}",
+      "",
+      "struct FailingSerialize;",
+      "",
+      "impl Serialize for FailingSerialize {",
+      "    fn serialize<S>(&self, _serializer: S) -> Result<Self::Ok, Self::Error>",
+      "    where",
+      "        S: Serializer,",
+      "    {",
+      "        Err(CustomError)",
+      "    }",
+      "}",
+      "",
+      "struct TestSerializeSeq {",
+      "    elements: Vec<Content>,",
+      "}",
+      "",
+      "impl SerializeSeq for TestSerializeSeq {",
+      "    type Ok = Content;",
+      "    type Error = CustomError;",
+      "    ",
+      "    fn serialize_element<T>(&mut self, value: &T) -> Result<(), Self::Error>",
+      "    where",
+      "        T: ?Sized + Serialize,",
+      "    {",
+      "        let value = tri!(value.serialize(ContentSerializer::<CustomError>::new()));",
+      "        self.elements.push(value);",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn end(self) -> Result<Content, Self::Error> {",
+      "        Ok(Content::Seq(self.elements))",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut seq = TestSerializeSeq {",
+          "        elements: Vec::new(),",
+          "    };",
+          "    let failing_value = FailingSerialize;",
+          "",
+          "    let result = seq.serialize_element(&failing_value);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let failing_value = FailingSerialize;",
+            "    let result = seq.serialize_element(&failing_value);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let failing_value = FailingSerialize;",
+            "    let result = seq.serialize_element(&failing_value);",
+            "    assert_eq!(result.unwrap_err().to_string(), \"Custom error occurred\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut seq = TestSerializeSeq {",
+            "        elements: Vec::new(),",
+            "    };",
+            "    let failing_value = FailingSerialize;",
+            "",
+            "    let result = seq.serialize_element(&failing_value);",
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let failing_value = FailingSerialize;",
+            "    let result = seq.serialize_element(&failing_value);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut seq = TestSerializeSeq {",
+            "        elements: Vec::new(),",
+            "    };",
+            "    let failing_value = FailingSerialize;",
+            "",
+            "    let result = seq.serialize_element(&failing_value);",
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let failing_value = FailingSerialize;",
+            "    let result = seq.serialize_element(&failing_value);",
+            "    assert_eq!(result.unwrap_err().to_string(), \"Custom error occurred\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut seq = TestSerializeSeq {",
+          "        elements: Vec::new(),",
+          "    };",
+          "    let empty_value: &str = \"\";",
+          "",
+          "    let result = seq.serialize_element(&empty_value);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let empty_value: &str = \"\";",
+            "    let result = seq.serialize_element(&empty_value);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let empty_value: &str = \"\";",
+            "    let result = seq.serialize_element(&empty_value);",
+            "    assert_eq!(result.err().unwrap().to_string(), \"Custom error occurred\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut seq = TestSerializeSeq {",
+            "        elements: Vec::new(),",
+            "    };",
+            "    let empty_value: &str = \"\";",
+            "",
+            "    let result = seq.serialize_element(&empty_value);",
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let empty_value: &str = \"\";",
+            "    let result = seq.serialize_element(&empty_value);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut seq = TestSerializeSeq {",
+            "        elements: Vec::new(),",
+            "    };",
+            "    let empty_value: &str = \"\";",
+            "",
+            "    let result = seq.serialize_element(&empty_value);",
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let empty_value: &str = \"\";",
+            "    let result = seq.serialize_element(&empty_value);",
+            "    assert_eq!(result.err().unwrap().to_string(), \"Custom error occurred\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut seq = TestSerializeSeq {",
+          "        elements: Vec::new(),",
+          "    };",
+          "    ",
+          "    let result = seq.serialize_element(&None::<&str>);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let result = seq.serialize_element(&None::<&str>);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let result = seq.serialize_element(&None::<&str>);",
+            "    assert_eq!(result.unwrap_err().to_string(), \"Custom error occurred\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut seq = TestSerializeSeq {",
+            "        elements: Vec::new(),",
+            "    };",
+            "    ",
+            "    let result = seq.serialize_element(&None::<&str>);",
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let result = seq.serialize_element(&None::<&str>);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut seq = TestSerializeSeq {",
+            "        elements: Vec::new(),",
+            "    };",
+            "    ",
+            "    let result = seq.serialize_element(&None::<&str>);",
+            "    let mut seq = TestSerializeSeq { elements: Vec::new() };",
+            "    let result = seq.serialize_element(&None::<&str>);",
+            "    assert_eq!(result.unwrap_err().to_string(), \"Custom error occurred\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

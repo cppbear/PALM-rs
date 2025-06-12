@@ -1,0 +1,1 @@
+pub fn len(&self) -> usize { 0 }

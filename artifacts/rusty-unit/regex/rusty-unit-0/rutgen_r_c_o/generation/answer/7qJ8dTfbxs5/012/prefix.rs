@@ -1,0 +1,192 @@
+// Answer 0
+
+#[test]
+fn test_follow_epsilons_with_start_line() {
+    let mut cache = CacheInner {
+        compiled: HashMap::new(),
+        trans: vec![],
+        states: vec![],
+        start_states: vec![],
+        stack: vec![0],
+        flush_count: 0,
+        size: 0,
+    };
+    
+    let program = Program {
+        insts: vec![Inst::EmptyLook(InstEmptyLook { goto: 1, look: EmptyLook::StartLine })],
+        matches: vec![],
+        captures: vec![],
+        capture_name_idx: HashMap::new().into(),
+        start: 0,
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: true,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: Default::default(),
+        dfa_size_limit: 100,
+    };
+
+    let mut q = SparseSet::new(100);
+    let flags = EmptyFlags { start_line: true, ..Default::default() };
+
+    let mut fsm = Fsm {
+        prog: &program,
+        start: 0,
+        at: 0,
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut cache,
+    };
+
+    fsm.follow_epsilons(0, &mut q, flags);
+}
+
+#[test]
+fn test_follow_epsilons_with_end_line() {
+    let mut cache = CacheInner {
+        compiled: HashMap::new(),
+        trans: vec![],
+        states: vec![],
+        start_states: vec![],
+        stack: vec![0],
+        flush_count: 0,
+        size: 0,
+    };
+
+    let program = Program {
+        insts: vec![Inst::EmptyLook(InstEmptyLook { goto: 1, look: EmptyLook::EndLine })],
+        matches: vec![],
+        captures: vec![],
+        capture_name_idx: HashMap::new().into(),
+        start: 0,
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: true,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: Default::default(),
+        dfa_size_limit: 100,
+    };
+
+    let mut q = SparseSet::new(100);
+    let flags = EmptyFlags { end_line: true, ..Default::default() };
+
+    let mut fsm = Fsm {
+        prog: &program,
+        start: 0,
+        at: 0,
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut cache,
+    };
+
+    fsm.follow_epsilons(0, &mut q, flags);
+}
+
+#[test]
+fn test_follow_epsilons_with_word_boundary() {
+    let mut cache = CacheInner {
+        compiled: HashMap::new(),
+        trans: vec![],
+        states: vec![],
+        start_states: vec![],
+        stack: vec![0],
+        flush_count: 0,
+        size: 0,
+    };
+
+    let program = Program {
+        insts: vec![Inst::EmptyLook(InstEmptyLook { goto: 1, look: EmptyLook::WordBoundary })],
+        matches: vec![],
+        captures: vec![],
+        capture_name_idx: HashMap::new().into(),
+        start: 0,
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: true,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: Default::default(),
+        dfa_size_limit: 100,
+    };
+
+    let mut q = SparseSet::new(100);
+    let flags = EmptyFlags { word_boundary: true, ..Default::default() };
+
+    let mut fsm = Fsm {
+        prog: &program,
+        start: 0,
+        at: 0,
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut cache,
+    };
+
+    fsm.follow_epsilons(0, &mut q, flags);
+}
+
+#[test]
+fn test_follow_epsilons_with_multiple_conditions() {
+    let mut cache = CacheInner {
+        compiled: HashMap::new(),
+        trans: vec![],
+        states: vec![],
+        start_states: vec![],
+        stack: vec![2],
+        flush_count: 0,
+        size: 0,
+    };
+
+    let program = Program {
+        insts: vec![
+            Inst::EmptyLook(InstEmptyLook { goto: 3, look: EmptyLook::WordBoundary }),
+            Inst::EmptyLook(InstEmptyLook { goto: 4, look: EmptyLook::EndLine }),
+            Inst::EmptyLook(InstEmptyLook { goto: 5, look: EmptyLook::StartLine }),
+            Inst::Match(0),
+        ],
+        matches: vec![],
+        captures: vec![],
+        capture_name_idx: HashMap::new().into(),
+        start: 0,
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: true,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: Default::default(),
+        dfa_size_limit: 100,
+    };
+
+    let mut q = SparseSet::new(100);
+    q.insert(3); // Assuming emission at goto 3
+    let flags = EmptyFlags { word_boundary: true, end_line: true, ..Default::default() };
+
+    let mut fsm = Fsm {
+        prog: &program,
+        start: 0,
+        at: 0,
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut cache,
+    };
+
+    fsm.follow_epsilons(2, &mut q, flags);
+}
+

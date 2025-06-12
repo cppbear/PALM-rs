@@ -1,0 +1,79 @@
+// Answer 0
+
+#[test]
+fn test_next_with_empty_iter() {
+    struct TestAllocator;
+
+    unsafe impl Allocator for TestAllocator {
+        fn allocate(&self, _: Layout) -> Result<NonNull<u8>, ()> {
+            Err(())
+        }
+        unsafe fn deallocate(&self, _: NonNull<u8>, _: Layout) {}
+    }
+
+    struct RawIterRange {
+        items: usize,
+    }
+
+    impl Iterator for RawIterRange {
+        type Item = NonNull<u8>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.items > 0 {
+                self.items -= 1;
+                Some(NonNull::new_unchecked(1 as *mut u8))
+            } else {
+                None
+            }
+        }
+    }
+
+    struct RawIter {
+        iter: RawIterRange,
+    }
+
+    impl RawIter {
+        fn iter(&mut self) -> &mut Self {
+            self
+        }
+    }
+
+    struct RawTable<T, A: Allocator> {
+        iter: RawIter,
+        alloc: A,
+    }
+
+    struct RawExtractIf<'a, T, A: Allocator> {
+        iter: RawIter,
+        table: &'a mut RawTable<T, A>,
+    }
+
+    impl<'a, T, A: Allocator> RawExtractIf<'a, T, A> {
+        pub(crate) fn new(iter: RawIter, table: &'a mut RawTable<T, A>) -> Self {
+            Self { iter, table }
+        }
+
+        pub(crate) fn next<F>(&mut self, mut f: F) -> Option<T>
+        where
+            F: FnMut(&mut T) -> bool,
+        {
+            unsafe {
+                for item in self.iter.iter() {
+                    if f(item.as_mut()) {
+                        return Some(self.table.remove(item).0);
+                    }
+                }
+            }
+            None
+        }
+    }
+
+    let mut table = RawTable {
+        iter: RawIter { iter: RawIterRange { items: 0 } },
+        alloc: TestAllocator,
+    };
+
+    let mut extract = RawExtractIf::new(table.iter, &mut table);
+    let result = extract.next(|_: &mut u8| false);
+}
+

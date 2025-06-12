@@ -1,0 +1,1162 @@
+{
+  "name": "regex::expand::find_cap_ref",
+  "name_with_impl": "regex::expand::find_cap_ref",
+  "mod_info": {
+    "name": "expand",
+    "loc": "src/lib.rs:653:1:653:12"
+  },
+  "visible": false,
+  "loc": "src/expand.rs:128:1:167:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: rep.len() <= 1 is true, with bound rep.len() == 1\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"\"; // rep.len() == 0, should return None",
+                  "    assert_eq!(find_cap_ref(input), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"a\"; // rep.len() == 1, should return None",
+                  "    assert_eq!(find_cap_ref(input), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"$\"; // rep.len() == 1 and first byte is '$', should return None",
+                  "    assert_eq!(find_cap_ref(input), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: rep.len() <= 1 is false\n",
+        "// constraint: rep[0] != b'$' is true\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"$\"; // rep.len() == 1, should return None",
+                  "    assert_eq!(find_cap_ref(input), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"#capture\"; // rep[0] != b'$', should return None",
+                  "    assert_eq!(find_cap_ref(input), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"${\"; // len > 1 but invalid due to no capture name",
+                  "    assert_eq!(find_cap_ref(input), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"${}\"; // valid format but empty capture name, should return None",
+                  "    assert_eq!(find_cap_ref(input), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"${capture\"; // valid but missing closing brace, should return None",
+                  "    assert_eq!(find_cap_ref(input), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 13,
+      "prompt_conds": [
+        "// constraint: rep.len() <= 1 is false\n",
+        "// constraint: rep[0] != b'$' is false\n",
+        "// constraint: rep[i] == b'{' is false\n",
+        "// constraint: rep.get(cap_end).map_or(false, is_valid_cap_letter) is false\n",
+        "// constraint: cap_end == i is false\n",
+        "// may panic: rep[i..cap_end] may panic in certain situations\n",
+        "// may panic: str::from_utf8(&rep[i..cap_end])\n                  .expect(\"valid UTF-8 capture name\") may panic in certain situations\n",
+        "// constraint: brace is false\n",
+        "// constraint: cap.parse::<u32>() matches Err(_) is true\n",
+        "// expected return value/type: Some(CaptureRef {\n        cap: match cap.parse::<u32>() {\n            Ok(i) => Ref::Number(i as usize),\n            Err(_) => Ref::Named(cap),\n        },\n        end: cap_end,\n    })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$name}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(",
+                  "        result,",
+                  "        Some(CaptureRef {",
+                  "            cap: Ref::Named(\"name\"),",
+                  "            end: 6",
+                  "        })",
+                  "    );",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$123}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(",
+                  "        result,",
+                  "        Some(CaptureRef {",
+                  "            cap: Ref::Number(123),",
+                  "            end: 5",
+                  "        })",
+                  "    );",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${name}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(",
+                  "        result,",
+                  "        Some(CaptureRef {",
+                  "            cap: Ref::Named(\"name\"),",
+                  "            end: 7",
+                  "        })",
+                  "    );",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${name\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"name}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${123abc}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(",
+                  "        result,",
+                  "        Some(CaptureRef {",
+                  "            cap: Ref::Named(\"123abc\"),",
+                  "            end: 8",
+                  "        })",
+                  "    );",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 20,
+      "prompt_conds": [
+        "// constraint: rep.len() <= 1 is false\n",
+        "// constraint: rep[0] != b'$' is false\n",
+        "// constraint: rep[i] == b'{' is true\n",
+        "// constraint: rep.get(cap_end).map_or(false, is_valid_cap_letter) is true\n",
+        "// constraint: rep.get(cap_end).map_or(false, is_valid_cap_letter) is false\n",
+        "// constraint: cap_end == i is false\n",
+        "// may panic: rep[i..cap_end] may panic in certain situations\n",
+        "// may panic: str::from_utf8(&rep[i..cap_end])\n                  .expect(\"valid UTF-8 capture name\") may panic in certain situations\n",
+        "// constraint: brace is false\n",
+        "// constraint: cap.parse::<u32>() matches Ok(i) is true\n",
+        "// constraint: cap.parse::<u32>() matches Ok(i) is true\n",
+        "// expected return value/type: Some(CaptureRef {\n        cap: match cap.parse::<u32>() {\n            Ok(i) => Ref::Number(i as usize),\n            Err(_) => Ref::Named(cap),\n        },\n        end: cap_end,\n    })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${name}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Named(\"name\"),",
+                  "        end: 7,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$5\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Number(5),",
+                  "        end: 2,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${myCapture}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Named(\"myCapture\"),",
+                  "        end: 11,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$name\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = &[b'$', b'{', 255]; // Invalid UTF-8 sequence",
+                  "    let _ = find_cap_ref(&input);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"Just a string.\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 21,
+      "prompt_conds": [
+        "// constraint: rep.len() <= 1 is false\n",
+        "// constraint: rep[0] != b'$' is false\n",
+        "// constraint: rep[i] == b'{' is true\n",
+        "// constraint: rep.get(cap_end).map_or(false, is_valid_cap_letter) is false\n",
+        "// constraint: cap_end == i is true\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"lorem ipsum\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${@}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$123\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 23,
+      "prompt_conds": [
+        "// constraint: rep.len() <= 1 is false\n",
+        "// constraint: rep[0] != b'$' is false\n",
+        "// constraint: rep[i] == b'{' is true\n",
+        "// constraint: rep.get(cap_end).map_or(false, is_valid_cap_letter) is false\n",
+        "// constraint: cap_end == i is false\n",
+        "// may panic: rep[i..cap_end] may panic in certain situations\n",
+        "// may panic: str::from_utf8(&rep[i..cap_end])\n                  .expect(\"valid UTF-8 capture name\") may panic in certain situations\n",
+        "// constraint: brace is true\n",
+        "// constraint: rep.get(cap_end).map_or(false, |&b| b == b'}') is true\n",
+        "// constraint: cap.parse::<u32>() matches Ok(i) is true\n",
+        "// constraint: cap.parse::<u32>() matches Ok(i) is true\n",
+        "// expected return value/type: Some(CaptureRef {\n        cap: match cap.parse::<u32>() {\n            Ok(i) => Ref::Number(i as usize),\n            Err(_) => Ref::Named(cap),\n        },\n        end: cap_end,\n    })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${name}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Named(\"name\"),",
+                  "        end: 6,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$123}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Number(123),",
+                  "        end: 4,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${name\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${name}x\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Named(\"name\"),",
+                  "        end: 7,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"${}\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input = b\"$valid\";",
+                  "    let result = find_cap_ref(&input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Named(\"valid\"),",
+                  "        end: 6,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 24,
+      "prompt_conds": [
+        "// constraint: rep.len() <= 1 is false\n",
+        "// constraint: rep[0] != b'$' is false\n",
+        "// constraint: rep[i] == b'{' is true\n",
+        "// constraint: rep.get(cap_end).map_or(false, is_valid_cap_letter) is false\n",
+        "// constraint: cap_end == i is false\n",
+        "// may panic: rep[i..cap_end] may panic in certain situations\n",
+        "// may panic: str::from_utf8(&rep[i..cap_end])\n                  .expect(\"valid UTF-8 capture name\") may panic in certain situations\n",
+        "// constraint: brace is true\n",
+        "// constraint: rep.get(cap_end).map_or(false, |&b| b == b'}') is false\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"$\";",
+                  "    let result = find_cap_ref(input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"${}\";",
+                  "    let result = find_cap_ref(input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"${@}\";",
+                  "    let result = find_cap_ref(input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"${capt\";",
+                  "    let result = find_cap_ref(input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"$123}\";",
+                  "    let result = find_cap_ref(input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Number(123),",
+                  "        end: 5,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"${name}\";",
+                  "    let result = find_cap_ref(input);",
+                  "    assert_eq!(result, Some(CaptureRef {",
+                  "        cap: Ref::Named(\"name\"),",
+                  "        end: 6,",
+                  "    }));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"${name\";",
+                  "    let result = find_cap_ref(input);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

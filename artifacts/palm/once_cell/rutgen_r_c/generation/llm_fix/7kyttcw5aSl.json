@@ -1,0 +1,268 @@
+{
+  "name": "once_cell::race::race::OnceRef<'a, T>::init",
+  "name_with_impl": "once_cell::race::{impl#5}::init",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": false,
+  "loc": "src/race.rs:311:5:317:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: f()? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Test;",
+                  "    ",
+                  "    impl Test {",
+                  "        fn trigger_error(&self) -> Result<&'static str, &'static str> {",
+                  "            Err(\"Error occurred\")",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let once_ref = OnceRef::<Test>::new();",
+                  "    let result: Result<&Test, &'static str> = once_ref.init(|_| Test.trigger_error(&Test));",
+                  "    assert_eq!(result, Err(\"Error occurred\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0593]: closure is expected to take 0 arguments, but it takes 1 argument\n   --> src/race.rs:518:56\n    |\n518 |     let result: Result<&Test, &'static str> = once_ref.init(|_| Test.trigger_error(&Test));\n    |                                                        ^^^^ --- takes 1 argument\n    |                                                        |\n    |                                                        expected closure that takes 0 arguments\n\nerror[E0061]: this method takes 0 arguments but 1 argument was supplied\n   --> src/race.rs:518:70\n    |\n518 |     let result: Result<&Test, &'static str> = once_ref.init(|_| Test.trigger_error(&Test));\n    |                                                                      ^^^^^^^^^^^^^ ----- unexpected argument of type `&Test`\n    |\nnote: method defined here\n   --> src/race.rs:512:12\n    |\n512 |         fn trigger_error(&self) -> Result<&'static str, &'static str> {\n    |            ^^^^^^^^^^^^^\nhelp: remove the extra argument\n    |\n518 -     let result: Result<&Test, &'static str> = once_ref.init(|_| Test.trigger_error(&Test));\n518 +     let result: Result<&Test, &'static str> = once_ref.init(|_| Test.trigger_error());\n    |\n\nerror[E0369]: binary operation `==` cannot be applied to type `Result<&Test, &str>`\n   --> src/race.rs:519:5\n    |\n519 |     assert_eq!(result, Err(\"Error occurred\"));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     Result<&Test, &str>\n    |     Result<&Test, &str>\n    |\nnote: an implementation of `PartialEq` might be missing for `Test`\n   --> src/race.rs:509:5\n    |\n509 |     struct Test;\n    |     ^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `Test` with `#[derive(PartialEq)]`\n    |\n509 +     #[derive(PartialEq)]\n510 |     struct Test;\n    |\n\nerror[E0277]: `Test` doesn't implement `Debug`\n   --> src/race.rs:519:5\n    |\n519 |     assert_eq!(result, Err(\"Error occurred\"));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `Test` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `Test`, which is required by `Result<&Test, &str>: Debug`\n    = note: add `#[derive(Debug)]` to `Test` or manually `impl Debug for Test`\n    = help: the trait `Debug` is implemented for `Result<T, E>`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `Test` with `#[derive(Debug)]`\n    |\n509 +     #[derive(Debug)]\n510 |     struct Test;\n    |\n\nSome errors have detailed explanations: E0061, E0277, E0369, E0593.\nFor more information about an error, try `rustc --explain E0061`.\nerror: could not compile `once_cell` (lib test) due to 5 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "   {",
+                  "      struct Test;",
+                  "      ",
+                  "      impl Test {",
+                  "          fn get_instance() -> &'static Test {",
+                  "              static INSTANCE: Test = Test;",
+                  "              &INSTANCE",
+                  "          }",
+                  "",
+                  "      }",
+                  "      let once_ref = OnceRef::<Test>::new();",
+                  "      let result: Result<&Test, ()> = once_ref.init(|| Ok(Test::get_instance()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  struct Test {",
+                  "      value: &'static str,",
+                  "  }",
+                  "  ",
+                  "  impl Test {",
+                  "      fn new() -> Test {",
+                  "          Test { value: \"Initialized\" }",
+                  "      }",
+                  "  }",
+                  "",
+                  "  let once_ref = OnceRef::<Test>::new();",
+                  "  let _ = once_ref.init(|| Ok(&Test::new())); // Borrowing Test instance",
+                  "  ",
+                  "  // This should not trigger an error, the result should be the already initialized value",
+                  "  let result = once_ref.init(|| Ok(&Test::new())); // Borrowing Test instance",
+                  "  assert_eq!(result.unwrap().value, \"Initialized\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0282]: type annotations needed for `Result<&Test, _>`\n   --> src/race.rs:520:7\n    |\n520 |   let _ = once_ref.init(|| Ok(&Test::new())); // Borrowing Test instance\n    |       ^                    ---------------- type must be known at this point\n    |\nhelp: consider giving this pattern a type, where the type for type parameter `E` is specified\n    |\n520 |   let _: Result<&Test, E> = once_ref.init(|| Ok(&Test::new())); // Borrowing Test instance\n    |        ++++++++++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct NonStatic;",
+                  "",
+                  "    impl NonStatic {",
+                  "        fn create() -> Result<&'static str, &'static str> {",
+                  "            let value = String::from(\"Non-static\");",
+                  "            Ok(Box::leak(value.into_boxed_str()))",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let once_ref = OnceRef::<NonStatic>::new();",
+                  "    let _ = once_ref.init(|_| NonStatic::create());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0593]: closure is expected to take 0 arguments, but it takes 1 argument\n   --> src/race.rs:520:22\n    |\n520 |     let _ = once_ref.init(|_| NonStatic::create());\n    |                      ^^^^ --- takes 1 argument\n    |                      |\n    |                      expected closure that takes 0 arguments\n\nFor more information about this error, try `rustc --explain E0593`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: f()? is Ok/Some\n",
+        "// constraint: let Err(old) = self.compare_exchange(value) is true\n",
+        "// expected return value/type: Ok(value)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestValue;",
+                  "",
+                  "    let once_ref: OnceRef<TestValue> = OnceRef::new();",
+                  "",
+                  "    let init_function = || {",
+                  "        Ok(&TestValue)",
+                  "    };",
+                  "",
+                  "    let result = once_ref.init(init_function);",
+                  "    assert!(result.is_ok(), \"Expected Ok(value) but got {:?}\", result);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0277]: `TestValue` doesn't implement `Debug`\n   --> src/race.rs:518:64\n    |\n518 |     assert!(result.is_ok(), \"Expected Ok(value) but got {:?}\", result);\n    |                                                                ^^^^^^ `TestValue` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `TestValue`, which is required by `Result<&TestValue, _>: Debug`\n    = note: add `#[derive(Debug)]` to `TestValue` or manually `impl Debug for TestValue`\n    = help: the trait `Debug` is implemented for `Result<T, E>`\n    = note: this error originates in the macro `$crate::const_format_args` which comes from the expansion of the macro `assert` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `TestValue` with `#[derive(Debug)]`\n    |\n509 +     #[derive(Debug)]\n510 |     struct TestValue;\n    |\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  #[derive(Debug)]  ",
+                  "  struct TestValue;  ",
+                  "",
+                  "  let once_ref: OnceRef<TestValue> = OnceRef::new();  ",
+                  "  let initial_value = TestValue;  ",
+                  "",
+                  "  // Set the initial value to simulate existing pointer  ",
+                  "  once_ref.set(&initial_value).unwrap();  ",
+                  "",
+                  "  let init_function = || {  ",
+                  "      Ok(&TestValue) // Function will provide a value  ",
+                  "  };  ",
+                  "",
+                  "  let result: Result<&TestValue, ()> = once_ref.init(init_function);  ",
+                  "  assert!(result.is_ok(), \"Expected Ok(value) but got {:?}\", result);  ",
+                  "",
+                  "  let value = result.unwrap();  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestValue;",
+                  "",
+                  "    let once_ref: OnceRef<TestValue> = OnceRef::new();",
+                  "",
+                  "    let init_function = || {",
+                  "        Err(\"some error\") // This simulates an error occurring",
+                  "    };",
+                  "",
+                  "    let _ = once_ref.init(init_function); // This should panic since the error is not handled",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

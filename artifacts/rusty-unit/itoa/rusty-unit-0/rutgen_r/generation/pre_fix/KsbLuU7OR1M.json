@@ -1,0 +1,209 @@
+{
+  "name": "itoa::Buffer::format",
+  "name_with_impl": "itoa::{impl#3}::format",
+  "mod_info": {
+    "name": "",
+    "loc": "src/lib.rs:1:1:329:34"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:97:5:106:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: string.len() > I::MAX_STR_LEN is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInteger {",
+                  "        value: i64,",
+                  "    }",
+                  "",
+                  "    impl private::Sealed for TestInteger {",
+                  "        type Buffer = [MaybeUninit<u8>; 20]; // Assuming 20 for MAX_STR_LEN for testing",
+                  "    }",
+                  "",
+                  "    impl Integer for TestInteger {",
+                  "        const MAX_STR_LEN: usize = 20;",
+                  "",
+                  "        fn write(&self, buffer: &mut [MaybeUninit<u8>; Self::MAX_STR_LEN]) -> &str {",
+                  "            let mut s = format!(\"{:}\", self.value);",
+                  "            if s.len() > Self::MAX_STR_LEN {",
+                  "                // if this condition is true, it's to simulate panic condition",
+                  "                s = &s[..Self::MAX_STR_LEN + 1]; ",
+                  "            }",
+                  "            let bytes = s.as_bytes();",
+                  "            for (i, &b) in bytes.iter().enumerate() {",
+                  "                buffer[i].write(b);",
+                  "            }",
+                  "            std::str::from_utf8(&buffer[..s.len()]).unwrap()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buffer = [MaybeUninit::<u8>::uninit(); 20];",
+                  "    let test_integer = TestInteger { value: 1234567890123456789 }; // High value to exceed MAX_STR_LEN",
+                  "    buffer.format(test_integer);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling itoa v1.0.15 (/home/abezbm/rust-utgen-test-crates-new/itoa)\nerror[E0407]: method `write` is not a member of trait `Integer`\n   --> src/lib.rs:350:9\n    |\n350 | /         fn write(&self, buffer: &mut [MaybeUninit<u8>; Self::MAX_STR_LEN]) -> &str {\n351 | |             let mut s = format!(\"{:}\", self.value);\n352 | |             if s.len() > Self::MAX_STR_LEN {\n353 | |                 // if this condition is true, it's to simulate panic condition\n...   |\n360 | |             std::str::from_utf8(&buffer[..s.len()]).unwrap()\n361 | |         }\n    | |_________^ not a member of trait `Integer`\n\nwarning: unused import: `ntest::timeout`\n   --> src/lib.rs:334:8\n    |\n334 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `TestInteger: std::marker::Copy` is not satisfied\n   --> src/lib.rs:343:30\n    |\n343 |     impl private::Sealed for TestInteger {\n    |                              ^^^^^^^^^^^ the trait `std::marker::Copy` is not implemented for `TestInteger`\n    |\nnote: required by a bound in `Sealed`\n   --> src/lib.rs:121:23\n    |\n121 |     pub trait Sealed: Copy {\n    |                       ^^^^ required by this bound in `Sealed`\nhelp: consider annotating `TestInteger` with `#[derive(Copy)]`\n    |\n339 +     #[derive(Copy)]\n340 |     struct TestInteger {\n    |\n\nerror[E0046]: not all trait items implemented, missing: `write`\n   --> src/lib.rs:343:5\n    |\n124 |         fn write(self, buf: &mut Self::Buffer) -> &str;\n    |         ----------------------------------------------- `write` from trait\n...\n343 |     impl private::Sealed for TestInteger {\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `write` in implementation\n\nerror[E0277]: the trait bound `TestInteger: std::marker::Copy` is not satisfied\n   --> src/lib.rs:347:22\n    |\n347 |     impl Integer for TestInteger {\n    |                      ^^^^^^^^^^^ the trait `std::marker::Copy` is not implemented for `TestInteger`, which is required by `TestInteger: Sealed`\n    |\n    = help: the trait `Sealed` is implemented for `TestInteger`\nnote: required for `TestInteger` to implement `Sealed`\n   --> src/lib.rs:121:15\n    |\n121 |     pub trait Sealed: Copy {\n    |               ^^^^^^\nnote: required by a bound in `Integer`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer`\n    = note: `Integer` is a \"sealed trait\", because to implement it you also need to implement `private::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it\n    = help: the following types implement the trait:\n              i8\n              u8\n              i16\n              u16\n              i32\n              u32\n              i64\n              u64\n            and 5 others\nhelp: consider annotating `TestInteger` with `#[derive(Copy)]`\n    |\n339 +     #[derive(Copy)]\n340 |     struct TestInteger {\n    |\n\nerror[E0599]: no method named `format` found for array `[std::mem::MaybeUninit<u8>; 20]` in the current scope\n   --> src/lib.rs:366:12\n    |\n366 |     buffer.format(test_integer);\n    |            ^^^^^^\n    |\nhelp: there is a method `fmt` with a similar name\n    |\n366 |     buffer.fmt(test_integer);\n    |            ~~~\n\nerror[E0308]: mismatched types\n   --> src/lib.rs:354:21\n    |\n351 |             let mut s = format!(\"{:}\", self.value);\n    |                 -----   -------------------------- expected due to this value\n    |                 |\n    |                 expected due to the type of this binding\n...\n354 |                 s = &s[..Self::MAX_STR_LEN + 1]; \n    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `String`, found `&str`\n    |\nhelp: try using a conversion method\n    |\n354 |                 s = (&s[..Self::MAX_STR_LEN + 1]).to_string(); \n    |                     +                           +++++++++++++\n\nerror[E0308]: mismatched types\n   --> src/lib.rs:360:33\n    |\n360 |             std::str::from_utf8(&buffer[..s.len()]).unwrap()\n    |             ------------------- ^^^^^^^^^^^^^^^^^^ expected `&[u8]`, found `&[MaybeUninit<u8>]`\n    |             |\n    |             arguments to this function are incorrect\n    |\n    = note: expected reference `&[u8]`\n               found reference `&[std::mem::MaybeUninit<u8>]`\nnote: function defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/str/converts.rs:88:14\n    |\n88  | pub const fn from_utf8(v: &[u8]) -> Result<&str, Utf8Error> {\n    |              ^^^^^^^^^\n\nSome errors have detailed explanations: E0046, E0277, E0308, E0407, E0599.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `itoa` (lib test) generated 1 warning\nerror: could not compile `itoa` (lib test) due to 7 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInteger {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    impl private::Sealed for TestInteger {",
+                  "        type Buffer = [MaybeUninit<u8>; 10]; // Assuming MAX_STR_LEN as 10",
+                  "    }",
+                  "",
+                  "    impl Integer for TestInteger {",
+                  "        const MAX_STR_LEN: usize = 10;",
+                  "",
+                  "        fn write(&self, buffer: &mut [MaybeUninit<u8>; Self::MAX_STR_LEN]) -> &str {",
+                  "            let s = format!(\"{}\", self.value);",
+                  "            let bytes = s.as_bytes();",
+                  "            for (i, &b) in bytes.iter().enumerate() {",
+                  "                buffer[i].write(b);",
+                  "            }",
+                  "            std::str::from_utf8(&buffer[..s.len()]).unwrap()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buffer = [MaybeUninit::<u8>::uninit(); 10];",
+                  "    let test_integer = TestInteger { value: 12345 };",
+                  "    let result = buffer.format(test_integer);",
+                  "    assert_eq!(result, \"12345\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "    Blocking waiting for file lock on package cache\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling itoa v1.0.15 (/home/abezbm/rust-utgen-test-crates-new/itoa)\nerror[E0407]: method `write` is not a member of trait `Integer`\n   --> src/lib.rs:349:9\n    |\n349 | /         fn write(&self, buffer: &mut [MaybeUninit<u8>; Self::MAX_STR_LEN]) -> &str {\n350 | |             let s = format!(\"{}\", self.value);\n351 | |             let bytes = s.as_bytes();\n352 | |             for (i, &b) in bytes.iter().enumerate() {\n...   |\n355 | |             std::str::from_utf8(&buffer[..s.len()]).unwrap()\n356 | |         }\n    | |_________^ not a member of trait `Integer`\n\nwarning: unused import: `ntest::timeout`\n   --> src/lib.rs:334:8\n    |\n334 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `TestInteger: std::marker::Copy` is not satisfied\n   --> src/lib.rs:342:30\n    |\n342 |     impl private::Sealed for TestInteger {\n    |                              ^^^^^^^^^^^ the trait `std::marker::Copy` is not implemented for `TestInteger`\n    |\nnote: required by a bound in `Sealed`\n   --> src/lib.rs:121:23\n    |\n121 |     pub trait Sealed: Copy {\n    |                       ^^^^ required by this bound in `Sealed`\nhelp: consider annotating `TestInteger` with `#[derive(Copy)]`\n    |\n338 +     #[derive(Copy)]\n339 |     struct TestInteger {\n    |\n\nerror[E0046]: not all trait items implemented, missing: `write`\n   --> src/lib.rs:342:5\n    |\n124 |         fn write(self, buf: &mut Self::Buffer) -> &str;\n    |         ----------------------------------------------- `write` from trait\n...\n342 |     impl private::Sealed for TestInteger {\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `write` in implementation\n\nerror[E0277]: the trait bound `TestInteger: std::marker::Copy` is not satisfied\n   --> src/lib.rs:346:22\n    |\n346 |     impl Integer for TestInteger {\n    |                      ^^^^^^^^^^^ the trait `std::marker::Copy` is not implemented for `TestInteger`, which is required by `TestInteger: Sealed`\n    |\n    = help: the trait `Sealed` is implemented for `TestInteger`\nnote: required for `TestInteger` to implement `Sealed`\n   --> src/lib.rs:121:15\n    |\n121 |     pub trait Sealed: Copy {\n    |               ^^^^^^\nnote: required by a bound in `Integer`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer`\n    = note: `Integer` is a \"sealed trait\", because to implement it you also need to implement `private::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it\n    = help: the following types implement the trait:\n              i8\n              u8\n              i16\n              u16\n              i32\n              u32\n              i64\n              u64\n            and 5 others\nhelp: consider annotating `TestInteger` with `#[derive(Copy)]`\n    |\n338 +     #[derive(Copy)]\n339 |     struct TestInteger {\n    |\n\nerror[E0599]: no method named `format` found for array `[std::mem::MaybeUninit<u8>; 10]` in the current scope\n   --> src/lib.rs:361:25\n    |\n361 |     let result = buffer.format(test_integer);\n    |                         ^^^^^^\n    |\nhelp: there is a method `fmt` with a similar name\n    |\n361 |     let result = buffer.fmt(test_integer);\n    |                         ~~~\n\nerror[E0308]: mismatched types\n   --> src/lib.rs:355:33\n    |\n355 |             std::str::from_utf8(&buffer[..s.len()]).unwrap()\n    |             ------------------- ^^^^^^^^^^^^^^^^^^ expected `&[u8]`, found `&[MaybeUninit<u8>]`\n    |             |\n    |             arguments to this function are incorrect\n    |\n    = note: expected reference `&[u8]`\n               found reference `&[std::mem::MaybeUninit<u8>]`\nnote: function defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/str/converts.rs:88:14\n    |\n88  | pub const fn from_utf8(v: &[u8]) -> Result<&str, Utf8Error> {\n    |              ^^^^^^^^^\n\nSome errors have detailed explanations: E0046, E0277, E0308, E0407, E0599.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `itoa` (lib test) generated 1 warning\nerror: could not compile `itoa` (lib test) due to 6 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: string.len() > I::MAX_STR_LEN is false, with bound string.len() == I::MAX_STR_LEN\n",
+        "// expected return value/type: string\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct MockInteger;",
+            "",
+            "impl Integer for MockInteger {",
+            "    const MAX_STR_LEN: usize = 10; ",
+            "",
+            "    fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {",
+            "        let string = \"1234567890\";",
+            "        buffer.copy_from_slice(string.as_bytes());",
+            "        std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()",
+            "    }",
+            "}",
+            "",
+            "",
+            "#[derive(Debug)]",
+            "struct AnotherMockInteger;",
+            "",
+            "impl Integer for AnotherMockInteger {",
+            "    const MAX_STR_LEN: usize = 8; ",
+            "",
+            "    fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {",
+            "        let string = \"12345678\";",
+            "        buffer.copy_from_slice(string.as_bytes());",
+            "        std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = [std::mem::MaybeUninit::<u8>::uninit(); 10];",
+                  "    let result = format(&mut buf, MockInteger);",
+                  "    assert_eq!(result, \"1234567890\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling itoa v1.0.15 (/home/abezbm/rust-utgen-test-crates-new/itoa)\nerror[E0407]: method `write` is not a member of trait `Integer`\n   --> src/lib.rs:341:5\n    |\n341 | /     fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n342 | |         let string = \"1234567890\";\n343 | |         buffer.copy_from_slice(string.as_bytes());\n344 | |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n345 | |     }\n    | |_____^ not a member of trait `Integer`\n\nerror[E0407]: method `write` is not a member of trait `Integer`\n   --> src/lib.rs:355:5\n    |\n355 | /     fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n356 | |         let string = \"12345678\";\n357 | |         buffer.copy_from_slice(string.as_bytes());\n358 | |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n359 | |     }\n    | |_____^ not a member of trait `Integer`\n\nerror[E0423]: expected function, found macro `format`\n   --> src/lib.rs:366:18\n    |\n366 |     let result = format(&mut buf, MockInteger);\n    |                  ^^^^^^ not a function\n    |\nhelp: use `!` to invoke the macro\n    |\n366 |     let result = format!(&mut buf, MockInteger);\n    |                        +\nhelp: consider importing this function instead\n    |\n333 +    use std::fmt::format;\n    |\n\nwarning: unused import: `ntest::timeout`\n   --> src/lib.rs:334:8\n    |\n334 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `MockInteger: Sealed` is not satisfied\n   --> src/lib.rs:338:18\n    |\n338 | impl Integer for MockInteger {\n    |                  ^^^^^^^^^^^ the trait `Sealed` is not implemented for `MockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\nnote: required by a bound in `Integer`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer`\n    = note: `Integer` is a \"sealed trait\", because to implement it you also need to implement `private::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it\n    = help: the following types implement the trait:\n              i8\n              u8\n              i16\n              u16\n              i32\n              u32\n              i64\n              u64\n            and 4 others\n\nerror[E0277]: the trait bound `AnotherMockInteger: Sealed` is not satisfied\n   --> src/lib.rs:352:18\n    |\n352 | impl Integer for AnotherMockInteger {\n    |                  ^^^^^^^^^^^^^^^^^^ the trait `Sealed` is not implemented for `AnotherMockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\nnote: required by a bound in `Integer`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer`\n    = note: `Integer` is a \"sealed trait\", because to implement it you also need to implement `private::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it\n    = help: the following types implement the trait:\n              i8\n              u8\n              i16\n              u16\n              i32\n              u32\n              i64\n              u64\n            and 4 others\n\nerror[E0277]: the trait bound `MockInteger: Sealed` is not satisfied\n   --> src/lib.rs:341:34\n    |\n341 |     fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Sealed` is not implemented for `MockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\n\nerror[E0277]: the trait bound `AnotherMockInteger: Sealed` is not satisfied\n   --> src/lib.rs:355:34\n    |\n355 |     fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Sealed` is not implemented for `AnotherMockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\n\nerror[E0277]: the trait bound `MockInteger: Sealed` is not satisfied\n   --> src/lib.rs:341:77\n    |\n341 |       fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n    |  _____________________________________________________________________________^\n342 | |         let string = \"1234567890\";\n343 | |         buffer.copy_from_slice(string.as_bytes());\n344 | |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n345 | |     }\n    | |_____^ the trait `Sealed` is not implemented for `MockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\n\nerror[E0282]: type annotations needed\n   --> src/lib.rs:343:16\n    |\n343 |         buffer.copy_from_slice(string.as_bytes());\n    |                ^^^^^^^^^^^^^^^ cannot infer type\n\nerror[E0277]: the trait bound `MockInteger: Sealed` is not satisfied\n   --> src/lib.rs:344:39\n    |\n344 |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n    |                                       ^^^^ the trait `Sealed` is not implemented for `MockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\nnote: required by a bound in `Integer::MAX_STR_LEN`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer::MAX_STR_LEN`\n...\n115 |     const MAX_STR_LEN: usize;\n    |           ----------- required by a bound in this associated constant\n\nerror[E0277]: the trait bound `AnotherMockInteger: Sealed` is not satisfied\n   --> src/lib.rs:355:77\n    |\n355 |       fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n    |  _____________________________________________________________________________^\n356 | |         let string = \"12345678\";\n357 | |         buffer.copy_from_slice(string.as_bytes());\n358 | |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n359 | |     }\n    | |_____^ the trait `Sealed` is not implemented for `AnotherMockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\n\nerror[E0282]: type annotations needed\n   --> src/lib.rs:357:16\n    |\n357 |         buffer.copy_from_slice(string.as_bytes());\n    |                ^^^^^^^^^^^^^^^ cannot infer type\n\nerror[E0277]: the trait bound `AnotherMockInteger: Sealed` is not satisfied\n   --> src/lib.rs:358:39\n    |\n358 |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n    |                                       ^^^^ the trait `Sealed` is not implemented for `AnotherMockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\nnote: required by a bound in `Integer::MAX_STR_LEN`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer::MAX_STR_LEN`\n...\n115 |     const MAX_STR_LEN: usize;\n    |           ----------- required by a bound in this associated constant\n\nSome errors have detailed explanations: E0277, E0282, E0407, E0423.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `itoa` (lib test) generated 1 warning\nerror: could not compile `itoa` (lib test) due to 13 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = [std::mem::MaybeUninit::<u8>::uninit(); 8];",
+                  "    let result = format(&mut buf, AnotherMockInteger);",
+                  "    assert_eq!(result, \"12345678\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling itoa v1.0.15 (/home/abezbm/rust-utgen-test-crates-new/itoa)\nerror[E0407]: method `write` is not a member of trait `Integer`\n   --> src/lib.rs:341:5\n    |\n341 | /     fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n342 | |         let string = \"1234567890\";\n343 | |         buffer.copy_from_slice(string.as_bytes());\n344 | |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n345 | |     }\n    | |_____^ not a member of trait `Integer`\n\nerror[E0407]: method `write` is not a member of trait `Integer`\n   --> src/lib.rs:355:5\n    |\n355 | /     fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n356 | |         let string = \"12345678\";\n357 | |         buffer.copy_from_slice(string.as_bytes());\n358 | |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n359 | |     }\n    | |_____^ not a member of trait `Integer`\n\nerror[E0423]: expected function, found macro `format`\n   --> src/lib.rs:366:18\n    |\n366 |     let result = format(&mut buf, AnotherMockInteger);\n    |                  ^^^^^^ not a function\n    |\nhelp: use `!` to invoke the macro\n    |\n366 |     let result = format!(&mut buf, AnotherMockInteger);\n    |                        +\nhelp: consider importing this function instead\n    |\n333 +    use std::fmt::format;\n    |\n\nwarning: unused import: `ntest::timeout`\n   --> src/lib.rs:334:8\n    |\n334 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `MockInteger: Sealed` is not satisfied\n   --> src/lib.rs:338:18\n    |\n338 | impl Integer for MockInteger {\n    |                  ^^^^^^^^^^^ the trait `Sealed` is not implemented for `MockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\nnote: required by a bound in `Integer`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer`\n    = note: `Integer` is a \"sealed trait\", because to implement it you also need to implement `private::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it\n    = help: the following types implement the trait:\n              i8\n              u8\n              i16\n              u16\n              i32\n              u32\n              i64\n              u64\n            and 4 others\n\nerror[E0277]: the trait bound `AnotherMockInteger: Sealed` is not satisfied\n   --> src/lib.rs:352:18\n    |\n352 | impl Integer for AnotherMockInteger {\n    |                  ^^^^^^^^^^^^^^^^^^ the trait `Sealed` is not implemented for `AnotherMockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\nnote: required by a bound in `Integer`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer`\n    = note: `Integer` is a \"sealed trait\", because to implement it you also need to implement `private::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it\n    = help: the following types implement the trait:\n              i8\n              u8\n              i16\n              u16\n              i32\n              u32\n              i64\n              u64\n            and 4 others\n\nerror[E0277]: the trait bound `MockInteger: Sealed` is not satisfied\n   --> src/lib.rs:341:34\n    |\n341 |     fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Sealed` is not implemented for `MockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\n\nerror[E0277]: the trait bound `AnotherMockInteger: Sealed` is not satisfied\n   --> src/lib.rs:355:34\n    |\n355 |     fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Sealed` is not implemented for `AnotherMockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\n\nerror[E0277]: the trait bound `MockInteger: Sealed` is not satisfied\n   --> src/lib.rs:341:77\n    |\n341 |       fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n    |  _____________________________________________________________________________^\n342 | |         let string = \"1234567890\";\n343 | |         buffer.copy_from_slice(string.as_bytes());\n344 | |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n345 | |     }\n    | |_____^ the trait `Sealed` is not implemented for `MockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\n\nerror[E0282]: type annotations needed\n   --> src/lib.rs:343:16\n    |\n343 |         buffer.copy_from_slice(string.as_bytes());\n    |                ^^^^^^^^^^^^^^^ cannot infer type\n\nerror[E0277]: the trait bound `MockInteger: Sealed` is not satisfied\n   --> src/lib.rs:344:39\n    |\n344 |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n    |                                       ^^^^ the trait `Sealed` is not implemented for `MockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\nnote: required by a bound in `Integer::MAX_STR_LEN`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer::MAX_STR_LEN`\n...\n115 |     const MAX_STR_LEN: usize;\n    |           ----------- required by a bound in this associated constant\n\nerror[E0277]: the trait bound `AnotherMockInteger: Sealed` is not satisfied\n   --> src/lib.rs:355:77\n    |\n355 |       fn write(&self, buffer: &mut <Self as private::Sealed>::Buffer) -> &str {\n    |  _____________________________________________________________________________^\n356 | |         let string = \"12345678\";\n357 | |         buffer.copy_from_slice(string.as_bytes());\n358 | |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n359 | |     }\n    | |_____^ the trait `Sealed` is not implemented for `AnotherMockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\n\nerror[E0282]: type annotations needed\n   --> src/lib.rs:357:16\n    |\n357 |         buffer.copy_from_slice(string.as_bytes());\n    |                ^^^^^^^^^^^^^^^ cannot infer type\n\nerror[E0277]: the trait bound `AnotherMockInteger: Sealed` is not satisfied\n   --> src/lib.rs:358:39\n    |\n358 |         std::str::from_utf8(&buffer[..Self::MAX_STR_LEN]).unwrap()\n    |                                       ^^^^ the trait `Sealed` is not implemented for `AnotherMockInteger`\n    |\n    = help: the following other types implement trait `Sealed`:\n              i128\n              i16\n              i32\n              i64\n              i8\n              isize\n              u128\n              u16\n            and 4 others\nnote: required by a bound in `Integer::MAX_STR_LEN`\n   --> src/lib.rs:112:20\n    |\n112 | pub trait Integer: private::Sealed {\n    |                    ^^^^^^^^^^^^^^^ required by this bound in `Integer::MAX_STR_LEN`\n...\n115 |     const MAX_STR_LEN: usize;\n    |           ----------- required by a bound in this associated constant\n\nSome errors have detailed explanations: E0277, E0282, E0407, E0423.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `itoa` (lib test) generated 1 warning\nerror: could not compile `itoa` (lib test) due to 13 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

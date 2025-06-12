@@ -1,0 +1,471 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+          "",
+          "    let test_data = TestLifetime {",
+          "        ref_cnt: AtomicUsize::new(2), // old_cnt will be 2 for this case",
+          "        drop: dummy_drop,",
+          "    };",
+          "",
+          "    let owned: *mut () = &test_data as *const _ as *mut ();",
+          "    unsafe {",
+          "        owned_drop_impl(owned);",
+          "    }",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(2), drop: dummy_drop };",
+            "    let old_cnt = test_data.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt == 2);"
+          ],
+          [
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(2), drop: dummy_drop };",
+            "    let old_cnt = test_data.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(test_data.ref_cnt.load(Ordering::Acquire) == 1);"
+          ],
+          [
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(2), drop: dummy_drop };",
+            "    let old_cnt = test_data.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(test_data.ref_cnt.load(Ordering::Acquire) <= usize::MAX >> 1);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(2), // old_cnt will be 2 for this case",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(2), drop: dummy_drop };",
+            "    let old_cnt = test_data.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt == 2);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(2), // old_cnt will be 2 for this case",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(2), drop: dummy_drop };",
+            "    let old_cnt = test_data.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(test_data.ref_cnt.load(Ordering::Acquire) == 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(2), // old_cnt will be 2 for this case",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(2), drop: dummy_drop };",
+            "    let old_cnt = test_data.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(test_data.ref_cnt.load(Ordering::Acquire) <= usize::MAX >> 1);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+          "",
+          "    let test_data = TestLifetime {",
+          "        ref_cnt: AtomicUsize::new(0), // This will trigger a panic",
+          "        drop: dummy_drop,",
+          "    };",
+          "",
+          "    let owned: *mut () = &test_data as *const _ as *mut ();",
+          "    unsafe {",
+          "        owned_drop_impl(owned);",
+          "    }",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(0), drop: dummy_drop };",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    assert!(std::panic::catch_unwind(|| { unsafe { owned_drop_impl(owned) } }).is_err());"
+          ],
+          [
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(0), drop: dummy_drop };",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    assert!(std::panic::catch_unwind(|| { unsafe { owned_drop_impl(owned) } }).unwrap_err().downcast_ref::<&str>().map_or(false, |s| *s == \"expected non-zero refcount and no underflow\"));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(0), // This will trigger a panic",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(0), drop: dummy_drop };",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    assert!(std::panic::catch_unwind(|| { unsafe { owned_drop_impl(owned) } }).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(0), // This will trigger a panic",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let test_data = TestLifetime { ref_cnt: AtomicUsize::new(0), drop: dummy_drop };",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    assert!(std::panic::catch_unwind(|| { unsafe { owned_drop_impl(owned) } }).unwrap_err().downcast_ref::<&str>().map_or(false, |s| *s == \"expected non-zero refcount and no underflow\"));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+          "",
+          "    let test_data = TestLifetime {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1), // old_cnt will be the boundary value",
+          "        drop: dummy_drop,",
+          "    };",
+          "",
+          "    let owned: *mut () = &test_data as *const _ as *mut ();",
+          "    unsafe {",
+          "        owned_drop_impl(owned);",
+          "    }",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let test_data = TestLifetime {",
+            "    ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "    drop: dummy_drop,",
+            "    };",
+            "    assert_eq!(test_data.ref_cnt.load(Ordering::Relaxed), usize::MAX >> 1 - 1);"
+          ],
+          [
+            "    let test_data = TestLifetime {",
+            "    ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "    drop: dummy_drop,",
+            "    };",
+            "    assert_eq!(test_data.ref_cnt.load(Ordering::Relaxed), 0);  // Check for no underflow"
+          ],
+          [
+            "    let test_data = TestLifetime {",
+            "    ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "    drop: dummy_drop,",
+            "    };",
+            "    assert_eq!(test_data.ref_cnt.load(Ordering::Acquire), 0); // Check ref count after load"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(usize::MAX >> 1), // old_cnt will be the boundary value",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let test_data = TestLifetime {",
+            "    ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "    drop: dummy_drop,",
+            "    };",
+            "    assert_eq!(test_data.ref_cnt.load(Ordering::Relaxed), usize::MAX >> 1 - 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(usize::MAX >> 1), // old_cnt will be the boundary value",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let test_data = TestLifetime {",
+            "    ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "    drop: dummy_drop,",
+            "    };",
+            "    assert_eq!(test_data.ref_cnt.load(Ordering::Relaxed), 0);  // Check for no underflow",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(usize::MAX >> 1), // old_cnt will be the boundary value",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let test_data = TestLifetime {",
+            "    ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "    drop: dummy_drop,",
+            "    };",
+            "    assert_eq!(test_data.ref_cnt.load(Ordering::Acquire), 0); // Check ref count after load",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+          "",
+          "    let test_data = TestLifetime {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1), // This will satisfy old_cnt <= usize::MAX >> 1 is false",
+          "        drop: dummy_drop,",
+          "    };",
+          "",
+          "    let owned: *mut () = &test_data as *const _ as *mut ();",
+          "    unsafe {",
+          "        owned_drop_impl(owned);",
+          "    }",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let lifetime = owned.cast::<OwnedLifetime>();",
+            "    let ref_cnt = &(*lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt > 0);"
+          ],
+          [
+            "    let lifetime = owned.cast::<OwnedLifetime>();",
+            "    let ref_cnt = &(*lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(!(old_cnt <= usize::MAX >> 1));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1), // This will satisfy old_cnt <= usize::MAX >> 1 is false",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let lifetime = owned.cast::<OwnedLifetime>();",
+            "    let ref_cnt = &(*lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt > 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe extern \"C\" fn dummy_drop(_: *mut ()) {}",
+            "",
+            "    let test_data = TestLifetime {",
+            "        ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1), // This will satisfy old_cnt <= usize::MAX >> 1 is false",
+            "        drop: dummy_drop,",
+            "    };",
+            "",
+            "    let owned: *mut () = &test_data as *const _ as *mut ();",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "    let lifetime = owned.cast::<OwnedLifetime>();",
+            "    let ref_cnt = &(*lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(!(old_cnt <= usize::MAX >> 1));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

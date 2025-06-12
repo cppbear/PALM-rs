@@ -1,0 +1,160 @@
+{
+  "name": "rand::rngs::reseeding::rngs::reseeding::ReseedingRng<R, Rsdr>::reseed",
+  "name_with_impl": "rand::rngs::reseeding::{impl#0}::reseed",
+  "mod_info": {
+    "name": "rngs::reseeding",
+    "loc": "src/rngs/mod.rs:80:1:80:15"
+  },
+  "visible": true,
+  "loc": "src/rngs/reseeding.rs:99:5:102:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockCore {",
+                  "        reseed_called: bool,",
+                  "    }",
+                  "",
+                  "    impl MockCore {",
+                  "        fn new() -> Self {",
+                  "            MockCore { reseed_called: false }",
+                  "        }",
+                  "",
+                  "        fn reseed(&mut self) -> Result<(), ()> {",
+                  "            self.reseed_called = true;",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockRng {",
+                  "        core: MockCore,",
+                  "    }",
+                  "",
+                  "    impl MockRng {",
+                  "        fn new() -> Self {",
+                  "            MockRng {",
+                  "                core: MockCore::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn reset(&mut self) {",
+                  "            // Mock reset behavior",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Rsdr(MockRng);",
+                  "",
+                  "    impl Rsdr {",
+                  "        fn reset(&mut self) {",
+                  "            self.0.reset();",
+                  "        }",
+                  "",
+                  "        fn core(&mut self) -> &mut MockCore {",
+                  "            &mut self.0.core",
+                  "        }",
+                  "",
+                  "        pub fn reseed(&mut self) -> Result<(), ()> {",
+                  "            self.reset();",
+                  "            self.core().reseed()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut rng = Rsdr(MockRng::new());",
+                  "    let result = rng.reseed();",
+                  "    assert!(result.is_ok());",
+                  "    assert!(rng.0.core.reseed_called);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FaultyCore;",
+                  "",
+                  "    impl FaultyCore {",
+                  "        fn reseed(&mut self) -> Result<(), ()> {",
+                  "            Err(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct FaultyRng {",
+                  "        core: FaultyCore,",
+                  "    }",
+                  "",
+                  "    impl FaultyRng {",
+                  "        fn new() -> Self {",
+                  "            FaultyRng { core: FaultyCore }",
+                  "        }",
+                  "",
+                  "        fn reset(&mut self) {",
+                  "            // Mock reset behavior",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Rsdr(FaultyRng);",
+                  "",
+                  "    impl Rsdr {",
+                  "        fn reset(&mut self) {",
+                  "            self.0.reset();",
+                  "        }",
+                  "",
+                  "        fn core(&mut self) -> &mut FaultyCore {",
+                  "            &mut self.0.core",
+                  "        }",
+                  "",
+                  "        pub fn reseed(&mut self) -> Result<(), ()> {",
+                  "            self.reset();",
+                  "            self.core().reseed()?;",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut rng = Rsdr(FaultyRng::new());",
+                  "    rng.reseed().expect(\"This should panic due to reseed failure\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

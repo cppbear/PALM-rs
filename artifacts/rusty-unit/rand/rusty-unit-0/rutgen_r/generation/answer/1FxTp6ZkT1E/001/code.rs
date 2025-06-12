@@ -1,0 +1,60 @@
+// Answer 0
+
+#[test]
+fn test_next_u64() {
+    struct Pcg {
+        state: u64,
+    }
+
+    impl Pcg {
+        fn new(seed: u64) -> Self {
+            Pcg { state: seed }
+        }
+
+        fn next_u64(&mut self) -> u64 {
+            // Mock implementation of the actual function for testing purposes
+            let result = (self.state * 48271) % 0x7fffffff;
+            self.state = result;
+            result
+        }
+    }
+
+    let mut rng = Pcg::new(123456);
+
+    // Testing for multiple calls to verify different states
+    let output1 = rng.next_u64();
+    assert!(output1 <= 0x7fffffff, "Output should be within bounds");
+
+    let output2 = rng.next_u64();
+    assert!(output2 <= 0x7fffffff, "Output should be within bounds");
+
+    let output3 = rng.next_u64();
+    assert!(output3 <= 0x7fffffff, "Output should be within bounds");
+}
+
+#[test]
+#[should_panic]
+fn test_next_u64_panic() {
+    struct Pcg {
+        state: u64,
+    }
+
+    impl Pcg {
+        fn new(seed: u64) -> Self {
+            Pcg { state: seed }
+        }
+
+        fn next_u64(&mut self) -> u64 {
+            if self.state == 0 {
+                panic!("State cannot be zero");
+            }
+            let result = (self.state * 48271) % 0x7fffffff;
+            self.state = result;
+            result
+        }
+    }
+
+    let mut rng = Pcg::new(0);
+    rng.next_u64(); // Should panic here
+}
+

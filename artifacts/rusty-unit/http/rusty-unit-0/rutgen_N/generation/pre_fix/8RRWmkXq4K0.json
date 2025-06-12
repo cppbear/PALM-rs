@@ -1,0 +1,202 @@
+{
+  "name": "http::uri::scheme::<uri::scheme::Scheme as std::hash::Hash>::hash",
+  "name_with_impl": "http::uri::scheme::{impl#11}::hash",
+  "mod_info": {
+    "name": "uri::scheme",
+    "loc": "src/uri/mod.rs:47:1:47:12"
+  },
+  "visible": true,
+  "loc": "src/uri/scheme.rs:168:5:183:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::collections::hash_map::DefaultHasher;"
+          ],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct Http {",
+            "    inner: Scheme2,",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "enum Scheme2 {",
+            "    None,",
+            "    Standard(Protocol),",
+            "    Other(String),",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "enum Protocol {",
+            "    Http,",
+            "    Https,",
+            "}",
+            "",
+            "impl Http {",
+            "    fn hash<H>(&self, state: &mut H)",
+            "    where",
+            "        H: std::hash::Hasher,",
+            "    {",
+            "        match self.inner {",
+            "            Scheme2::None => (),",
+            "            Scheme2::Standard(Protocol::Http) => state.write_u8(1),",
+            "            Scheme2::Standard(Protocol::Https) => state.write_u8(2),",
+            "            Scheme2::Other(ref other) => {",
+            "                other.len().hash(state);",
+            "                for &b in other.as_bytes() {",
+            "                    state.write_u8(b.to_ascii_lowercase());",
+            "                }",
+            "            }",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let http = Http { inner: Scheme2::None };",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    http.hash(&mut hasher);",
+                  "    let result = hasher.finish();",
+                  "    assert_eq!(result, 0); // No output for None case",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let http = Http { inner: Scheme2::Standard(Protocol::Http) };",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    http.hash(&mut hasher);",
+                  "    let result = hasher.finish();",
+                  "    assert_eq!(result, 1); // 1 for HTTP",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let http = Http { inner: Scheme2::Standard(Protocol::Https) };",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    http.hash(&mut hasher);",
+                  "    let result = hasher.finish();",
+                  "    assert_eq!(result, 2); // 2 for HTTPS",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let other_scheme = \"MyCustomScheme\".to_string();",
+                  "    let http = Http { inner: Scheme2::Other(other_scheme.clone()) };",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    http.hash(&mut hasher);",
+                  "    let result = hasher.finish();",
+                  "    ",
+                  "    // Length of \"MyCustomScheme\" is 13",
+                  "    // Hash must consider the length first and then ascii lowercase of 'MyCustomScheme'",
+                  "    assert!(result != 0); // Should produce a non-zero hash, can't specify exact value",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let other_scheme = \"\".to_string();",
+                  "    let http = Http { inner: Scheme2::Other(other_scheme.clone()) };",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    http.hash(&mut hasher);",
+                  "    let result = hasher.finish();",
+                  "    ",
+                  "    // Empty string should only consider its length",
+                  "    assert!(result != 0); // Should produce a non-zero hash, can't specify exact value",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

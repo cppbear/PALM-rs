@@ -1,0 +1,293 @@
+{
+  "name": "once_cell::race::race::OnceRef<'a, T>::get_or_init",
+  "name_with_impl": "once_cell::race::{impl#5}::get_or_init",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:281:5:290:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.get_or_try_init(|| Ok::<&'a T, Void>(f())) matches Err(void) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MyCell<T> {",
+                  "        initialized: bool,",
+                  "        value: Option<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> MyCell<T> {",
+                  "        fn new() -> Self {",
+                  "            MyCell {",
+                  "                initialized: false,",
+                  "                value: None,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F>(&mut self, f: F) -> Result<&T, ()>",
+                  "        where",
+                  "            F: FnOnce() -> T,",
+                  "        {",
+                  "            if self.initialized {",
+                  "                Ok(self.value.as_ref().unwrap())",
+                  "            } else {",
+                  "                let val = f();",
+                  "                self.value = Some(val);",
+                  "                self.initialized = true;",
+                  "                Ok(self.value.as_ref().unwrap())",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_init<F>(&mut self, f: F) -> &T",
+                  "        where",
+                  "            F: FnOnce() -> T,",
+                  "        {",
+                  "            enum Void {}",
+                  "            match self.get_or_try_init(|| Ok::<&T, Void>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell: MyCell<i32> = MyCell::new();",
+                  "    ",
+                  "    // Test that get_or_init initializes the value and returns it.",
+                  "    let value = cell.get_or_init(|| 42);",
+                  "    assert_eq!(*value, 42);",
+                  "",
+                  "    // Test that calling get_or_init again returns the same value without calling f again.",
+                  "    let same_value = cell.get_or_init(|| 21);",
+                  "    assert_eq!(*same_value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:538:58\n    |\n511 |     impl<T> MyCell<T> {\n    |          - found this type parameter\n...\n538 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           -------------- ^^^ expected `&T`, found type parameter `T`\n    |                                           |\n    |                                           arguments to this enum variant are incorrect\n    |\n    = note:   expected reference `&_`\n            found type parameter `_`\nhelp: the type constructed contains `T` due to the type of the argument passed\n   --> src/race.rs:538:43\n    |\n538 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^---^\n    |                                                          |\n    |                                                          this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\nhelp: consider borrowing here\n    |\n538 |             match self.get_or_try_init(|| Ok::<&T, Void>(&f())) {\n    |                                                          +\n\nerror[E0308]: mismatched types\n   --> src/race.rs:538:43\n    |\n511 |     impl<T> MyCell<T> {\n    |          - expected this type parameter\n...\n538 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^ expected type parameter `T`, found `Result<&T, Void>`\n    |\n    = note: expected type parameter `T`\n                         found enum `Result<&T, MyCell<T>::get_or_init::Void>`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MyCell<T> {",
+                  "        initialized: bool,",
+                  "        value: Option<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> MyCell<T> {",
+                  "        fn new() -> Self {",
+                  "            MyCell {",
+                  "                initialized: false,",
+                  "                value: None,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F>(&mut self, f: F) -> Result<&T, ()>",
+                  "        where",
+                  "            F: FnOnce() -> T,",
+                  "        {",
+                  "            if self.initialized {",
+                  "                Err(())",
+                  "            } else {",
+                  "                let val = f();",
+                  "                self.value = Some(val);",
+                  "                self.initialized = true;",
+                  "                Ok(self.value.as_ref().unwrap())",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_init<F>(&mut self, f: F) -> &T",
+                  "        where",
+                  "            F: FnOnce() -> T,",
+                  "        {",
+                  "            enum Void {}",
+                  "            match self.get_or_try_init(|| Ok::<&T, Void>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell: MyCell<i32> = MyCell::new();",
+                  "    ",
+                  "    // Initialize the cell",
+                  "    cell.get_or_init(|| 42);",
+                  "    ",
+                  "    // This should trigger a panic because we're trying to reinitialize.",
+                  "    let _ = cell.get_or_init(|| 21);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:539:58\n    |\n512 |     impl<T> MyCell<T> {\n    |          - found this type parameter\n...\n539 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           -------------- ^^^ expected `&T`, found type parameter `T`\n    |                                           |\n    |                                           arguments to this enum variant are incorrect\n    |\n    = note:   expected reference `&_`\n            found type parameter `_`\nhelp: the type constructed contains `T` due to the type of the argument passed\n   --> src/race.rs:539:43\n    |\n539 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^---^\n    |                                                          |\n    |                                                          this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\nhelp: consider borrowing here\n    |\n539 |             match self.get_or_try_init(|| Ok::<&T, Void>(&f())) {\n    |                                                          +\n\nerror[E0308]: mismatched types\n   --> src/race.rs:539:43\n    |\n512 |     impl<T> MyCell<T> {\n    |          - expected this type parameter\n...\n539 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^ expected type parameter `T`, found `Result<&T, Void>`\n    |\n    = note: expected type parameter `T`\n                         found enum `Result<&T, MyCell<T>::get_or_init::Void>`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.get_or_try_init(|| Ok::<&'a T, Void>(f())) matches Ok(val) is true\n",
+        "// constraint: self.get_or_try_init(|| Ok::<&'a T, Void>(f())) matches Ok(val) is true\n",
+        "// expected return value/type: val\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<T> {",
+                  "        value: Option<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> Cell<T> {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F>(&mut self, f: F) -> Result<&T, ()>",
+                  "        where",
+                  "            F: FnOnce() -> T,",
+                  "        {",
+                  "            if let Some(ref value) = self.value {",
+                  "                Ok(value)",
+                  "            } else {",
+                  "                let val = f();",
+                  "                self.value = Some(val);",
+                  "                Ok(self.value.as_ref().unwrap())",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_init<F>(&mut self, f: F) -> &T",
+                  "        where",
+                  "            F: FnOnce() -> T,",
+                  "        {",
+                  "            enum Void {}",
+                  "            match self.get_or_try_init(|| Ok::<&T, Void>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell: Cell<i32> = Cell::new();",
+                  "    let result = cell.get_or_init(|| 42);",
+                  "    assert_eq!(*result, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:533:58\n    |\n510 |     impl<T> Cell<T> {\n    |          - found this type parameter\n...\n533 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           -------------- ^^^ expected `&T`, found type parameter `T`\n    |                                           |\n    |                                           arguments to this enum variant are incorrect\n    |\n    = note:   expected reference `&_`\n            found type parameter `_`\nhelp: the type constructed contains `T` due to the type of the argument passed\n   --> src/race.rs:533:43\n    |\n533 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^---^\n    |                                                          |\n    |                                                          this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\nhelp: consider borrowing here\n    |\n533 |             match self.get_or_try_init(|| Ok::<&T, Void>(&f())) {\n    |                                                          +\n\nerror[E0308]: mismatched types\n   --> src/race.rs:533:43\n    |\n510 |     impl<T> Cell<T> {\n    |          - expected this type parameter\n...\n533 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^ expected type parameter `T`, found `Result<&T, Void>`\n    |\n    = note: expected type parameter `T`\n                         found enum `Result<&T, llmtests::test_get_or_init_02::Cell<T>::get_or_init::Void>`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<T> {",
+                  "        value: Option<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> Cell<T> {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F>(&mut self, f: F) -> Result<&T, ()>",
+                  "        where",
+                  "            F: FnOnce() -> T,",
+                  "        {",
+                  "            if let Some(ref value) = self.value {",
+                  "                Ok(value)",
+                  "            } else {",
+                  "                let val = f();",
+                  "                self.value = Some(val);",
+                  "                Ok(self.value.as_ref().unwrap())",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_init<F>(&mut self, f: F) -> &T",
+                  "        where",
+                  "            F: FnOnce() -> T,",
+                  "        {",
+                  "            enum Void {}",
+                  "            match self.get_or_try_init(|| Ok::<&T, Void>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell: Cell<i32> = Cell::new();",
+                  "    let _result = cell.get_or_init(|| panic!(\"This function panics\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:534:58\n    |\n511 |     impl<T> Cell<T> {\n    |          - found this type parameter\n...\n534 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           -------------- ^^^ expected `&T`, found type parameter `T`\n    |                                           |\n    |                                           arguments to this enum variant are incorrect\n    |\n    = note:   expected reference `&_`\n            found type parameter `_`\nhelp: the type constructed contains `T` due to the type of the argument passed\n   --> src/race.rs:534:43\n    |\n534 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^---^\n    |                                                          |\n    |                                                          this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\nhelp: consider borrowing here\n    |\n534 |             match self.get_or_try_init(|| Ok::<&T, Void>(&f())) {\n    |                                                          +\n\nerror[E0308]: mismatched types\n   --> src/race.rs:534:43\n    |\n511 |     impl<T> Cell<T> {\n    |          - expected this type parameter\n...\n534 |             match self.get_or_try_init(|| Ok::<&T, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^ expected type parameter `T`, found `Result<&T, Void>`\n    |\n    = note: expected type parameter `T`\n                         found enum `Result<&T, llmtests::test_get_or_init_03::Cell<T>::get_or_init::Void>`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

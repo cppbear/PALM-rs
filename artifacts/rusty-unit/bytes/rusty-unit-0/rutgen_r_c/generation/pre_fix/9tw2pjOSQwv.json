@@ -1,0 +1,252 @@
+{
+  "name": "bytes::bytes::release_shared",
+  "name_with_impl": "bytes::bytes::release_shared",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1564:1:1594:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: (*ptr).ref_cnt.fetch_sub(1, Ordering::Release) != 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null_mut;",
+            "use alloc::boxed::Box;",
+            "use core::sync::atomic::AtomicUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::AtomicUsize;",
+                  "    use alloc::boxed::Box;",
+                  "",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    // Create a Shared instance with a non-zero reference count",
+                  "    let shared = Box::new(Shared {",
+                  "        buf: null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(2), // Set reference count to 2",
+                  "    });",
+                  "",
+                  "    // Convert the Box to a raw pointer",
+                  "    let ptr = Box::into_raw(shared);",
+                  "",
+                  "    unsafe {",
+                  "        // Call release_shared function",
+                  "        release_shared(ptr); // This should decrease ref_cnt to 1 and not drop the shared instance",
+                  "",
+                  "        // Verify that the reference count is still greater than zero",
+                  "        assert_eq!((*ptr).ref_cnt.load(core::sync::atomic::Ordering::Relaxed), 1);",
+                  "",
+                  "        // Cleanup: properly release the reference by calling release_shared again",
+                  "        release_shared(ptr); // This should decrement ref_cnt to 0 and drop the shared instance",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1710:24\n     |\n1710 |         release_shared(ptr); // This should decrease ref_cnt to 1 and not drop the shared instance\n     |         -------------- ^^^ expected `bytes::Shared`, found `Shared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: `Shared` and `bytes::Shared` have similar names, but are actually distinct types\nnote: `Shared` is defined in module `crate::bytes::llmtests` of the current crate\n    --> src/bytes.rs:1692:5\n     |\n1692 |     struct Shared {\n     |     ^^^^^^^^^^^^^\nnote: `bytes::Shared` is defined in module `crate::bytes` of the current crate\n    --> src/bytes.rs:1357:1\n     |\n1357 | struct Shared {\n     | ^^^^^^^^^^^^^\nnote: function defined here\n    --> src/bytes.rs:1564:11\n     |\n1564 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1716:24\n     |\n1716 |         release_shared(ptr); // This should decrement ref_cnt to 0 and drop the shared instance\n     |         -------------- ^^^ expected `bytes::Shared`, found `Shared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: `Shared` and `bytes::Shared` have similar names, but are actually distinct types\nnote: `Shared` is defined in module `crate::bytes::llmtests` of the current crate\n    --> src/bytes.rs:1692:5\n     |\n1692 |     struct Shared {\n     |     ^^^^^^^^^^^^^\nnote: `bytes::Shared` is defined in module `crate::bytes` of the current crate\n    --> src/bytes.rs:1357:1\n     |\n1357 | struct Shared {\n     | ^^^^^^^^^^^^^\nnote: function defined here\n    --> src/bytes.rs:1564:11\n     |\n1564 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::AtomicUsize;",
+                  "    use alloc::boxed::Box;",
+                  "",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    // Create a Shared instance with a reference count of 1",
+                  "    let shared = Box::new(Shared {",
+                  "        buf: null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(1), // Set reference count to 1 for triggering panic",
+                  "    });",
+                  "",
+                  "    // Convert the Box to a raw pointer",
+                  "    let ptr = Box::into_raw(shared);",
+                  "",
+                  "    unsafe {",
+                  "        // Call release_shared function",
+                  "        release_shared(ptr); // This should decrease ref_cnt to 0 and drop the shared instance",
+                  "",
+                  "        // Attempt to access it after it has been dropped (should panic as it's dangling)",
+                  "        let _ = (*ptr).ref_cnt.load(core::sync::atomic::Ordering::Relaxed); // Dangling reference access",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1711:24\n     |\n1711 |         release_shared(ptr); // This should decrease ref_cnt to 0 and drop the shared instance\n     |         -------------- ^^^ expected `bytes::Shared`, found `Shared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: `Shared` and `bytes::Shared` have similar names, but are actually distinct types\nnote: `Shared` is defined in module `crate::bytes::llmtests` of the current crate\n    --> src/bytes.rs:1693:5\n     |\n1693 |     struct Shared {\n     |     ^^^^^^^^^^^^^\nnote: `bytes::Shared` is defined in module `crate::bytes` of the current crate\n    --> src/bytes.rs:1357:1\n     |\n1357 | struct Shared {\n     | ^^^^^^^^^^^^^\nnote: function defined here\n    --> src/bytes.rs:1564:11\n     |\n1564 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: (*ptr).ref_cnt.fetch_sub(1, Ordering::Release) != 1 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use alloc::alloc::dealloc;",
+            "use core::ptr::null_mut;",
+            "use alloc::alloc::alloc;",
+            "use alloc::alloc::Layout;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use alloc::alloc::{alloc, dealloc, Layout};",
+                  "",
+                  "    struct TestShared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn create_shared(capacity: usize) -> *mut TestShared {",
+                  "        let layout = Layout::from_size_align(std::mem::size_of::<TestShared>(), std::mem::align_of::<TestShared>()).unwrap();",
+                  "        let ptr = alloc(layout) as *mut TestShared;",
+                  "",
+                  "        (*ptr) = TestShared {",
+                  "            buf: null_mut(), // No allocation for the buffer since we are testing reference count behavior",
+                  "            cap: capacity,",
+                  "            ref_cnt: AtomicUsize::new(2), // Initialize reference count to 2 to satisfy the test condition",
+                  "        };",
+                  "",
+                  "        ptr",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        let shared_ptr = create_shared(0);",
+                  "",
+                  "        // Call the function, it should not drop the shared object as ref_cnt is 2",
+                  "        release_shared(shared_ptr);",
+                  "",
+                  "        // Verify that the reference count was decremented correctly",
+                  "        assert_eq!((*shared_ptr).ref_cnt.load(Ordering::Relaxed), 1);",
+                  "",
+                  "        // Cleanup: Call release_shared again to clean up",
+                  "        release_shared(shared_ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `dealloc`\n    --> src/bytes.rs:1689:31\n     |\n1689 |     use alloc::alloc::{alloc, dealloc, Layout};\n     |                               ^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1714:24\n     |\n1714 |         release_shared(shared_ptr);\n     |         -------------- ^^^^^^^^^^ expected `*mut Shared`, found `*mut TestShared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: expected raw pointer `*mut bytes::Shared`\n                found raw pointer `*mut TestShared`\nnote: function defined here\n    --> src/bytes.rs:1564:11\n     |\n1564 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1720:24\n     |\n1720 |         release_shared(shared_ptr);\n     |         -------------- ^^^^^^^^^^ expected `*mut Shared`, found `*mut TestShared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: expected raw pointer `*mut bytes::Shared`\n                found raw pointer `*mut TestShared`\nnote: function defined here\n    --> src/bytes.rs:1564:11\n     |\n1564 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use alloc::alloc::{alloc, dealloc, Layout};",
+                  "",
+                  "    struct TestShared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn create_shared(capacity: usize) -> *mut TestShared {",
+                  "        let layout = Layout::from_size_align(std::mem::size_of::<TestShared>(), std::mem::align_of::<TestShared>()).unwrap();",
+                  "        let ptr = alloc(layout) as *mut TestShared;",
+                  "",
+                  "        (*ptr) = TestShared {",
+                  "            buf: null_mut(), // No allocation for the buffer since we are testing reference count behavior",
+                  "            cap: capacity,",
+                  "            ref_cnt: AtomicUsize::new(1), // Initialize reference count to 1 to trigger panic",
+                  "        };",
+                  "",
+                  "        ptr",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        let shared_ptr = create_shared(0);",
+                  "",
+                  "        // Call the function, this should cause a panic on the next release since ref_cnt is 1",
+                  "        release_shared(shared_ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `dealloc`\n    --> src/bytes.rs:1690:31\n     |\n1690 |     use alloc::alloc::{alloc, dealloc, Layout};\n     |                               ^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1715:24\n     |\n1715 |         release_shared(shared_ptr);\n     |         -------------- ^^^^^^^^^^ expected `*mut Shared`, found `*mut TestShared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: expected raw pointer `*mut bytes::Shared`\n                found raw pointer `*mut TestShared`\nnote: function defined here\n    --> src/bytes.rs:1564:11\n     |\n1564 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

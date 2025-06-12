@@ -1,0 +1,123 @@
+type Result<T> = result::Result<T, Error>;
+use std::cell::{Cell, RefCell};
+use std::result;
+use ast::{self, Ast, Span, Visitor};
+use hir::{self, Error, ErrorKind, Hir};
+use unicode::{self, ClassQuery};
+#[derive(Clone, Copy, Default, Eq, PartialEq, PartialOrd, Ord)]
+pub struct ClassBytesRange {
+    start: u8,
+    end: u8,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ClassBytes {
+    set: IntervalSet<ClassBytesRange>,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ClassAsciiKind {
+    /// `[0-9A-Za-z]`
+    Alnum,
+    /// `[A-Za-z]`
+    Alpha,
+    /// `[\x00-\x7F]`
+    Ascii,
+    /// `[ \t]`
+    Blank,
+    /// `[\x00-\x1F\x7F]`
+    Cntrl,
+    /// `[0-9]`
+    Digit,
+    /// `[!-~]`
+    Graph,
+    /// `[a-z]`
+    Lower,
+    /// `[ -~]`
+    Print,
+    /// `[!-/:-@\[-`{-~]`
+    Punct,
+    /// `[\t\n\v\f\r ]`
+    Space,
+    /// `[A-Z]`
+    Upper,
+    /// `[0-9A-Za-z_]`
+    Word,
+    /// `[0-9A-Fa-f]`
+    Xdigit,
+}
+fn hir_ascii_class_bytes(kind: &ast::ClassAsciiKind) -> hir::ClassBytes {
+    let ranges: Vec<_> = ascii_class(kind)
+        .iter()
+        .cloned()
+        .map(|(s, e)| { hir::ClassBytesRange::new(s as u8, e as u8) })
+        .collect();
+    hir::ClassBytes::new(ranges)
+}
+fn ascii_class(kind: &ast::ClassAsciiKind) -> &'static [(char, char)] {
+    use ast::ClassAsciiKind::*;
+    type T = &'static [(char, char)];
+    match *kind {
+        Alnum => {
+            const X: T = &[('0', '9'), ('A', 'Z'), ('a', 'z')];
+            X
+        }
+        Alpha => {
+            const X: T = &[('A', 'Z'), ('a', 'z')];
+            X
+        }
+        Ascii => {
+            const X: T = &[('\x00', '\x7F')];
+            X
+        }
+        Blank => {
+            const X: T = &[(' ', '\t')];
+            X
+        }
+        Cntrl => {
+            const X: T = &[('\x00', '\x1F'), ('\x7F', '\x7F')];
+            X
+        }
+        Digit => {
+            const X: T = &[('0', '9')];
+            X
+        }
+        Graph => {
+            const X: T = &[('!', '~')];
+            X
+        }
+        Lower => {
+            const X: T = &[('a', 'z')];
+            X
+        }
+        Print => {
+            const X: T = &[(' ', '~')];
+            X
+        }
+        Punct => {
+            const X: T = &[('!', '/'), (':', '@'), ('[', '`'), ('{', '~')];
+            X
+        }
+        Space => {
+            const X: T = &[
+                ('\t', '\t'),
+                ('\n', '\n'),
+                ('\x0B', '\x0B'),
+                ('\x0C', '\x0C'),
+                ('\r', '\r'),
+                (' ', ' '),
+            ];
+            X
+        }
+        Upper => {
+            const X: T = &[('A', 'Z')];
+            X
+        }
+        Word => {
+            const X: T = &[('0', '9'), ('A', 'Z'), ('_', '_'), ('a', 'z')];
+            X
+        }
+        Xdigit => {
+            const X: T = &[('0', '9'), ('A', 'F'), ('a', 'f')];
+            X
+        }
+    }
+}

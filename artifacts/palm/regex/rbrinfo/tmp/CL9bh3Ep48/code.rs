@@ -1,0 +1,1 @@
+pub fn find(&self, _haystack: &[u8]) -> Option<Match> { None }

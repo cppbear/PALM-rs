@@ -1,0 +1,82 @@
+// Answer 0
+
+#[test]
+fn test_serialize_tuple_struct_returns_err() {
+    struct TestSerializer;
+    
+    impl core::fmt::Write for TestSerializer {
+        fn write_str(&mut self, _s: &str) -> core::fmt::Result {
+            Ok(())
+        }
+    }
+    
+    impl Serializer for TestSerializer {
+        type Ok = ();
+        type Error = fmt::Error;
+        type SerializeSeq = Impossible<(), fmt::Error>;
+        type SerializeTuple = Impossible<(), fmt::Error>;
+        type SerializeTupleStruct = Impossible<(), fmt::Error>;
+        type SerializeTupleVariant = Impossible<(), fmt::Error>;
+        type SerializeMap = Impossible<(), fmt::Error>;
+        type SerializeStruct = Impossible<(), fmt::Error>;
+        type SerializeStructVariant = Impossible<(), fmt::Error>;
+
+        fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, fmt::Error> {
+            Err(fmt::Error)
+        }
+
+        fn serialize_unit_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str) -> fmt::Result {
+            Ok(())
+        }
+
+        fn serialize_unit(self) -> fmt::Result {
+            Ok(())
+        }
+
+        // Implement other required methods of Trait
+        fn serialize_bytes(self, _v: &[u8]) -> fmt::Result {
+            Ok(())
+        }
+        fn serialize_none(self) -> fmt::Result {
+            Ok(())
+        }
+        fn serialize_some<T>(self, _value: &T) -> fmt::Result
+        where
+            T: ?Sized + Serialize,
+        {
+            Ok(())
+        }
+        fn serialize_newtype_variant<T>(
+            self,
+            _name: &'static str,
+            _variant_index: u32,
+            _variant: &'static str,
+            _value: &T,
+        ) -> fmt::Result
+        where
+            T: ?Sized + Serialize,
+        {
+            Ok(())
+        }
+        fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, fmt::Error> {
+            Err(fmt::Error)
+        }
+        fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, fmt::Error> {
+            Err(fmt::Error)
+        }
+        fn serialize_tuple_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, fmt::Error> {
+            Err(fmt::Error)
+        }
+        fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, fmt::Error> {
+            Err(fmt::Error)
+        }
+        fn serialize_struct_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, fmt::Error> {
+            Err(fmt::Error)
+        }
+    }
+    
+    let serializer = TestSerializer;
+    let result = serializer.serialize_tuple_struct("TestStruct", 2);
+    assert!(result.is_err());
+}
+

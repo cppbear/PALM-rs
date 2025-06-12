@@ -1,0 +1,461 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Eq, Ord)]",
+      "struct TestBound(i32);",
+      "",
+      "impl TestBound {",
+      "    fn increment(&self) -> Self {",
+      "        TestBound(self.0 + 1)",
+      "    }",
+      "",
+      "    fn decrement(&self) -> Self {",
+      "        TestBound(self.0 - 1)",
+      "    }",
+      "}",
+      "",
+      "impl Bound for TestBound {}",
+      "",
+      "#[derive(Clone, Debug, Default, PartialEq, PartialOrd)]",
+      "struct TestInterval {",
+      "    lower: TestBound,",
+      "    upper: TestBound,",
+      "}",
+      "",
+      "impl Interval for TestInterval {",
+      "    type Bound = TestBound;",
+      "",
+      "    fn lower(&self) -> Self::Bound {",
+      "        self.lower",
+      "    }",
+      "",
+      "    fn upper(&self) -> Self::Bound {",
+      "        self.upper",
+      "    }",
+      "",
+      "    fn set_lower(&mut self, bound: Self::Bound) {",
+      "        self.lower = bound;",
+      "    }",
+      "",
+      "    fn set_upper(&mut self, bound: Self::Bound) {",
+      "        self.upper = bound;",
+      "    }",
+      "",
+      "    fn case_fold_simple(&self, _: &mut Vec<Self>) {}",
+      "",
+      "    fn is_contiguous(&self, other: &Self) -> bool {",
+      "        self.lower() <= other.upper() && other.lower() <= self.upper()",
+      "    }",
+      "",
+      "    fn is_intersection_empty(&self, other: &Self) -> bool {",
+      "        self.upper() < other.lower() || self.lower() > other.upper()",
+      "    }",
+      "",
+      "    fn is_subset(&self, other: &Self) -> bool {",
+      "        self.lower() >= other.lower() && self.upper() <= other.upper()",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set_a = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(-100), upper: TestBound(0) },",
+          "        TestInterval { lower: TestBound(10), upper: TestBound(20) },",
+          "    ]);",
+          "    let set_b = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(-50), upper: TestBound(15) },",
+          "    ]);",
+          "    set_a.symmetric_difference(&set_b);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(-100), upper: TestBound(0) }, TestInterval { lower: TestBound(10), upper: TestBound(20) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(-50), upper: TestBound(15) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals(), &[TestInterval { lower: TestBound(-100), upper: TestBound(-51) }, TestInterval { lower: TestBound(16), upper: TestBound(20) }]);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(-100), upper: TestBound(0) },",
+            "        TestInterval { lower: TestBound(10), upper: TestBound(20) },",
+            "    ]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(-50), upper: TestBound(15) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let mut set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(-100), upper: TestBound(0) }, TestInterval { lower: TestBound(10), upper: TestBound(20) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(-50), upper: TestBound(15) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals(), &[TestInterval { lower: TestBound(-100), upper: TestBound(-51) }, TestInterval { lower: TestBound(16), upper: TestBound(20) }]);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set_a = IntervalSet::new(vec![]);",
+          "    let set_b = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(0), upper: TestBound(100) },",
+          "    ]);",
+          "    set_a.symmetric_difference(&set_b);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(0), upper: TestBound(100) },]);",
+            "    assert_eq!(set_a.intervals(), &[]);"
+          ],
+          [
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(0), upper: TestBound(100) },]);",
+            "    assert_eq!(set_b.intervals(), &[TestInterval { lower: TestBound(0), upper: TestBound(100) }]);"
+          ],
+          [
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(0), upper: TestBound(100) },]);",
+            "    assert_eq!(set_a.symmetric_difference(&set_b), set_a.union(&set_b));"
+          ],
+          [
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(0), upper: TestBound(100) },]);",
+            "    set_a.push(TestInterval { lower: TestBound(0), upper: TestBound(100) });",
+            "    assert_eq!(set_a.intervals(), &[TestInterval { lower: TestBound(0), upper: TestBound(100) }]);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(0), upper: TestBound(100) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(0), upper: TestBound(100) },]);",
+            "    assert_eq!(set_a.intervals(), &[]);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(0), upper: TestBound(100) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(0), upper: TestBound(100) },]);",
+            "    assert_eq!(set_b.intervals(), &[TestInterval { lower: TestBound(0), upper: TestBound(100) }]);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(0), upper: TestBound(100) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(0), upper: TestBound(100) },]);",
+            "    assert_eq!(set_a.symmetric_difference(&set_b), set_a.union(&set_b));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(0), upper: TestBound(100) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let mut set_a = IntervalSet::new(vec![]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(0), upper: TestBound(100) },]);",
+            "    set_a.push(TestInterval { lower: TestBound(0), upper: TestBound(100) });",
+            "    assert_eq!(set_a.intervals(), &[TestInterval { lower: TestBound(0), upper: TestBound(100) }]);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set_a = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(1), upper: TestBound(3) },",
+          "        TestInterval { lower: TestBound(5), upper: TestBound(7) },",
+          "    ]);",
+          "    let set_b = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(2), upper: TestBound(6) },",
+          "    ]);",
+          "    set_a.symmetric_difference(&set_b);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(1), upper: TestBound(3) }, TestInterval { lower: TestBound(5), upper: TestBound(7) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(2), upper: TestBound(6) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals(), &[TestInterval { lower: TestBound(1), upper: TestBound(1) }, TestInterval { lower: TestBound(4), upper: TestBound(6) }, TestInterval { lower: TestBound(7), upper: TestBound(7) }]);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(1), upper: TestBound(3) },",
+            "        TestInterval { lower: TestBound(5), upper: TestBound(7) },",
+            "    ]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(2), upper: TestBound(6) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let mut set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(1), upper: TestBound(3) }, TestInterval { lower: TestBound(5), upper: TestBound(7) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(2), upper: TestBound(6) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals(), &[TestInterval { lower: TestBound(1), upper: TestBound(1) }, TestInterval { lower: TestBound(4), upper: TestBound(6) }, TestInterval { lower: TestBound(7), upper: TestBound(7) }]);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set_a = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(100), upper: TestBound(200) },",
+          "    ]);",
+          "    let set_b = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(150), upper: TestBound(250) },",
+          "    ]);",
+          "    set_a.symmetric_difference(&set_b);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(100), upper: TestBound(200) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(150), upper: TestBound(250) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals(), &[TestInterval { lower: TestBound(100), upper: TestBound(149) }, TestInterval { lower: TestBound(201), upper: TestBound(250) }]);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(100), upper: TestBound(200) },",
+            "    ]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(150), upper: TestBound(250) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let mut set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(100), upper: TestBound(200) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(150), upper: TestBound(250) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals(), &[TestInterval { lower: TestBound(100), upper: TestBound(149) }, TestInterval { lower: TestBound(201), upper: TestBound(250) }]);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set_a = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(500), upper: TestBound(600) },",
+          "    ]);",
+          "    let set_b = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(600), upper: TestBound(700) },",
+          "    ]);",
+          "    set_a.symmetric_difference(&set_b);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let expected_set_a = IntervalSet::new(vec![",
+            "    TestInterval { lower: TestBound(500), upper: TestBound(600) },",
+            "    TestInterval { lower: TestBound(600), upper: TestBound(700) },",
+            "    ]);",
+            "    assert_eq!(set_a, expected_set_a);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(500), upper: TestBound(600) },",
+            "    ]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(600), upper: TestBound(700) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let expected_set_a = IntervalSet::new(vec![",
+            "    TestInterval { lower: TestBound(500), upper: TestBound(600) },",
+            "    TestInterval { lower: TestBound(600), upper: TestBound(700) },",
+            "    ]);",
+            "    assert_eq!(set_a, expected_set_a);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut set_a = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(-1000), upper: TestBound(-900) },",
+          "    ]);",
+          "    let set_b = IntervalSet::new(vec![",
+          "        TestInterval { lower: TestBound(-950), upper: TestBound(-850) },",
+          "    ]);",
+          "    set_a.symmetric_difference(&set_b);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(-1000), upper: TestBound(-900) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(-950), upper: TestBound(-850) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals().len(), 2);"
+          ],
+          [
+            "    let set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(-1000), upper: TestBound(-900) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(-950), upper: TestBound(-850) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals()[0], TestInterval { lower: TestBound(-1000), upper: TestBound(-951) });"
+          ],
+          [
+            "    let set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(-1000), upper: TestBound(-900) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(-950), upper: TestBound(-850) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals()[1], TestInterval { lower: TestBound(-849), upper: TestBound(-900) });"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(-1000), upper: TestBound(-900) },",
+            "    ]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(-950), upper: TestBound(-850) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(-1000), upper: TestBound(-900) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(-950), upper: TestBound(-850) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals().len(), 2);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(-1000), upper: TestBound(-900) },",
+            "    ]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(-950), upper: TestBound(-850) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(-1000), upper: TestBound(-900) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(-950), upper: TestBound(-850) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals()[0], TestInterval { lower: TestBound(-1000), upper: TestBound(-951) });",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut set_a = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(-1000), upper: TestBound(-900) },",
+            "    ]);",
+            "    let set_b = IntervalSet::new(vec![",
+            "        TestInterval { lower: TestBound(-950), upper: TestBound(-850) },",
+            "    ]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    let set_a = IntervalSet::new(vec![TestInterval { lower: TestBound(-1000), upper: TestBound(-900) }]);",
+            "    let set_b = IntervalSet::new(vec![TestInterval { lower: TestBound(-950), upper: TestBound(-850) }]);",
+            "    set_a.symmetric_difference(&set_b);",
+            "    assert_eq!(set_a.intervals()[1], TestInterval { lower: TestBound(-849), upper: TestBound(-900) });",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,472 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Debug)]",
+      "struct TestRng {",
+      "    value: u32,",
+      "}",
+      "",
+      "impl RngCore for TestRng {",
+      "    fn next_u32(&mut self) -> u32 {",
+      "        self.value",
+      "    }",
+      "",
+      "    fn next_u64(&mut self) -> u64 {",
+      "        0",
+      "    }",
+      "",
+      "    fn fill_bytes(&mut self, dst: &mut [u8]) {",
+      "        for byte in dst.iter_mut() {",
+      "            *byte = 0;",
+      "        }",
+      "    }",
+      "}",
+      "",
+      "impl TryRngCore for TestRng {",
+      "    type Error = &'static str;",
+      "",
+      "    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {",
+      "        Ok(self.next_u32())",
+      "    }",
+      "",
+      "    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {",
+      "        Ok(self.next_u64())",
+      "    }",
+      "",
+      "    fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Self::Error> {",
+      "        self.fill_bytes(dst);",
+      "        Ok(())",
+      "    }",
+      "}",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "#[should_panic]",
+      "fn test_reborrow_with_invalid_rng() {",
+      "    let rng: Option<TestRng> = None;",
+      "    let mut unwrap_mut = rng.unwrap_mut();",
+      "    let new_ref = unwrap_mut.re();",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = TestRng { value: 42 };",
+          "    let mut unwrap_mut = rng.unwrap_mut();",
+          "    let new_ref = unwrap_mut.re();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert_eq!(unwrap_mut.0.value, 42);"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(matches!(new_ref, UnwrapMut(_)));"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(new_ref.0 as *const _ == unwrap_mut.0 as *const _);"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(std::ptr::eq(new_ref.0, unwrap_mut.0));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut rng = TestRng { value: 42 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert_eq!(unwrap_mut.0.value, 42);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 42 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(matches!(new_ref, UnwrapMut(_)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 42 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(new_ref.0 as *const _ == unwrap_mut.0 as *const _);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 42 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(std::ptr::eq(new_ref.0, unwrap_mut.0));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = TestRng { value: 10 };",
+          "    let mut unwrap_mut = rng.unwrap_mut();",
+          "    for _ in 0..5 {",
+          "        let new_ref = unwrap_mut.re();",
+          "    }",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(rng.is_none());"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 10 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    for _ in 0..5 {",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert_eq!(new_ref.0.value, 10);"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 10 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    for _ in 0..5 {",
+            "    let new_ref = unwrap_mut.re();",
+            "    }",
+            "    assert!(unwrap_mut.0.value == 10);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut rng = TestRng { value: 10 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    for _ in 0..5 {",
+            "        let new_ref = unwrap_mut.re();",
+            "    }",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(rng.is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 10 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    for _ in 0..5 {",
+            "        let new_ref = unwrap_mut.re();",
+            "    }",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 10 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    for _ in 0..5 {",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert_eq!(new_ref.0.value, 10);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 10 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    for _ in 0..5 {",
+            "        let new_ref = unwrap_mut.re();",
+            "    }",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 10 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    for _ in 0..5 {",
+            "    let new_ref = unwrap_mut.re();",
+            "    }",
+            "    assert!(unwrap_mut.0.value == 10);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = TestRng { value: 100 };",
+          "    let mut unwrap_mut = rng.unwrap_mut();",
+          "    let new_ref = unwrap_mut.re();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    assert!(unwrap_mut.is_err());"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(std::mem::size_of::<UnwrapMut<TestRng>>() == std::mem::size_of::<&TestRng>());"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 100 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(!std::ptr::eq(&*unwrap_mut.0, &*new_ref.0));"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 100 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(new_ref.0.value == 100);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut rng = TestRng { value: 100 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    assert!(unwrap_mut.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 100 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(std::mem::size_of::<UnwrapMut<TestRng>>() == std::mem::size_of::<&TestRng>());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 100 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 100 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(!std::ptr::eq(&*unwrap_mut.0, &*new_ref.0));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 100 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 100 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert!(new_ref.0.value == 100);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = TestRng { value: 7 };",
+          "    let mut unwrap_mut = rng.unwrap_mut();",
+          "    {",
+          "        let new_ref = unwrap_mut.re();",
+          "    }",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    assert!(unwrap_mut.is_none());"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert_eq!(new_ref.0, rng);"
+          ],
+          [
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 7 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert_eq!(new_ref.0.value, 7);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut rng = TestRng { value: 7 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    {",
+            "        let new_ref = unwrap_mut.re();",
+            "    }",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    assert!(unwrap_mut.is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 7 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    {",
+            "        let new_ref = unwrap_mut.re();",
+            "    }",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert_eq!(new_ref.0, rng);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { value: 7 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    {",
+            "        let new_ref = unwrap_mut.re();",
+            "    }",
+            "    let rng: Option<TestRng> = None;",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    let mut rng = TestRng { value: 7 };",
+            "    let mut unwrap_mut = rng.unwrap_mut();",
+            "    let new_ref = unwrap_mut.re();",
+            "    assert_eq!(new_ref.0.value, 7);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

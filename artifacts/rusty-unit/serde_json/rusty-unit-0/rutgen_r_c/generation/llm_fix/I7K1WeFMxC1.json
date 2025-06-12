@@ -1,0 +1,177 @@
+{
+  "name": "serde_json::value::de::<value::de::VariantDeserializer as serde::de::VariantAccess<'de>>::newtype_variant_seed",
+  "name_with_impl": "serde_json::value::de::{impl#7}::newtype_variant_seed",
+  "mod_info": {
+    "name": "value::de",
+    "loc": "src/value/mod.rs:927:1:927:8"
+  },
+  "visible": true,
+  "loc": "src/value/de.rs:556:5:567:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.value matches Some(value) is true\n",
+        "// constraint: self.value matches Some(value) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use serde::de::DeserializeSeed;",
+            "use serde::Deserialize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use serde::de::DeserializeSeed;",
+                  "    use serde::Deserialize;",
+                  "",
+                  "    #[derive(Deserialize)]",
+                  "    struct TestStruct {",
+                  "        value: String,",
+                  "    }",
+                  "",
+                  "    struct TestSeed;",
+                  "",
+                  "    impl<'de> DeserializeSeed<'de> for TestSeed {",
+                  "        type Value = TestStruct;",
+                  "",
+                  "        fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>",
+                  "        where",
+                  "            D: serde::Deserializer<'de>,",
+                  "        {",
+                  "            TestStruct::deserialize(deserializer)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let deserialized_value = Value::String(String::from(\"test string\"));",
+                  "    let variant_deserializer = VariantDeserializer {",
+                  "        value: Some(deserialized_value),",
+                  "    };",
+                  "",
+                  "    let seed = TestSeed;",
+                  "    let result = variant_deserializer.newtype_variant_seed(seed);",
+                  "    assert!(result.is_ok());",
+                  "    let test_struct = result.unwrap();",
+                  "    assert_eq!(test_struct.value, \"test string\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"invalid type: unit variant, expected newtype variant\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestSeed;",
+                  "",
+                  "    impl<'de> DeserializeSeed<'de> for TestSeed {",
+                  "        type Value = String;",
+                  "",
+                  "        fn deserialize<D>(self, _deserializer: D) -> Result<Self::Value, D::Error>",
+                  "        where",
+                  "            D: serde::Deserializer<'de>,",
+                  "        {",
+                  "            Ok(String::from(\"dummy\"))",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let variant_deserializer = VariantDeserializer {",
+                  "        value: None,",
+                  "    };",
+                  "",
+                  "    let seed = TestSeed;",
+                  "    let _result = variant_deserializer.newtype_variant_seed(seed); // This should trigger a panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.value matches None is true\n",
+        "// expected return value/type: Err(serde::de::Error::invalid_type(\n                Unexpected::UnitVariant,\n                &\"newtype variant\",\n            ))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Seed;",
+                  "    ",
+                  "    impl<'de> DeserializeSeed<'de> for Seed {",
+                  "        type Value = i32;",
+                  "        ",
+                  "        fn deserialize<D>(self, _deserializer: D) -> Result<Self::Value, Error>",
+                  "        where",
+                  "            D: Deserializer<'de>,",
+                  "        {",
+                  "            Ok(42) // stub implementation, not used in this test",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let variant_deserializer = VariantDeserializer { value: None };",
+                  "    let result: Result<i32, Error> = variant_deserializer.newtype_variant_seed(Seed);",
+                  "    ",
+                  "    assert!(result.is_err());",
+                  "    let error = result.err().unwrap();",
+                  "    assert_eq!(error, serde::de::Error::invalid_type(Unexpected::UnitVariant, &\"newtype variant\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0405]: cannot find trait `Deserializer` in this scope\n    --> src/value/de.rs:1518:16\n     |\n1518 |             D: Deserializer<'de>,\n     |                ^^^^^^^^^^^^\n     |\n    ::: /home/abezbm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.219/src/de/mod.rs:541:1\n     |\n541  | pub trait Deserialize<'de>: Sized {\n     | --------------------------------- similarly named trait `Deserialize` defined here\n     |\nhelp: a trait with a similar name exists\n     |\n1518 |             D: Deserialize<'de>,\n     |                ~~~~~~~~~~~\nhelp: consider importing one of these traits\n     |\n1503 +    use crate::value::de::de::Deserializer;\n     |\n1503 +    use serde::Deserializer;\n     |\n\nFor more information about this error, try `rustc --explain E0405`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

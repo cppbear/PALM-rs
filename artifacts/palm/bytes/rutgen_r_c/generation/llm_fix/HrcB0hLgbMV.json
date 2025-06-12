@@ -1,0 +1,221 @@
+{
+  "name": "bytes::buf::buf_mut::<alloc::vec::Vec<u8> as buf::buf_mut::BufMut>::chunk_mut",
+  "name_with_impl": "bytes::buf::buf_mut::{impl#4}::chunk_mut",
+  "mod_info": {
+    "name": "buf::buf_mut",
+    "loc": "src/buf/mod.rs:18:1:18:13"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_mut.rs:1623:5:1636:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.capacity() == self.len() is true\n",
+        "// expected return value/type: unsafe { UninitSlice::from_raw_parts_mut(ptr.add(len), cap - len) }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut vec = Vec::with_capacity(64);",
+                  "    vec.push(0); // Initialize to avoid panic on empty vector",
+                  "",
+                  "    let result = unsafe { vec.chunk_mut() };",
+                  "    assert_eq!(result.len(), 63); // 64 - 1 (the element pushed)",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut vec: Vec<u8> = Vec::with_capacity(1);",
+                  "    vec.push(1); // Fill to make it full",
+                  "",
+                  "    let result = unsafe { vec.chunk_mut() };",
+                  "    assert_eq!(result.len(), 63); // 64 - 1 (the element pushed)",
+                  "",
+                  "    // Ensure the pointer can be accessed and used",
+                  "    result.copy_from_slice(&[2; 63]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut vec: Vec<u8> = Vec::with_capacity(2);",
+                  "    vec.push(1); // Fill one slot",
+                  "    vec.push(2); // Fill second slot",
+                  "",
+                  "    let result = unsafe { vec.chunk_mut() };",
+                  "    assert_eq!(result.len(), 62); // 64 - 2 (two elements pushed)",
+                  "",
+                  "    // Ensure writing to the new chunk works",
+                  "    result.copy_from_slice(&[3; 62]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut vec: Vec<u8> = Vec::with_capacity(0);",
+                  "    unsafe { vec.chunk_mut() }; // This should cause reserve to be invoked",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.capacity() == self.len() is false\n",
+        "// expected return value/type: unsafe { UninitSlice::from_raw_parts_mut(ptr.add(len), cap - len) }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut vec: Vec<u8> = Vec::with_capacity(64);",
+                  "    vec.push(1);",
+                  "    vec.push(2);",
+                  "    vec.push(3);",
+                  "",
+                  "   let uninit_slice: &mut UninitSlice = vec.chunk_mut();",
+                  "   assert_eq!(uninit_slice.len(), vec.capacity() - vec.len());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut vec: Vec<u8> = Vec::with_capacity(64);",
+                  "",
+                  "   let uninit_slice: &mut UninitSlice = vec.chunk_mut();",
+                  "   assert_eq!(uninit_slice.len(), vec.capacity() - vec.len());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let mut vec: Vec<u8> = Vec::new();",
+                  "   vec.reserve(3); // Ensure capacity is 3",
+                  " ",
+                  "   let uninit_slice: &mut UninitSlice = vec.chunk_mut();",
+                  "   assert_eq!(uninit_slice.len(), vec.capacity() - vec.len());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

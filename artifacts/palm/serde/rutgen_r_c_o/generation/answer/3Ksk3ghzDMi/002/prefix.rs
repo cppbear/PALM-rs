@@ -1,0 +1,82 @@
+// Answer 0
+
+#[test]
+fn test_deserialize_integer_i64_valid() {
+    let content = Content::I64(42);
+    let deserializer = ContentDeserializer { content, err: PhantomData };
+    // Create a visitor for i64
+    struct TestVisitor {
+        value: Option<i64>,
+    }
+    
+    impl<'de> Visitor<'de> for TestVisitor {
+        type Value = Option<i64>;
+    
+        fn visit_i64(self, value: i64) -> Result<Self::Value, Self::Error> {
+            Ok(Some(value))
+        }
+        
+        // Implement other required visitor methods
+        fn visit_u8(self, _: u8) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_u16(self, _: u16) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_u32(self, _: u32) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_u64(self, _: u64) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_i8(self, _: i8) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_i16(self, _: i16) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_f32(self, _: f32) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_f64(self, _: f64) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_char(self, _: char) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_str(self, _: &str) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_string(self, _: String) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_bytes(self, _: &'de [u8]) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_byte_buf(self, _: Vec<u8>) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_unit(self) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_none(self) -> Result<Self::Value, Self::Error> { unimplemented!() }
+        fn visit_some<V>(self, _: V) -> Result<Self::Value, Self::Error> where V: Visitor<'de> { unimplemented!() }
+        fn visit_seq<V>(self, _: V) -> Result<Self::Value, Self::Error> where V: SeqAccess<'de> { unimplemented!() }
+        fn visit_map<V>(self, _: V) -> Result<Self::Value, Self::Error> where V: MapAccess<'de> { unimplemented!() }
+    }
+
+    let _result = deserializer.deserialize_integer(TestVisitor { value: None });
+}
+
+#[test]
+fn test_deserialize_integer_i64_min() {
+    let content = Content::I64(-9223372036854775808);
+    let deserializer = ContentDeserializer { content, err: PhantomData };
+    struct TestVisitor {
+        value: Option<i64>,
+    }
+    
+    impl<'de> Visitor<'de> for TestVisitor {
+        type Value = Option<i64>;
+    
+        fn visit_i64(self, value: i64) -> Result<Self::Value, Self::Error> {
+            Ok(Some(value))
+        }
+        // Implement other required visitor methods as above...
+    }
+
+    let _result = deserializer.deserialize_integer(TestVisitor { value: None });
+}
+
+#[test]
+fn test_deserialize_integer_i64_max() {
+    let content = Content::I64(9223372036854775807);
+    let deserializer = ContentDeserializer { content, err: PhantomData };
+    struct TestVisitor {
+        value: Option<i64>,
+    }
+    
+    impl<'de> Visitor<'de> for TestVisitor {
+        type Value = Option<i64>;
+    
+        fn visit_i64(self, value: i64) -> Result<Self::Value, Self::Error> {
+            Ok(Some(value))
+        }
+        // Implement other required visitor methods as above...
+    }
+
+    let _result = deserializer.deserialize_integer(TestVisitor { value: None });
+}
+

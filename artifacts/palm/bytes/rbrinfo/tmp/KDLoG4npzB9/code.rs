@@ -1,0 +1,1 @@
+fn _split_off_must_use() {}

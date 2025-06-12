@@ -1,0 +1,483 @@
+{
+  "name": "strsim::GrowingHashmapChar<ValueType>::get_mut",
+  "name_with_impl": "strsim::{impl#5}::get_mut",
+  "mod_info": {
+    "name": "",
+    "loc": "src/lib.rs:1:1:1307:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:471:5:500:6",
+  "fn_tests": [
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.map.is_none() is true\n",
+        "// may panic: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\") may panic in certain situations\n",
+        "// may panic: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\")[i] may panic in certain situations\n",
+        "// constraint: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\")[i]\n            .value\n            == Default::default() is false\n",
+        "// may panic: self\n            .map\n            .as_mut()\n            .expect(\"map should have been created above\") may panic in certain situations\n",
+        "// may panic: self\n            .map\n            .as_mut()\n            .expect(\"map should have been created above\")[i] may panic in certain situations\n",
+        "// expected return value/type: &mut elem.value\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Clone, Copy, PartialEq, Eq)]  ",
+                  "   struct TestValue {  ",
+                  "       value: i32,  ",
+                  "   }  ",
+                  "   impl Default for TestValue {  ",
+                  "       fn default() -> Self {  ",
+                  "           TestValue { value: -1 } // Assign a unique default value  ",
+                  "       }  ",
+                  "   }  ",
+                  " ",
+                  "   let mut map: GrowingHashmapChar<TestValue> = GrowingHashmapChar {  ",
+                  "       used: 0,  ",
+                  "       fill: 0,  ",
+                  "       mask: 0,  ",
+                  "       map: None,  ",
+                  "   };  ",
+                  " ",
+                  "   let v = map.get_mut(1);  ",
+                  "   v.value = 42; // Set value through mutable reference  ",
+                  " ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Clone, Copy, Eq, PartialEq)]",
+                  "   struct TestValue {",
+                  "       value: i32,",
+                  "   }",
+                  "   impl Default for TestValue {",
+                  "       fn default() -> Self {",
+                  "           TestValue { value: -1 }",
+                  "       }",
+                  "   }",
+                  "",
+                  "    let mut map: GrowingHashmapChar<TestValue> = GrowingHashmapChar {",
+                  "        used: 0,",
+                  "        fill: 0,",
+                  "        mask: 0,",
+                  "        map: None,",
+                  "    };",
+                  "",
+                  "    // Adding elements to trigger resizing",
+                  "    for i in 0..7 {",
+                  "        let v = map.get_mut(i);",
+                  "        v.value = i as i32;",
+                  "    }",
+                  "",
+                  "    // Before reaching resize threshold",
+                  "    assert_eq!(map.used, 7);",
+                  "    assert_eq!(map.fill, 7);",
+                  "",
+                  "    // Last insertion should trigger resize",
+                  "    let v = map.get_mut(7);",
+                  "    v.value = 100;",
+                  "",
+                  "    assert_eq!(v.value, 100);",
+                  "    assert!(map.used > 7); // Check that resizing has occurred",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Clone, Copy, PartialEq, Eq)]",
+                  "   struct TestValue {",
+                  "       value: i32,",
+                  "   }",
+                  "   impl Default for TestValue {",
+                  "       fn default() -> Self {",
+                  "           TestValue { value: -1 }",
+                  "       }",
+                  "   }",
+                  "",
+                  "    let mut map: GrowingHashmapChar<TestValue> = GrowingHashmapChar {",
+                  "        used: 0,",
+                  "        fill: 0,",
+                  "        mask: 0,",
+                  "        map: None,",
+                  "    };",
+                  "",
+                  "    // This should cause a panic because the index is invalid (out of bounds)",
+                  "    let _ = map.get_mut(9999);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: self.map.is_none() is false\n",
+        "// may panic: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\") may panic in certain situations\n",
+        "// may panic: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\")[i] may panic in certain situations\n",
+        "// constraint: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\")[i]\n            .value\n            == Default::default() is true\n",
+        "// constraint: self.fill * 3 >= (self.mask + 1) * 2 is true, with bound self.fill * 3 == (self.mask + 1) * 2\n",
+        "// may panic: self\n            .map\n            .as_mut()\n            .expect(\"map should have been created above\") may panic in certain situations\n",
+        "// may panic: self\n            .map\n            .as_mut()\n            .expect(\"map should have been created above\")[i] may panic in certain situations\n",
+        "// expected return value/type: &mut elem.value\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Clone, Copy, Default, Eq, PartialEq)]",
+                  "   struct TestValue(u32);",
+                  "   ",
+                  "    let mut hashmap: GrowingHashmapChar<TestValue> = GrowingHashmapChar {",
+                  "        used: 0,",
+                  "        fill: 0,",
+                  "        mask: 0,",
+                  "        map: None,",
+                  "    };",
+                  "",
+                  "    let value_ref: &mut TestValue = hashmap.get_mut(1);",
+                  "    value_ref.0 = 42;",
+                  "",
+                  "    assert_eq!(value_ref.0, 42);",
+                  "    assert_eq!(hashmap.used, 1);",
+                  "    assert_eq!(hashmap.fill, 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  #[derive(Default, Clone, Copy, Eq, PartialEq)]",
+                  "  struct TestValue(u32);",
+                  "  ",
+                  "   let mut hashmap: GrowingHashmapChar<TestValue> = GrowingHashmapChar {",
+                  "       used: 0,",
+                  "       fill: 0,",
+                  "       mask: 7,",
+                  "       map: Some(vec![GrowingHashmapMapElemChar::<TestValue>::default(); 8]),",
+                  "   };",
+                  "    // Manually set the map to a value that satisfies the conditions",
+                  "    hashmap.fill = 5; // Fill should now be 5",
+                  "    hashmap.used = 5; // Assume we have previously filled 5 slots",
+                  "",
+                  "    let value_ref: &mut TestValue = hashmap.get_mut(2);",
+                  "    value_ref.0 = 50;",
+                  "",
+                  "    assert_eq!(value_ref.0, 50);",
+                  "    assert_eq!(hashmap.used, 6);",
+                  "    assert_eq!(hashmap.fill, 6);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut hashmap: GrowingHashmapChar<u32> = GrowingHashmapChar {",
+                  "        used: 0,",
+                  "        fill: 0,",
+                  "        mask: 0,",
+                  "        map: None,",
+                  "    };",
+                  "",
+                  "    let _value_ref: &mut u32 = hashmap.get_mut(3); // This should trigger an allocation",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Clone, Copy, Default, Eq, PartialEq)]  ",
+                  "   struct TestValue(u32);  ",
+                  "   ",
+                  "   let mut hashmap: GrowingHashmapChar<TestValue> = GrowingHashmapChar {  ",
+                  "        used: 0,",
+                  "        fill: 0,",
+                  "        mask: 7,",
+                  "        map: Some(vec![GrowingHashmapMapElemChar::default(); 8]),",
+                  "    };",
+                  "",
+                  "    let _value_ref: &mut TestValue = hashmap.get_mut(1);",
+                  "    ",
+                  "    // Fill the map to avoid panic on empty slot",
+                  "    hashmap.fill = 5; ",
+                  "    hashmap.used = 5;",
+                  "",
+                  "    // Accessing a key that isn't present will now panic when attempting to access the empty slot",
+                  "    let _value_ref2: &mut TestValue = hashmap.get_mut(6);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "// constraint: self.map.is_none() is false\n",
+        "// may panic: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\") may panic in certain situations\n",
+        "// may panic: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\")[i] may panic in certain situations\n",
+        "// constraint: self\n            .map\n            .as_ref()\n            .expect(\"map should have been created above\")[i]\n            .value\n            == Default::default() is true\n",
+        "// constraint: self.fill * 3 >= (self.mask + 1) * 2 is false\n",
+        "// may panic: self\n            .map\n            .as_mut()\n            .expect(\"map should have been created above\") may panic in certain situations\n",
+        "// may panic: self\n            .map\n            .as_mut()\n            .expect(\"map should have been created above\")[i] may panic in certain situations\n",
+        "// expected return value/type: &mut elem.value\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut hashmap: GrowingHashmapChar<i32> = GrowingHashmapChar {",
+                  "        used: 0,",
+                  "        fill: 0,",
+                  "        mask: 0,",
+                  "        map: None,",
+                  "    };",
+                  "",
+                  "    let value = hashmap.get_mut(1);",
+                  "    *value = 10;",
+                  "",
+                  "    assert_eq!(hashmap.get(1), 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let mut hashmap: GrowingHashmapChar<u32> = GrowingHashmapChar {  ",
+                  "       used: 0,  ",
+                  "       fill: 0,  ",
+                  "       mask: 0,  ",
+                  "       map: None,  ",
+                  "   };  ",
+                  " ",
+                  "   for i in 1..6 {  ",
+                  "       let value = hashmap.get_mut(i);  ",
+                  "       *value = (i * 10) as u32;  ",
+                  "    }",
+                  "",
+                  "    // Verify that the values are correctly updated.",
+                  "   for i in 1..6 {  ",
+                  "       assert_eq!(hashmap.get(i), (i * 10) as u32);  ",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let mut hashmap: GrowingHashmapChar<i32> = GrowingHashmapChar {  ",
+                  "       used: 0,  ",
+                  "       fill: 0,  ",
+                  "       mask: 0,  ",
+                  "       map: None,  ",
+                  "   };  ",
+                  " ",
+                  "   // Filling up the hashmap to trigger resizing.  ",
+                  "   for i in 1..=6 {  ",
+                  "       let value = hashmap.get_mut(i);  ",
+                  "       *value = (i * 20) as i32;  ",
+                  "   }  ",
+                  " ",
+                  "   // Check that values have persisted after resizing.  ",
+                  "   for i in 1..=6 {",
+                  "       assert_eq!(hashmap.get(i), (i * 20).try_into().unwrap());",
+                  "   }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut hashmap: GrowingHashmapChar<i32> = GrowingHashmapChar {",
+                  "        used: 0,",
+                  "        fill: 0,",
+                  "        mask: 0,",
+                  "        map: None,",
+                  "    };",
+                  "",
+                  "    let _value = hashmap.get_mut(1);",
+                  "    *(_value); // Trigger panic by accessing a default value.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,441 @@
+{
+  "name": "http::header::map::header::map::HeaderMap<T>::try_grow",
+  "name_with_impl": "http::header::map::{impl#1}::try_grow",
+  "mod_info": {
+    "name": "header::map",
+    "loc": "src/header/mod.rs:73:1:73:9"
+  },
+  "visible": false,
+  "loc": "src/header/map.rs:1735:5:1772:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: new_raw_cap > MAX_SIZE is true\n",
+        "// expected return value/type: Err(MaxSizeReached::new())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestHeaderMap {",
+                  "        mask: Size,",
+                  "        indices: Box<[Pos]>,",
+                  "        entries: Vec<Bucket<HeaderValue>>,",
+                  "        danger: Danger,",
+                  "    }",
+                  "",
+                  "    impl TestHeaderMap {",
+                  "        fn new(capacity: usize) -> Self {",
+                  "            TestHeaderMap {",
+                  "                mask: capacity as Size,",
+                  "                indices: vec![Pos::none(); capacity].into_boxed_slice(),",
+                  "                entries: Vec::new(),",
+                  "                danger: Danger::Green,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn try_grow(&mut self, new_raw_cap: usize) -> Result<(), MaxSizeReached> {",
+                  "            if new_raw_cap > MAX_SIZE {",
+                  "                return Err(MaxSizeReached::new());",
+                  "            }",
+                  "",
+                  "            // find first ideally placed element -- start of cluster",
+                  "            let mut first_ideal = 0;",
+                  "",
+                  "            for (i, pos) in self.indices.iter().enumerate() {",
+                  "                if let Some((_, entry_hash)) = pos.resolve() {",
+                  "                    if 0 == probe_distance(self.mask, entry_hash, i) {",
+                  "                        first_ideal = i;",
+                  "                        break;",
+                  "                    }",
+                  "                }",
+                  "            }",
+                  "",
+                  "            // visit the entries in an order where we can simply reinsert them",
+                  "            // into self.indices without any bucket stealing.",
+                  "            let old_indices = mem::replace(",
+                  "                &mut self.indices,",
+                  "                vec![Pos::none(); new_raw_cap].into_boxed_slice(),",
+                  "            );",
+                  "            self.mask = new_raw_cap.wrapping_sub(1) as Size;",
+                  "",
+                  "            for &pos in &old_indices[first_ideal..] {",
+                  "                self.reinsert_entry_in_order(pos);",
+                  "            }",
+                  "",
+                  "            for &pos in &old_indices[..first_ideal] {",
+                  "                self.reinsert_entry_in_order(pos);",
+                  "            }",
+                  "",
+                  "            // Reserve additional entry slots",
+                  "            let more = self.capacity() - self.entries.len();",
+                  "            self.entries.reserve_exact(more);",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn reinsert_entry_in_order(&mut self, _pos: Pos) {}",
+                  "        fn capacity(&self) -> usize {",
+                  "            self.indices.len()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut header_map = TestHeaderMap::new(16);",
+                  "    let new_capacity = 32768; // greater than MAX_SIZE (which is 32768)",
+                  "    ",
+                  "    assert!(header_map.try_grow(new_capacity).is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 9,
+      "prompt_conds": [
+        "// constraint: new_raw_cap > MAX_SIZE is false, with bound new_raw_cap == MAX_SIZE\n",
+        "// constraint: (i, pos) in self.indices.iter().enumerate() is true\n",
+        "// constraint: let Some((_, entry_hash)) = pos.resolve() is true\n",
+        "// constraint: 0 == probe_distance(self.mask, entry_hash, i) is false\n",
+        "// may panic: old_indices[first_ideal..] may panic in certain situations\n",
+        "// constraint: &pos in &old_indices[first_ideal..] is false\n",
+        "// may panic: old_indices[..first_ideal] may panic in certain situations\n",
+        "// constraint: &pos in &old_indices[..first_ideal] is false\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestHeaderMap {",
+                  "        indices: Box<[Pos]>,",
+                  "        mask: Size,",
+                  "        entries: Vec<Bucket<HeaderValue>>,",
+                  "    }",
+                  "",
+                  "    impl TestHeaderMap {",
+                  "        fn new() -> Self {",
+                  "            let mask = (1 << 15) - 1; // MAX_SIZE - 1",
+                  "            let indices = vec![Pos::new(0, HashValue(0)); MAX_SIZE].into_boxed_slice();",
+                  "            let entries = Vec::new();",
+                  "            TestHeaderMap { indices, mask, entries }",
+                  "        }",
+                  "        ",
+                  "        fn try_grow(&mut self, new_raw_cap: usize) -> Result<(), MaxSizeReached> {",
+                  "            if new_raw_cap > MAX_SIZE {",
+                  "                return Err(MaxSizeReached::new());",
+                  "            }",
+                  "",
+                  "            let mut first_ideal = 0;",
+                  "",
+                  "            for (i, pos) in self.indices.iter().enumerate() {",
+                  "                if let Some((_, entry_hash)) = pos.resolve() {",
+                  "                    // Make sure we have a case where probe_distance is not zero",
+                  "                    if probe_distance(self.mask, entry_hash, i) != 0 {",
+                  "                        first_ideal = i;",
+                  "                        break;",
+                  "                    }",
+                  "                }",
+                  "            }",
+                  "",
+                  "            let old_indices = mem::replace(",
+                  "                &mut self.indices,",
+                  "                vec![Pos::none(); new_raw_cap].into_boxed_slice(),",
+                  "            );",
+                  "            self.mask = new_raw_cap.wrapping_sub(1) as Size;",
+                  "",
+                  "           for &_pos in &old_indices[first_ideal..] {",
+                  "               // In a proper test, we should call a method to reinsert the entry",
+                  "           }",
+                  "",
+                  "           for &_pos in &old_indices[..first_ideal] {",
+                  "               // In a proper test, we should call a method to reinsert the entry",
+                  "           }",
+                  "",
+                  "            let more = self.capacity() - self.entries.len();",
+                  "            self.entries.reserve_exact(more);",
+                  "            Ok(())",
+                  "        }",
+                  "        ",
+                  "        fn capacity(&self) -> usize {",
+                  "            self.indices.len()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut header_map = TestHeaderMap::new();",
+                  "    let result = header_map.try_grow(MAX_SIZE);",
+                  "    assert_eq!(result, Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<(), map::MaxSizeReached>`\n    --> src/header/map.rs:3971:5\n     |\n3971 |     assert_eq!(result, Ok(()));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<(), map::MaxSizeReached>\n     |     std::result::Result<(), map::MaxSizeReached>\n     |\nnote: an implementation of `PartialEq` might be missing for `map::MaxSizeReached`\n    --> src/header/map.rs:217:1\n     |\n217  | pub struct MaxSizeReached {\n     | ^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `map::MaxSizeReached` with `#[derive(PartialEq)]`\n     |\n217  + #[derive(PartialEq)]\n218  | pub struct MaxSizeReached {\n     |\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `http` (lib test) generated 14 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestHeaderMap {",
+                  "        indices: Box<[Pos]>,",
+                  "        mask: Size,",
+                  "        entries: Vec<Bucket<HeaderValue>>,",
+                  "    }",
+                  "",
+                  "    impl TestHeaderMap {",
+                  "        fn new() -> Self {",
+                  "            let mask = (1 << 15) - 1; ",
+                  "            let indices = vec![Pos::new(1, HashValue(1)); MAX_SIZE].into_boxed_slice();",
+                  "            let entries = Vec::new();",
+                  "            TestHeaderMap { indices, mask, entries }",
+                  "        }",
+                  "        ",
+                  "        fn try_grow(&mut self, new_raw_cap: usize) -> Result<(), MaxSizeReached> {",
+                  "            if new_raw_cap > MAX_SIZE {",
+                  "                return Err(MaxSizeReached::new());",
+                  "            }",
+                  "",
+                  "            let mut first_ideal = 0;",
+                  "",
+                  "            for (i, pos) in self.indices.iter().enumerate() {",
+                  "                if let Some((_, entry_hash)) = pos.resolve() {",
+                  "                    // This condition will ensure a panic for testing",
+                  "                    if probe_distance(self.mask, entry_hash, i) == 0 {",
+                  "                        first_ideal = i;",
+                  "                        break;",
+                  "                    }",
+                  "                }",
+                  "            }",
+                  "",
+                  "            let old_indices = mem::replace(",
+                  "                &mut self.indices,",
+                  "                vec![Pos::none(); new_raw_cap].into_boxed_slice(),",
+                  "            );",
+                  "            self.mask = new_raw_cap.wrapping_sub(1) as Size;",
+                  "",
+                  "            for &pos in &old_indices[first_ideal..] {",
+                  "                // Pseudo reinsert method (panic)",
+                  "            }",
+                  "",
+                  "            for &pos in &old_indices[..first_ideal] {",
+                  "                // Pseudo reinsert method (panic)",
+                  "            }",
+                  "",
+                  "            let more = self.capacity() - self.entries.len();",
+                  "            self.entries.reserve_exact(more);",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn capacity(&self) -> usize {",
+                  "            self.indices.len()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut header_map = TestHeaderMap::new();",
+                  "    let _ = header_map.try_grow(MAX_SIZE);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 10,
+      "prompt_conds": [
+        "// constraint: new_raw_cap > MAX_SIZE is false, with bound new_raw_cap == MAX_SIZE\n",
+        "// constraint: (i, pos) in self.indices.iter().enumerate() is true\n",
+        "// constraint: let Some((_, entry_hash)) = pos.resolve() is true\n",
+        "// constraint: 0 == probe_distance(self.mask, entry_hash, i) is true\n",
+        "// constraint: (i, pos) in self.indices.iter().enumerate() is false\n",
+        "// may panic: old_indices[first_ideal..] may panic in certain situations\n",
+        "// constraint: &pos in &old_indices[first_ideal..] is true\n",
+        "// constraint: &pos in &old_indices[first_ideal..] is false\n",
+        "// may panic: old_indices[..first_ideal] may panic in certain situations\n",
+        "// constraint: &pos in &old_indices[..first_ideal] is true\n",
+        "// constraint: &pos in &old_indices[..first_ideal] is false\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 17,
+      "prompt_conds": [
+        "// constraint: new_raw_cap > MAX_SIZE is false, with bound new_raw_cap == MAX_SIZE\n",
+        "// constraint: (i, pos) in self.indices.iter().enumerate() is false\n",
+        "// may panic: old_indices[first_ideal..] may panic in certain situations\n",
+        "// constraint: &pos in &old_indices[first_ideal..] is false\n",
+        "// may panic: old_indices[..first_ideal] may panic in certain situations\n",
+        "// constraint: &pos in &old_indices[..first_ideal] is false\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let max_size = MAX_SIZE;",
+                  "    let mut header_map: HeaderMap<HeaderValue> = HeaderMap::with_capacity(0);",
+                  "    ",
+                  "    let result = header_map.try_grow(max_size);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let max_size = MAX_SIZE;",
+                  "    let mut header_map: HeaderMap<HeaderValue> = HeaderMap::with_capacity(0);",
+                  "    header_map.indices = vec![Pos::none(); 0].into_boxed_slice(); // Simulating no entries",
+                  "    ",
+                  "    let result = header_map.try_grow(max_size);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let max_size = MAX_SIZE;",
+                  "    let mut header_map: HeaderMap<HeaderValue> = HeaderMap::with_capacity(0);",
+                  "    header_map.indices = vec![Pos::none(); 10].into_boxed_slice(); // Simulating no entries",
+                  "",
+                  "    let result = header_map.try_grow(max_size);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let max_size = MAX_SIZE;",
+                  "    let mut header_map: HeaderMap<HeaderValue> = HeaderMap::with_capacity(0);",
+                  "    header_map.mask = max_size.wrapping_sub(1) as Size;",
+                  "    header_map.indices = vec![Pos::none(); max_size].into_boxed_slice(); // Simulating no entries",
+                  "",
+                  "    let result = header_map.try_grow(max_size);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

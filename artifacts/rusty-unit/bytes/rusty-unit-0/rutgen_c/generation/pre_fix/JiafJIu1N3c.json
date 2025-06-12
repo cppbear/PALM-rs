@@ -1,0 +1,113 @@
+{
+  "name": "bytes::bytes::promotable_to_mut",
+  "name_with_impl": "bytes::bytes::promotable_to_mut",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1247:1:1274:2",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null_mut;",
+            "use core::sync::atomic::Ordering;",
+            "use core::sync::atomic::AtomicPtr;",
+            "use alloc::vec::Vec;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::{AtomicPtr, Ordering};",
+                  "    ",
+                  "    struct Dummy;",
+                  "    unsafe fn dummy_fn(_: *mut ()) -> *mut u8 {",
+                  "        null_mut()",
+                  "    }",
+                  "",
+                  "    let data = AtomicPtr::new(&mut Dummy as *mut Dummy as *mut ());",
+                  "    let ptr = null_mut();",
+                  "    let len = 0;",
+                  "",
+                  "    let result = unsafe { promotable_to_mut(&data, ptr, len, dummy_fn) };",
+                  "",
+                  "    assert_eq!(result.len(), 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `Ordering`\n    --> src/bytes.rs:1689:41\n     |\n1689 |     use core::sync::atomic::{AtomicPtr, Ordering};\n     |                                         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1700:62\n     |\n1700 |     let result = unsafe { promotable_to_mut(&data, ptr, len, dummy_fn) };\n     |                           -----------------                  ^^^^^^^^ expected safe fn, found unsafe fn\n     |                           |\n     |                           arguments to this function are incorrect\n     |\n     = note: expected fn pointer `fn(_) -> _`\n                   found fn item `unsafe fn(_) -> _ {dummy_fn}`\n     = note: unsafe functions cannot be coerced into safe function pointers\nnote: function defined here\n    --> src/bytes.rs:1247:11\n     |\n1247 | unsafe fn promotable_to_mut(\n     |           ^^^^^^^^^^^^^^^^^\n...\n1251 |     f: fn(*mut ()) -> *mut u8,\n     |     -------------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use alloc::vec::Vec;",
+                  "    ",
+                  "    struct SharedBuffer {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "    }",
+                  "",
+                  "    unsafe fn mock_alloc(_: *mut ()) -> *mut u8 {",
+                  "        let vec = Vec::from_iter((0..10).map(|i| i as u8));",
+                  "        let ptr = vec.as_mut_ptr();",
+                  "        mem::forget(vec); // Prevent Vec from being dropped",
+                  "        ptr",
+                  "    }",
+                  "",
+                  "    let shared = Box::into_raw(Box::new(SharedBuffer {",
+                  "        buf: mock_alloc(null_mut()),",
+                  "        cap: 10,",
+                  "    })) as *mut ();",
+                  "",
+                  "    let data = AtomicPtr::new(shared);",
+                  "    let ptr = shared as *const SharedBuffer as *const u8;",
+                  "    let len = 10;",
+                  "",
+                  "    let result = unsafe { promotable_to_mut(&data, ptr, len, mock_alloc) };",
+                  "",
+                  "    assert_eq!(result.len(), 10);",
+                  "    assert_eq!(result.capacity(), 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `Ordering`\n    --> src/bytes.rs:1689:41\n     |\n1689 |     use core::sync::atomic::{AtomicPtr, Ordering};\n     |                                         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1713:62\n     |\n1713 |     let result = unsafe { promotable_to_mut(&data, ptr, len, mock_alloc) };\n     |                           -----------------                  ^^^^^^^^^^ expected safe fn, found unsafe fn\n     |                           |\n     |                           arguments to this function are incorrect\n     |\n     = note: expected fn pointer `fn(_) -> _`\n                   found fn item `unsafe fn(_) -> _ {mock_alloc}`\n     = note: unsafe functions cannot be coerced into safe function pointers\nnote: function defined here\n    --> src/bytes.rs:1247:11\n     |\n1247 | unsafe fn promotable_to_mut(\n     |           ^^^^^^^^^^^^^^^^^\n...\n1251 |     f: fn(*mut ()) -> *mut u8,\n     |     -------------------------\n\nerror[E0596]: cannot borrow `vec` as mutable, as it is not declared as mutable\n    --> src/bytes.rs:1699:19\n     |\n1699 |         let ptr = vec.as_mut_ptr();\n     |                   ^^^ cannot borrow as mutable\n     |\nhelp: consider changing this to be mutable\n     |\n1698 |         let mut vec = Vec::from_iter((0..10).map(|i| i as u8));\n     |             +++\n\nSome errors have detailed explanations: E0308, E0596.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

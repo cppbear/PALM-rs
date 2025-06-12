@@ -1,0 +1,768 @@
+{
+    "function_name": "http::header::map::header::map::HeaderMap<T>::try_reserve",
+    "tests": 20,
+    "tests_lines": [
+        5,
+        6,
+        5,
+        5,
+        6,
+        5,
+        7,
+        6,
+        7,
+        11,
+        11,
+        45,
+        44,
+        61,
+        8,
+        8,
+        9,
+        5,
+        61,
+        61
+    ],
+    "oracles": 20,
+    "oracles_compiled": 11,
+    "oracles_compiled_rate": 55.00000000000001,
+    "tests_compiled": 11,
+    "tests_compiled_rate": 55.00000000000001,
+    "oracles_run": 11,
+    "oracles_passed": 7,
+    "oracles_passed_rate": 63.63636363636363,
+    "tests_run": 11,
+    "tests_passed": 7,
+    "tests_passed_rate": 63.63636363636363,
+    "lines": 25,
+    "lines_covered": 0,
+    "lines_coveraged_rate": 0.0,
+    "branches": 6,
+    "branches_covered": 0,
+    "branches_coverage_rate": 0.0,
+    "codes_lines": [
+        701,
+        704,
+        705,
+        706,
+        707,
+        708,
+        710,
+        711,
+        712,
+        713,
+        714,
+        715,
+        716,
+        717,
+        718,
+        719,
+        720,
+        721,
+        722,
+        723,
+        724,
+        725,
+        727,
+        729,
+        730
+    ],
+    "codes_lines_covered": [
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    let result = map.try_reserve(10);",
+                "    assert!(result.is_ok());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    let _ = map.try_reserve(16); // fill to capacity",
+                "    let result = map.try_reserve(1); // trying to exceed capacity",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    let result = map.try_reserve(0);",
+                "    assert!(result.is_ok());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    let result = map.try_reserve(usize::MAX); // Testing the edge case",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    map.entries.resize(usize::MAX - 1, 0); // fill nearly to max",
+                "    let result = map.try_reserve(2); // this should cause an overflow",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::default();",
+                "    map.indices = vec![0; 64]; // Preallocate indices to meet the condition",
+                "    assert!(map.try_reserve(10).is_ok());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::default();",
+                "    map.indices = vec![0; 64]; // Preallocate to allow for growth",
+                "    map.entries = vec![0; 60]; // Fill entries close to the limit",
+                "    let result = map.try_reserve(5);",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::default();",
+                "    map.indices = vec![0; 32];",
+                "    map.entries = vec![0; 30];",
+                "    assert!(map.try_reserve(0).is_ok());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::default();",
+                "    map.indices = vec![0; 64];",
+                "    map.entries = vec![0; 60];",
+                "    let result = map.try_reserve(usize::MAX);",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct MockHeaderMap {",
+                "        entries: Vec<u8>, // Dummy data type",
+                "        indices: Vec<usize>, // Dummy data type",
+                "        mask: usize,",
+                "    }",
+                "",
+                "    impl MockHeaderMap {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                entries: Vec::new(),",
+                "                indices: Vec::new(),",
+                "                mask: 0,",
+                "            }",
+                "        }",
+                "",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), String> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or(\"MaxSizeReached\")?;",
+                "",
+                "            let raw_cap = cap.next_power_of_two(); // assuming this function works as to_raw_capacity",
+                "            const MAX_SIZE: usize = 65536; // hypothetical max size",
+                "            ",
+                "            if raw_cap > self.indices.len() {",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(\"MaxSizeReached\".into());",
+                "                }",
+                "",
+                "                if self.entries.is_empty() {",
+                "                    self.mask = raw_cap - 1;",
+                "                    self.indices = vec![0; raw_cap];",
+                "                    self.entries = Vec::with_capacity(raw_cap);",
+                "                }",
+                "",
+                "                return Ok(());",
+                "            }",
+                "",
+                "            Err(\"Capacity not increased\".into())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = MockHeaderMap::new();",
+                "    let result = map.try_reserve(1);",
+                "",
+                "    assert!(result.is_ok());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct MockHeaderMap {",
+                "        entries: Vec<u8>, // Dummy data type",
+                "        indices: Vec<usize>, // Dummy data type",
+                "        mask: usize,",
+                "    }",
+                "",
+                "    impl MockHeaderMap {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                entries: Vec::new(),",
+                "                indices: Vec::new(),",
+                "                mask: 0,",
+                "            }",
+                "        }",
+                "",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), String> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or(\"MaxSizeReached\")?;",
+                "",
+                "            let raw_cap = cap.next_power_of_two(); // assuming this function works as to_raw_capacity",
+                "            const MAX_SIZE: usize = 65536; // hypothetical max size",
+                "            ",
+                "            if raw_cap > self.indices.len() {",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(\"MaxSizeReached\".into());",
+                "                }",
+                "",
+                "                if self.entries.is_empty() {",
+                "                    self.mask = raw_cap - 1;",
+                "                    self.indices = vec![0; raw_cap];",
+                "                    self.entries = Vec::with_capacity(raw_cap);",
+                "                }",
+                "",
+                "                return Ok(());",
+                "            }",
+                "",
+                "            Err(\"Capacity not increased\".into())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = MockHeaderMap::new();",
+                "    map.try_reserve(65536); // Fill map to its MAX_SIZE",
+                "    let _ = map.try_reserve(1); // This should panic",
+                "}"
+            ],
+            []
+        ]
+    ],
+    "codes_branches": [
+        {
+            "start_line": 712,
+            "start_column": 12,
+            "end_line": 712,
+            "end_column": 40,
+            "positive": false,
+            "negative": false
+        },
+        {
+            "start_line": 716,
+            "start_column": 16,
+            "end_line": 716,
+            "end_column": 34,
+            "positive": false,
+            "negative": false
+        },
+        {
+            "start_line": 720,
+            "start_column": 16,
+            "end_line": 720,
+            "end_column": 39,
+            "positive": false,
+            "negative": false
+        }
+    ],
+    "codes_branches_covered": [
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    let result = map.try_reserve(10);",
+                "    assert!(result.is_ok());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    let _ = map.try_reserve(16); // fill to capacity",
+                "    let result = map.try_reserve(1); // trying to exceed capacity",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    let result = map.try_reserve(0);",
+                "    assert!(result.is_ok());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    let result = map.try_reserve(usize::MAX); // Testing the edge case",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::new();",
+                "    map.entries.resize(usize::MAX - 1, 0); // fill nearly to max",
+                "    let result = map.try_reserve(2); // this should cause an overflow",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::default();",
+                "    map.indices = vec![0; 64]; // Preallocate indices to meet the condition",
+                "    assert!(map.try_reserve(10).is_ok());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::default();",
+                "    map.indices = vec![0; 64]; // Preallocate to allow for growth",
+                "    map.entries = vec![0; 60]; // Fill entries close to the limit",
+                "    let result = map.try_reserve(5);",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::default();",
+                "    map.indices = vec![0; 32];",
+                "    map.entries = vec![0; 30];",
+                "    assert!(map.try_reserve(0).is_ok());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let mut map = HeaderMap::default();",
+                "    map.indices = vec![0; 64];",
+                "    map.entries = vec![0; 60];",
+                "    let result = map.try_reserve(usize::MAX);",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct MockHeaderMap {",
+                "        entries: Vec<u8>, // Dummy data type",
+                "        indices: Vec<usize>, // Dummy data type",
+                "        mask: usize,",
+                "    }",
+                "",
+                "    impl MockHeaderMap {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                entries: Vec::new(),",
+                "                indices: Vec::new(),",
+                "                mask: 0,",
+                "            }",
+                "        }",
+                "",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), String> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or(\"MaxSizeReached\")?;",
+                "",
+                "            let raw_cap = cap.next_power_of_two(); // assuming this function works as to_raw_capacity",
+                "            const MAX_SIZE: usize = 65536; // hypothetical max size",
+                "            ",
+                "            if raw_cap > self.indices.len() {",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(\"MaxSizeReached\".into());",
+                "                }",
+                "",
+                "                if self.entries.is_empty() {",
+                "                    self.mask = raw_cap - 1;",
+                "                    self.indices = vec![0; raw_cap];",
+                "                    self.entries = Vec::with_capacity(raw_cap);",
+                "                }",
+                "",
+                "                return Ok(());",
+                "            }",
+                "",
+                "            Err(\"Capacity not increased\".into())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = MockHeaderMap::new();",
+                "    let result = map.try_reserve(1);",
+                "",
+                "    assert!(result.is_ok());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct MockHeaderMap {",
+                "        entries: Vec<u8>, // Dummy data type",
+                "        indices: Vec<usize>, // Dummy data type",
+                "        mask: usize,",
+                "    }",
+                "",
+                "    impl MockHeaderMap {",
+                "        fn new() -> Self {",
+                "            Self {",
+                "                entries: Vec::new(),",
+                "                indices: Vec::new(),",
+                "                mask: 0,",
+                "            }",
+                "        }",
+                "",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), String> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or(\"MaxSizeReached\")?;",
+                "",
+                "            let raw_cap = cap.next_power_of_two(); // assuming this function works as to_raw_capacity",
+                "            const MAX_SIZE: usize = 65536; // hypothetical max size",
+                "            ",
+                "            if raw_cap > self.indices.len() {",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(\"MaxSizeReached\".into());",
+                "                }",
+                "",
+                "                if self.entries.is_empty() {",
+                "                    self.mask = raw_cap - 1;",
+                "                    self.indices = vec![0; raw_cap];",
+                "                    self.entries = Vec::with_capacity(raw_cap);",
+                "                }",
+                "",
+                "                return Ok(());",
+                "            }",
+                "",
+                "            Err(\"Capacity not increased\".into())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = MockHeaderMap::new();",
+                "    map.try_reserve(65536); // Fill map to its MAX_SIZE",
+                "    let _ = map.try_reserve(1); // This should panic",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ]
+    ],
+    "file_path": "/home/abezbm/rusty-unit/evaluation/http/rusty-unit-0/src/header/map.rs"
+}

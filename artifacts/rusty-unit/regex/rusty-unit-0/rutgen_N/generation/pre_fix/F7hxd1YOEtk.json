@@ -1,0 +1,140 @@
+{
+  "name": "regex_syntax::hir::<hir::ClassUnicodeRange as hir::interval::Interval>::case_fold_simple",
+  "name_with_impl": "regex_syntax::hir::{impl#13}::case_fold_simple",
+  "mod_info": {
+    "name": "hir",
+    "loc": "regex-syntax/src/lib.rs:116:1:116:13"
+  },
+  "visible": true,
+  "loc": "regex-syntax/src/hir/mod.rs:859:5:881:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct ClassUnicodeRange {",
+            "    start: char,",
+            "    end: char,",
+            "}",
+            "",
+            "impl ClassUnicodeRange {",
+            "    fn new(start: char, end: char) -> Self {",
+            "        ClassUnicodeRange { start, end }",
+            "    }",
+            "}",
+            "",
+            "struct DummyStruct {",
+            "    start: char,",
+            "    end: char,",
+            "}",
+            "",
+            "impl DummyStruct {",
+            "    fn case_fold_simple(&self, ranges: &mut Vec<ClassUnicodeRange>) {",
+            "        if !unicode::contains_simple_case_mapping(self.start, self.end) {",
+            "            return;",
+            "        }",
+            "        let start = self.start as u32;",
+            "        let end = (self.end as u32).saturating_add(1);",
+            "        let mut next_simple_cp = None;",
+            "        for cp in (start..end).filter_map(char::from_u32) {",
+            "            if next_simple_cp.map_or(false, |next| cp < next) {",
+            "                continue;",
+            "            }",
+            "            let it = match unicode::simple_fold(cp) {",
+            "                Ok(it) => it,",
+            "                Err(next) => {",
+            "                    next_simple_cp = next;",
+            "                    continue;",
+            "                }",
+            "            };",
+            "            for cp_folded in it {",
+            "                ranges.push(ClassUnicodeRange::new(cp_folded, cp_folded));",
+            "            }",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let dummy = DummyStruct { start: 'a', end: 'a' };",
+                  "    let mut ranges = Vec::new();",
+                  "    dummy.case_fold_simple(&mut ranges);",
+                  "    assert!(ranges.is_empty());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let dummy = DummyStruct { start: 'a', end: 'z' };",
+                  "    let mut ranges = Vec::new();",
+                  "    dummy.case_fold_simple(&mut ranges);",
+                  "    // Assuming 'a' maps to 'A' and so on; code needs to validate this.",
+                  "    assert!(!ranges.is_empty());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let dummy = DummyStruct { start: 'A', end: 'Z' };",
+                  "    let mut ranges = Vec::new();",
+                  "    dummy.case_fold_simple(&mut ranges);",
+                  "    // Code should validate that it captures ranges correctly.",
+                  "    assert!(!ranges.is_empty());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

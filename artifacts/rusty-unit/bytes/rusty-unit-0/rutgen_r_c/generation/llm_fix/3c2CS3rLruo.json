@@ -1,0 +1,122 @@
+{
+  "name": "bytes::buf::limit::<buf::limit::Limit<T> as buf::buf_mut::BufMut>::chunk_mut",
+  "name_with_impl": "bytes::buf::limit::{impl#1}::chunk_mut",
+  "mod_info": {
+    "name": "buf::limit",
+    "loc": "src/buf/mod.rs:21:1:21:11"
+  },
+  "visible": true,
+  "loc": "src/buf/limit.rs:64:5:68:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// may panic: bytes[..end] may panic in certain situations\n",
+        "// expected return value/type: &mut bytes[..end]\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBufMut {",
+                  "        data: Vec<u8>,",
+                  "        position: usize,",
+                  "    }",
+                  "    ",
+                  "    unsafe impl BufMut for TestBufMut {",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.data.len() - self.position",
+                  "        }",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            self.position += cnt;",
+                  "        }",
+                  "        fn has_remaining_mut(&self) -> bool {",
+                  "            self.remaining_mut() > 0",
+                  "        }",
+                  "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
+                  "            let slice = &mut self.data[self.position..];",
+                  "            let uninit_slice = UninitSlice::new(slice);",
+                  "            uninit_slice",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "   let buffer = TestBufMut { data: vec![0; 10], position: 0 };",
+                  "   let limit = 5;",
+                  "   let mut limit_buf = Limit { inner: buffer, limit }; // Changed to mutable",
+                  "   let chunk = limit_buf.chunk_mut();",
+                  "   assert_eq!(chunk.len(), limit);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBufMut {",
+                  "        data: Vec<u8>,",
+                  "        position: usize,",
+                  "    }",
+                  "    ",
+                  "    unsafe impl BufMut for TestBufMut {",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.data.len() - self.position",
+                  "        }",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            self.position += cnt;",
+                  "        }",
+                  "        fn has_remaining_mut(&self) -> bool {",
+                  "            self.remaining_mut() > 0",
+                  "        }",
+                  "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
+                  "            let slice = &mut self.data[self.position..];",
+                  "            let uninit_slice = UninitSlice::new(slice);",
+                  "            uninit_slice",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "   let buffer = TestBufMut { data: vec![0; 5], position: 0 };",
+                  "   let limit = 10; // Exceeds length of data",
+                  "   let mut limit_buf = Limit { inner: buffer, limit };",
+                  "   let _chunk = limit_buf.chunk_mut(); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

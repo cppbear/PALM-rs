@@ -1,0 +1,517 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Serialize)]",
+      "struct SerializableStruct {",
+      "    value: String,",
+      "}",
+      "",
+      "#[derive(Default)]",
+      "struct MockSerializeMap {",
+      "    keys: Vec<String>,",
+      "}",
+      "",
+      "impl SerializeMap for MockSerializeMap {",
+      "    type Ok = ();",
+      "    type Error = Error;",
+      "",
+      "    fn serialize_key<T>(&mut self, key: &T) -> Result<(), Self::Error>",
+      "    where",
+      "        T: ?Sized + Serialize,",
+      "    {",
+      "        let mut serializer = serde_json::Serializer::new(vec![]);",
+      "        key.serialize(&mut serializer)?;",
+      "        self.keys.push(serializer.into_inner());",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn serialize_value<T>(&mut self, _value: &T) -> Result<(), Self::Error>",
+      "    where",
+      "        T: ?Sized + Serialize,",
+      "    {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn serialize_entry<K, V>(&mut self, _key: &K, _value: &V) -> Result<(), Self::Error>",
+      "    where",
+      "        K: ?Sized + Serialize,",
+      "        V: ?Sized + Serialize,",
+      "    {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn end(self) -> Result<Self::Ok, Self::Error> {",
+      "        Ok(())",
+      "    }",
+      "}",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "#[should_panic]",
+      "fn test_serialize_key_null() {",
+      "    let mut mock_map = MockSerializeMap::default();",
+      "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+      "    serializer.serialize_key(&None::<()>).unwrap();",
+      "}",
+      "",
+      "#[should_panic]",
+      "fn test_serialize_key_non_serializable_object() {",
+      "    struct NonSerializable;",
+      "",
+      "    let mut mock_map = MockSerializeMap::default();",
+      "    let non_serializable_obj = NonSerializable;",
+      "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+      "    serializer.serialize_key(&non_serializable_obj).unwrap();",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut mock_map = MockSerializeMap::default();",
+          "    let obj = SerializableStruct { value: \"test\".to_string() };",
+          "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+          "    serializer.serialize_key(&obj).unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert!(serializer.serialize_key(&None::<()>).is_err());"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    struct NonSerializable;",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert!(serializer.serialize_key(&non_serializable_obj).is_err());"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    struct NonSerializable;",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let obj = SerializableStruct { value: \"test\".to_string() };",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&obj).unwrap();",
+            "    assert_eq!(mock_map.keys.len(), 1);"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    struct NonSerializable;",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let obj = SerializableStruct { value: \"test\".to_string() };",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&obj).unwrap();",
+            "    assert_eq!(mock_map.keys[0], \"\\\"test\\\"\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let obj = SerializableStruct { value: \"test\".to_string() };",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&obj).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert!(serializer.serialize_key(&None::<()>).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let obj = SerializableStruct { value: \"test\".to_string() };",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&obj).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    struct NonSerializable;",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert!(serializer.serialize_key(&non_serializable_obj).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let obj = SerializableStruct { value: \"test\".to_string() };",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&obj).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    struct NonSerializable;",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let obj = SerializableStruct { value: \"test\".to_string() };",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&obj).unwrap();",
+            "    assert_eq!(mock_map.keys.len(), 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let obj = SerializableStruct { value: \"test\".to_string() };",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&obj).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    struct NonSerializable;",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let obj = SerializableStruct { value: \"test\".to_string() };",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&obj).unwrap();",
+            "    assert_eq!(mock_map.keys[0], \"\\\"test\\\"\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut mock_map = MockSerializeMap::default();",
+          "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+          "    serializer.serialize_key(&\"\").unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert_eq!(serializer.serialize_key(&None::<()>).is_err(), true);"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert_eq!(serializer.serialize_key(&non_serializable_obj).is_err(), true);"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&\"\").unwrap();",
+            "    assert_eq!(mock_map.keys.len(), 1);"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&\"\").unwrap();",
+            "    assert_eq!(mock_map.keys[0], \"\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&\"\").unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert_eq!(serializer.serialize_key(&None::<()>).is_err(), true);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&\"\").unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert_eq!(serializer.serialize_key(&non_serializable_obj).is_err(), true);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&\"\").unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&\"\").unwrap();",
+            "    assert_eq!(mock_map.keys.len(), 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&\"\").unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&\"\").unwrap();",
+            "    assert_eq!(mock_map.keys[0], \"\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut mock_map = MockSerializeMap::default();",
+          "    let long_string = \"x\".repeat(1000); // Assuming maximum length can be 1000 characters",
+          "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+          "    serializer.serialize_key(&long_string).unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert!(serializer.serialize_key(&None::<()>).is_err());"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let non_serializable_obj = NonSerializable;",
+            "    assert!(serializer.serialize_key(&non_serializable_obj).is_err());"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let long_string = \"x\".repeat(1000);",
+            "    assert!(serializer.serialize_key(&long_string).is_ok());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let long_string = \"x\".repeat(1000); // Assuming maximum length can be 1000 characters",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&long_string).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    assert!(serializer.serialize_key(&None::<()>).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let long_string = \"x\".repeat(1000); // Assuming maximum length can be 1000 characters",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&long_string).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let non_serializable_obj = NonSerializable;",
+            "    assert!(serializer.serialize_key(&non_serializable_obj).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let long_string = \"x\".repeat(1000); // Assuming maximum length can be 1000 characters",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&long_string).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let long_string = \"x\".repeat(1000);",
+            "    assert!(serializer.serialize_key(&long_string).is_ok());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut mock_map = MockSerializeMap::default();",
+          "    let special_string = \"!@#$%^&*()\".to_string();",
+          "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+          "    serializer.serialize_key(&special_string).unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&None::<()>).unwrap_err();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&non_serializable_obj).unwrap_err();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let special_string = \"!@#$%^&*()\".to_string();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&special_string).unwrap();",
+            "    assert_eq!(mock_map.keys.len(), 1);"
+          ],
+          [
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&None::<()>).unwrap_err();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&non_serializable_obj).unwrap_err();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let special_string = \"!@#$%^&*()\".to_string();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&special_string).unwrap();",
+            "    assert_eq!(mock_map.keys[0], special_string);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let special_string = \"!@#$%^&*()\".to_string();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&special_string).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&None::<()>).unwrap_err();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&non_serializable_obj).unwrap_err();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let special_string = \"!@#$%^&*()\".to_string();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&special_string).unwrap();",
+            "    assert_eq!(mock_map.keys.len(), 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let special_string = \"!@#$%^&*()\".to_string();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&special_string).unwrap();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&None::<()>).unwrap_err();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let non_serializable_obj = NonSerializable;",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&non_serializable_obj).unwrap_err();",
+            "    let mut mock_map = MockSerializeMap::default();",
+            "    let special_string = \"!@#$%^&*()\".to_string();",
+            "    let mut serializer = FlatMapSerializeMap(&mut mock_map);",
+            "    serializer.serialize_key(&special_string).unwrap();",
+            "    assert_eq!(mock_map.keys[0], special_string);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

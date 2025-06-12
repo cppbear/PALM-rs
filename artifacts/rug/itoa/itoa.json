@@ -1,0 +1,336 @@
+{
+    "dependencies": {
+        "<Buffer as core::clone::Clone>::clone": [
+            "Buffer",
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<Buffer as core::default::Default>::default": [
+            "Buffer",
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for i128>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for i16>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for i32>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for i64>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for i8>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for isize>::write": [],
+        "<impl private::Sealed for u128>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for u16>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for u32>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for u64>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for u8>::write": [
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "<impl private::Sealed for usize>::write": [],
+        "Buffer": [
+            "Buffer",
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "Buffer::format": [
+            "Buffer",
+            "Integer",
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "Buffer::new": [
+            "Buffer",
+            "core::marker::Sized",
+            "core::mem::MaybeUninit"
+        ],
+        "private::Sealed::write": [],
+        "udiv128::u128_mulhi": [],
+        "udiv128::udivmod_1e19": []
+    },
+    "glob_path_import": {},
+    "self_to_fn": {
+        "Buffer": [
+            "impl Buffer {\n    /// This is a cheap operation; you don't need to worry about reusing buffers\n    /// for efficiency.\n    #[inline]\n    #[cfg_attr(feature = \"no-panic\", no_panic)]\n    pub fn new() -> Buffer {\n        let bytes = [MaybeUninit::<u8>::uninit(); i128::MAX_STR_LEN];\n        Buffer { bytes }\n    }\n\n    /// Print an integer into this buffer and return a reference to its string\n    /// representation within the buffer.\n    #[cfg_attr(feature = \"no-panic\", no_panic)]\n    pub fn format<I: Integer>(&mut self, i: I) -> &str {\n        let string = i.write(unsafe {\n            &mut *(&mut self.bytes as *mut [MaybeUninit<u8>; i128::MAX_STR_LEN]\n                as *mut <I as private::Sealed>::Buffer)\n        });\n        if string.len() > I::MAX_STR_LEN {\n            unsafe { hint::unreachable_unchecked() };\n        }\n        string\n    }\n}",
+            "impl Clone for Buffer {\n    #[inline]\n    #[allow(clippy::non_canonical_clone_impl)] // false positive https://github.com/rust-lang/rust-clippy/issues/11072\n    fn clone(&self) -> Self {\n        Buffer::new()\n    }\n}",
+            "impl Copy for Buffer {}",
+            "impl Default for Buffer {\n    #[inline]\n    fn default() -> Buffer {\n        Buffer::new()\n    }\n}"
+        ]
+    },
+    "single_path_import": {},
+    "srcs": {
+        "<Buffer as core::clone::Clone>::clone": [
+            "#[inline]\n#[allow(clippy::non_canonical_clone_impl)]\nfn clone(&self) -> Self{\n        Buffer::new()\n    }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<Buffer as core::default::Default>::default": [
+            "#[inline]\nfn default() -> Buffer{\n        Buffer::new()\n    }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for i128>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let n = if is_nonnegative {\n                    self as u128\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as u128)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n\n                // Divide by 10^19 which is the highest power less than 2^64.\n                let (n, rem) = udiv128::udivmod_1e19(n);\n                let buf1 = unsafe {\n                    buf_ptr.add(curr - u64::MAX_STR_LEN) as *mut [MaybeUninit<u8>; u64::MAX_STR_LEN]\n                };\n                curr -= rem.write(unsafe { &mut *buf1 }).len();\n\n                if n != 0 {\n                    // Memset the base10 leading zeros of rem.\n                    let target = buf.len() - 19;\n                    unsafe {\n                        ptr::write_bytes(buf_ptr.add(target), b'0', curr - target);\n                    }\n                    curr = target;\n\n                    // Divide by 10^19 again.\n                    let (n, rem) = udiv128::udivmod_1e19(n);\n                    let buf2 = unsafe {\n                        buf_ptr.add(curr - u64::MAX_STR_LEN)\n                            as *mut [MaybeUninit<u8>; u64::MAX_STR_LEN]\n                    };\n                    curr -= rem.write(unsafe { &mut *buf2 }).len();\n\n                    if n != 0 {\n                        // Memset the leading zeros.\n                        let target = buf.len() - 38;\n                        unsafe {\n                            ptr::write_bytes(buf_ptr.add(target), b'0', curr - target);\n                        }\n                        curr = target;\n\n                        // There is at most one digit left\n                        // because u128::MAX / 10^19 / 10^19 is 3.\n                        curr -= 1;\n                        unsafe {\n                            *buf_ptr.add(curr) = (n as u8) + b'0';\n                        }\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for i16>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let mut n = if is_nonnegative {\n                    self as $large_unsigned\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as $large_unsigned)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n                let lut_ptr = DEC_DIGITS_LUT.as_ptr();\n\n                // Render 4 digits at a time.\n                while n >= 10000 {\n                    let rem = n % 10000;\n                    n /= 10000;\n\n                    let d1 = ((rem / 100) << 1) as usize;\n                    let d2 = ((rem % 100) << 1) as usize;\n                    curr -= 4;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                        ptr::copy_nonoverlapping(lut_ptr.add(d2), buf_ptr.add(curr + 2), 2);\n                    }\n                }\n\n                // Render 2 more digits, if >2 digits.\n                if n >= 100 {\n                    let d1 = ((n % 100) << 1) as usize;\n                    n /= 100;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                // Render last 1 or 2 digits.\n                if n < 10 {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = (n as u8) + b'0';\n                    }\n                } else {\n                    let d1 = (n << 1) as usize;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for i32>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let mut n = if is_nonnegative {\n                    self as $large_unsigned\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as $large_unsigned)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n                let lut_ptr = DEC_DIGITS_LUT.as_ptr();\n\n                // Render 4 digits at a time.\n                while n >= 10000 {\n                    let rem = n % 10000;\n                    n /= 10000;\n\n                    let d1 = ((rem / 100) << 1) as usize;\n                    let d2 = ((rem % 100) << 1) as usize;\n                    curr -= 4;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                        ptr::copy_nonoverlapping(lut_ptr.add(d2), buf_ptr.add(curr + 2), 2);\n                    }\n                }\n\n                // Render 2 more digits, if >2 digits.\n                if n >= 100 {\n                    let d1 = ((n % 100) << 1) as usize;\n                    n /= 100;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                // Render last 1 or 2 digits.\n                if n < 10 {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = (n as u8) + b'0';\n                    }\n                } else {\n                    let d1 = (n << 1) as usize;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for i64>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let mut n = if is_nonnegative {\n                    self as $large_unsigned\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as $large_unsigned)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n                let lut_ptr = DEC_DIGITS_LUT.as_ptr();\n\n                // Render 4 digits at a time.\n                while n >= 10000 {\n                    let rem = n % 10000;\n                    n /= 10000;\n\n                    let d1 = ((rem / 100) << 1) as usize;\n                    let d2 = ((rem % 100) << 1) as usize;\n                    curr -= 4;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                        ptr::copy_nonoverlapping(lut_ptr.add(d2), buf_ptr.add(curr + 2), 2);\n                    }\n                }\n\n                // Render 2 more digits, if >2 digits.\n                if n >= 100 {\n                    let d1 = ((n % 100) << 1) as usize;\n                    n /= 100;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                // Render last 1 or 2 digits.\n                if n < 10 {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = (n as u8) + b'0';\n                    }\n                } else {\n                    let d1 = (n << 1) as usize;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for i8>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let mut n = if is_nonnegative {\n                    self as $large_unsigned\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as $large_unsigned)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n                let lut_ptr = DEC_DIGITS_LUT.as_ptr();\n\n                // Render 4 digits at a time.\n                while n >= 10000 {\n                    let rem = n % 10000;\n                    n /= 10000;\n\n                    let d1 = ((rem / 100) << 1) as usize;\n                    let d2 = ((rem % 100) << 1) as usize;\n                    curr -= 4;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                        ptr::copy_nonoverlapping(lut_ptr.add(d2), buf_ptr.add(curr + 2), 2);\n                    }\n                }\n\n                // Render 2 more digits, if >2 digits.\n                if n >= 100 {\n                    let d1 = ((n % 100) << 1) as usize;\n                    n /= 100;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                // Render last 1 or 2 digits.\n                if n < 10 {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = (n as u8) + b'0';\n                    }\n                } else {\n                    let d1 = (n << 1) as usize;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for isize>::write": [
+            "#[inline]\nfn write(self, buf: &mut Self::Buffer) -> &str{\n                (self as $primitive).write(buf)\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for u128>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let n = if is_nonnegative {\n                    self as u128\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as u128)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n\n                // Divide by 10^19 which is the highest power less than 2^64.\n                let (n, rem) = udiv128::udivmod_1e19(n);\n                let buf1 = unsafe {\n                    buf_ptr.add(curr - u64::MAX_STR_LEN) as *mut [MaybeUninit<u8>; u64::MAX_STR_LEN]\n                };\n                curr -= rem.write(unsafe { &mut *buf1 }).len();\n\n                if n != 0 {\n                    // Memset the base10 leading zeros of rem.\n                    let target = buf.len() - 19;\n                    unsafe {\n                        ptr::write_bytes(buf_ptr.add(target), b'0', curr - target);\n                    }\n                    curr = target;\n\n                    // Divide by 10^19 again.\n                    let (n, rem) = udiv128::udivmod_1e19(n);\n                    let buf2 = unsafe {\n                        buf_ptr.add(curr - u64::MAX_STR_LEN)\n                            as *mut [MaybeUninit<u8>; u64::MAX_STR_LEN]\n                    };\n                    curr -= rem.write(unsafe { &mut *buf2 }).len();\n\n                    if n != 0 {\n                        // Memset the leading zeros.\n                        let target = buf.len() - 38;\n                        unsafe {\n                            ptr::write_bytes(buf_ptr.add(target), b'0', curr - target);\n                        }\n                        curr = target;\n\n                        // There is at most one digit left\n                        // because u128::MAX / 10^19 / 10^19 is 3.\n                        curr -= 1;\n                        unsafe {\n                            *buf_ptr.add(curr) = (n as u8) + b'0';\n                        }\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for u16>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let mut n = if is_nonnegative {\n                    self as $large_unsigned\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as $large_unsigned)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n                let lut_ptr = DEC_DIGITS_LUT.as_ptr();\n\n                // Render 4 digits at a time.\n                while n >= 10000 {\n                    let rem = n % 10000;\n                    n /= 10000;\n\n                    let d1 = ((rem / 100) << 1) as usize;\n                    let d2 = ((rem % 100) << 1) as usize;\n                    curr -= 4;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                        ptr::copy_nonoverlapping(lut_ptr.add(d2), buf_ptr.add(curr + 2), 2);\n                    }\n                }\n\n                // Render 2 more digits, if >2 digits.\n                if n >= 100 {\n                    let d1 = ((n % 100) << 1) as usize;\n                    n /= 100;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                // Render last 1 or 2 digits.\n                if n < 10 {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = (n as u8) + b'0';\n                    }\n                } else {\n                    let d1 = (n << 1) as usize;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for u32>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let mut n = if is_nonnegative {\n                    self as $large_unsigned\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as $large_unsigned)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n                let lut_ptr = DEC_DIGITS_LUT.as_ptr();\n\n                // Render 4 digits at a time.\n                while n >= 10000 {\n                    let rem = n % 10000;\n                    n /= 10000;\n\n                    let d1 = ((rem / 100) << 1) as usize;\n                    let d2 = ((rem % 100) << 1) as usize;\n                    curr -= 4;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                        ptr::copy_nonoverlapping(lut_ptr.add(d2), buf_ptr.add(curr + 2), 2);\n                    }\n                }\n\n                // Render 2 more digits, if >2 digits.\n                if n >= 100 {\n                    let d1 = ((n % 100) << 1) as usize;\n                    n /= 100;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                // Render last 1 or 2 digits.\n                if n < 10 {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = (n as u8) + b'0';\n                    }\n                } else {\n                    let d1 = (n << 1) as usize;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for u64>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let mut n = if is_nonnegative {\n                    self as $large_unsigned\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as $large_unsigned)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n                let lut_ptr = DEC_DIGITS_LUT.as_ptr();\n\n                // Render 4 digits at a time.\n                while n >= 10000 {\n                    let rem = n % 10000;\n                    n /= 10000;\n\n                    let d1 = ((rem / 100) << 1) as usize;\n                    let d2 = ((rem % 100) << 1) as usize;\n                    curr -= 4;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                        ptr::copy_nonoverlapping(lut_ptr.add(d2), buf_ptr.add(curr + 2), 2);\n                    }\n                }\n\n                // Render 2 more digits, if >2 digits.\n                if n >= 100 {\n                    let d1 = ((n % 100) << 1) as usize;\n                    n /= 100;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                // Render last 1 or 2 digits.\n                if n < 10 {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = (n as u8) + b'0';\n                    }\n                } else {\n                    let d1 = (n << 1) as usize;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for u8>::write": [
+            "#[allow(unused_comparisons)]\n#[inline]\nfn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str{\n                let is_nonnegative = self >= 0;\n                let mut n = if is_nonnegative {\n                    self as $large_unsigned\n                } else {\n                    // Convert negative number to positive by summing 1 to its two's complement.\n                    (!(self as $large_unsigned)).wrapping_add(1)\n                };\n                let mut curr = buf.len();\n                let buf_ptr = buf.as_mut_ptr() as *mut u8;\n                let lut_ptr = DEC_DIGITS_LUT.as_ptr();\n\n                // Render 4 digits at a time.\n                while n >= 10000 {\n                    let rem = n % 10000;\n                    n /= 10000;\n\n                    let d1 = ((rem / 100) << 1) as usize;\n                    let d2 = ((rem % 100) << 1) as usize;\n                    curr -= 4;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                        ptr::copy_nonoverlapping(lut_ptr.add(d2), buf_ptr.add(curr + 2), 2);\n                    }\n                }\n\n                // Render 2 more digits, if >2 digits.\n                if n >= 100 {\n                    let d1 = ((n % 100) << 1) as usize;\n                    n /= 100;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                // Render last 1 or 2 digits.\n                if n < 10 {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = (n as u8) + b'0';\n                    }\n                } else {\n                    let d1 = (n << 1) as usize;\n                    curr -= 2;\n                    unsafe {\n                        ptr::copy_nonoverlapping(lut_ptr.add(d1), buf_ptr.add(curr), 2);\n                    }\n                }\n\n                if !is_nonnegative {\n                    curr -= 1;\n                    unsafe {\n                        *buf_ptr.add(curr) = b'-';\n                    }\n                }\n\n                let len = buf.len() - curr;\n                let bytes = unsafe { slice::from_raw_parts(buf_ptr.add(curr), len) };\n                unsafe { str::from_utf8_unchecked(bytes) }\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "<impl private::Sealed for usize>::write": [
+            "#[inline]\nfn write(self, buf: &mut Self::Buffer) -> &str{\n                (self as $primitive).write(buf)\n            }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "Buffer": [
+            "/// A correctly sized stack allocation for the formatted integer to be written\n/// into.\n///\n/// # Example\n///\n/// ```\n/// let mut buffer = itoa::Buffer::new();\n/// let printed = buffer.format(1234);\n/// assert_eq!(printed, \"1234\");\n/// ```\npub struct Buffer {\n    bytes: [MaybeUninit<u8>; i128::MAX_STR_LEN],\n}",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "Buffer::format": [
+            "/// Print an integer into this buffer and return a reference to its string\n/// representation within the buffer.\npub fn format<I: Integer>(&mut self, i: I) -> &str{\n        let string = i.write(unsafe {\n            &mut *(&mut self.bytes as *mut [MaybeUninit<u8>; i128::MAX_STR_LEN]\n                as *mut <I as private::Sealed>::Buffer)\n        });\n        if string.len() > I::MAX_STR_LEN {\n            unsafe { hint::unreachable_unchecked() };\n        }\n        string\n    }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "Buffer::new": [
+            "/// This is a cheap operation; you don't need to worry about reusing buffers\n/// for efficiency.\n#[inline]\npub fn new() -> Buffer{\n        let bytes = [MaybeUninit::<u8>::uninit(); i128::MAX_STR_LEN];\n        Buffer { bytes }\n    }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "Integer": [
+            "/// An integer that can be written into an [`itoa::Buffer`][Buffer].\n///\n/// This trait is sealed and cannot be implemented for types outside of itoa.\npub trait Integer: private::Sealed {\n    /// The maximum length of string that formatting an integer of this type can\n    /// produce on the current target platform.\n    const MAX_STR_LEN: usize;\n}",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "private::Sealed": [
+            "#[doc(hidden)]\npub trait Sealed: Copy {\n        #[doc(hidden)]\n        type Buffer: 'static;\n        fn write(self, buf: &mut Self::Buffer) -> &str;\n    }",
+            "Real(LocalPath(\"src/lib.rs\"))"
+        ],
+        "udiv128::u128_mulhi": [
+            "/// Multiply unsigned 128 bit integers, return upper 128 bits of the result\n#[inline]\nfn u128_mulhi(x: u128, y: u128) -> u128{\n    let x_lo = x as u64;\n    let x_hi = (x >> 64) as u64;\n    let y_lo = y as u64;\n    let y_hi = (y >> 64) as u64;\n\n    // handle possibility of overflow\n    let carry = (x_lo as u128 * y_lo as u128) >> 64;\n    let m = x_lo as u128 * y_hi as u128 + carry;\n    let high1 = m >> 64;\n\n    let m_lo = m as u64;\n    let high2 = (x_hi as u128 * y_lo as u128 + m_lo as u128) >> 64;\n\n    x_hi as u128 * y_hi as u128 + high1 + high2\n}",
+            "Real(LocalPath(\"src/udiv128.rs\"))"
+        ],
+        "udiv128::udivmod_1e19": [
+            "/// Divide `n` by 1e19 and return quotient and remainder\n///\n/// Integer division algorithm is based on the following paper:\n///\n///   T. Granlund and P. Montgomery, “Division by Invariant Integers Using Multiplication”\n///   in Proc. of the SIGPLAN94 Conference on Programming Language Design and\n///   Implementation, 1994, pp. 61–72\n///\n#[inline]\npub fn udivmod_1e19(n: u128) -> (u128, u64){\n    let d = 10_000_000_000_000_000_000_u64; // 10^19\n\n    let quot = if n < 1 << 83 {\n        ((n >> 19) as u64 / (d >> 19)) as u128\n    } else {\n        u128_mulhi(n, 156927543384667019095894735580191660403) >> 62\n    };\n\n    let rem = (n - quot * d as u128) as u64;\n    debug_assert_eq!(quot, n / d as u128);\n    debug_assert_eq!(rem as u128, n % d as u128);\n\n    (quot, rem)\n}",
+            "Real(LocalPath(\"src/udiv128.rs\"))"
+        ]
+    },
+    "struct_constructor": {
+        "&'^0.Named(DefId(0:123 ~ itoa[d092]::{impl#3}::format::'_), \"'_\") str": [
+            "format"
+        ],
+        "&'^0.Named(DefId(0:124 ~ itoa[d092]::private::Sealed::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:125 ~ itoa[d092]::{impl#5}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:126 ~ itoa[d092]::{impl#7}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:127 ~ itoa[d092]::{impl#9}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:128 ~ itoa[d092]::{impl#11}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:129 ~ itoa[d092]::{impl#13}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:130 ~ itoa[d092]::{impl#15}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:131 ~ itoa[d092]::{impl#17}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:132 ~ itoa[d092]::{impl#19}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:133 ~ itoa[d092]::{impl#21}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:134 ~ itoa[d092]::{impl#23}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:135 ~ itoa[d092]::{impl#25}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "&'^0.Named(DefId(0:136 ~ itoa[d092]::{impl#27}::write::'_), \"'_\") str": [
+            "write"
+        ],
+        "(u128, u64)": [
+            "udivmod_1e19"
+        ],
+        "Buffer": [
+            "clone",
+            "default",
+            "new"
+        ]
+    },
+    "struct_to_trait": {
+        "Buffer": [
+            "core::clone::Clone",
+            "core::default::Default",
+            "core::marker::Copy"
+        ]
+    },
+    "targets": {
+        "<Buffer as core::clone::Clone>::clone": [
+            "clone",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "core::clone::Clone"
+        ],
+        "<Buffer as core::default::Default>::default": [
+            "default",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "core::default::Default"
+        ],
+        "<impl private::Sealed for i128>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for i16>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for i32>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for i64>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for i8>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for isize>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for u128>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for u16>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for u32>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for u64>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for u8>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "<impl private::Sealed for usize>::write": [
+            "write",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            "private::Sealed"
+        ],
+        "Buffer::format": [
+            "format",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            ""
+        ],
+        "Buffer::new": [
+            "new",
+            "Real(LocalPath(\"src/lib.rs\"))",
+            ""
+        ],
+        "udiv128::u128_mulhi": [
+            "u128_mulhi",
+            "Real(LocalPath(\"src/udiv128.rs\"))",
+            ""
+        ],
+        "udiv128::udivmod_1e19": [
+            "udivmod_1e19",
+            "Real(LocalPath(\"src/udiv128.rs\"))",
+            ""
+        ]
+    },
+    "trait_to_struct": {
+        "core::clone::Clone": [
+            "Buffer"
+        ],
+        "core::default::Default": [
+            "Buffer"
+        ],
+        "core::marker::Copy": [
+            "Buffer"
+        ]
+    },
+    "type_to_def_path": {
+        "Buffer": "Buffer"
+    }
+}

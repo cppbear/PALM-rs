@@ -1,0 +1,221 @@
+{
+  "name": "serde::__private::ser::<__private::ser::FlatMapSerializeStructVariantAsMapValue<'a, M> as ser::SerializeStructVariant>::end",
+  "name_with_impl": "serde::__private::ser::{impl#10}::end",
+  "mod_info": {
+    "name": "__private::ser",
+    "loc": "serde/src/private/mod.rs:4:1:4:13"
+  },
+  "visible": true,
+  "loc": "serde/src/private/ser.rs:1328:5:1333:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self\n            .map\n            .serialize_value(&Content::Struct(self.name, self.fields)) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct TestMap;",
+            "",
+            "impl TestMap {",
+            "    fn serialize_value(&self, content: &Content) -> Result<(), String> {",
+            "        // Simulating error based on a condition for testing",
+            "        Err(\"Serialization Error\".to_string())",
+            "    }",
+            "}",
+            "",
+            "struct TestStruct {",
+            "    map: TestMap,",
+            "    name: String,",
+            "    fields: Vec<String>,",
+            "}",
+            "",
+            "impl TestStruct {",
+            "    fn end(self) -> Result<(), String> {",
+            "        self.map.serialize_value(&Content::Struct(self.name, self.fields))",
+            "    }",
+            "}",
+            "",
+            "enum Content {",
+            "    Struct(String, Vec<String>),",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let test_struct = TestStruct {",
+                  "        map: TestMap,",
+                  "        name: \"TestName\".to_string(),",
+                  "        fields: vec![\"field1\".to_string(), \"field2\".to_string()],",
+                  "    };",
+                  "",
+                  "    let result = test_struct.end();",
+                  "    assert!(result.is_err());",
+                  "    assert_eq!(result, Err(\"Serialization Error\".to_string()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self\n            .map\n            .serialize_value(&Content::Struct(self.name, self.fields)) matches Ok(val) is true\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct MockMap;",
+            "",
+            "impl MockMap {",
+            "    fn serialize_value(&self, _content: &Content) -> Result<(), &'static str> {",
+            "        Ok(())",
+            "    }",
+            "}",
+            "",
+            "struct Content {",
+            "    name: String,",
+            "    fields: Vec<String>,",
+            "}",
+            "",
+            "impl Content {",
+            "    fn new(name: &str, fields: Vec<&str>) -> Self {",
+            "        Content {",
+            "            name: name.to_string(),",
+            "            fields: fields.iter().map(|&s| s.to_string()).collect(),",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "struct MockSerializer {",
+            "    map: MockMap,",
+            "    name: String,",
+            "    fields: Vec<String>,",
+            "}",
+            "",
+            "impl MockSerializer {",
+            "    fn new(name: &str, fields: Vec<&str>) -> Self {",
+            "        MockSerializer {",
+            "            map: MockMap::default(),",
+            "            name: name.to_string(),",
+            "            fields: fields.iter().map(|&s| s.to_string()).collect(),",
+            "        }",
+            "    }",
+            "",
+            "    fn end(self) -> Result<(), &'static str> {",
+            "        self.map.serialize_value(&Content::new(&self.name, self.fields))",
+            "    }",
+            "}",
+            "",
+            "",
+            "",
+            "#[should_panic]",
+            "fn test_end_panics_on_failure() {",
+            "    struct FailingMap;",
+            "",
+            "    impl FailingMap {",
+            "        fn serialize_value(&self, _content: &Content) -> Result<(), &'static str> {",
+            "            Err(\"Serialization failed\")",
+            "        }",
+            "    }",
+            "",
+            "    struct FailingSerializer {",
+            "        map: FailingMap,",
+            "        name: String,",
+            "        fields: Vec<String>,",
+            "    }",
+            "",
+            "    impl FailingSerializer {",
+            "        fn new(name: &str, fields: Vec<&str>) -> Self {",
+            "            FailingSerializer {",
+            "                map: FailingMap,",
+            "                name: name.to_string(),",
+            "                fields: fields.iter().map(|&s| s.to_string()).collect(),",
+            "            }",
+            "        }",
+            "",
+            "        fn end(self) -> Result<(), &'static str> {",
+            "            self.map.serialize_value(&Content::new(&self.name, self.fields))",
+            "        }",
+            "    }",
+            "",
+            "    let failing_serializer = FailingSerializer::new(\"FailingStruct\", vec![\"field1\"]);",
+            "    let _ = failing_serializer.end();",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let serializer = MockSerializer::new(\"TestStruct\", vec![\"field1\", \"field2\"]);",
+                  "    assert_eq!(serializer.end(), Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1368:8\n     |\n1368 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n    --> serde/src/private/ser.rs:1408:60\n     |\n1408 |         self.map.serialize_value(&Content::new(&self.name, self.fields))\n     |                                   ------------             ^^^^^^^^^^^ expected `Vec<&str>`, found `Vec<String>`\n     |                                   |\n     |                                   arguments to this function are incorrect\n     |\n     = note: expected struct `std::vec::Vec<&str>`\n                found struct `std::vec::Vec<std::string::String>`\nnote: associated function defined here\n    --> serde/src/private/ser.rs:1384:8\n     |\n1384 |     fn new(name: &str, fields: Vec<&str>) -> Self {\n     |        ^^^             -----------------\n\nerror[E0308]: mismatched types\n    --> serde/src/private/ser.rs:1440:64\n     |\n1440 |             self.map.serialize_value(&Content::new(&self.name, self.fields))\n     |                                       ------------             ^^^^^^^^^^^ expected `Vec<&str>`, found `Vec<String>`\n     |                                       |\n     |                                       arguments to this function are incorrect\n     |\n     = note: expected struct `std::vec::Vec<&str>`\n                found struct `std::vec::Vec<std::string::String>`\nnote: associated function defined here\n    --> serde/src/private/ser.rs:1384:8\n     |\n1384 |     fn new(name: &str, fields: Vec<&str>) -> Self {\n     |        ^^^             -----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let serializer = MockSerializer::new(\"EmptyStruct\", vec![]);",
+                  "    assert_eq!(serializer.end(), Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1368:8\n     |\n1368 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n    --> serde/src/private/ser.rs:1408:60\n     |\n1408 |         self.map.serialize_value(&Content::new(&self.name, self.fields))\n     |                                   ------------             ^^^^^^^^^^^ expected `Vec<&str>`, found `Vec<String>`\n     |                                   |\n     |                                   arguments to this function are incorrect\n     |\n     = note: expected struct `std::vec::Vec<&str>`\n                found struct `std::vec::Vec<std::string::String>`\nnote: associated function defined here\n    --> serde/src/private/ser.rs:1384:8\n     |\n1384 |     fn new(name: &str, fields: Vec<&str>) -> Self {\n     |        ^^^             -----------------\n\nerror[E0308]: mismatched types\n    --> serde/src/private/ser.rs:1440:64\n     |\n1440 |             self.map.serialize_value(&Content::new(&self.name, self.fields))\n     |                                       ------------             ^^^^^^^^^^^ expected `Vec<&str>`, found `Vec<String>`\n     |                                       |\n     |                                       arguments to this function are incorrect\n     |\n     = note: expected struct `std::vec::Vec<&str>`\n                found struct `std::vec::Vec<std::string::String>`\nnote: associated function defined here\n    --> serde/src/private/ser.rs:1384:8\n     |\n1384 |     fn new(name: &str, fields: Vec<&str>) -> Self {\n     |        ^^^             -----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,270 @@
+{
+  "name": "serde_json::de::<de::MapKey<'a, R> as serde::Deserializer<'de>>::deserialize_any",
+  "name_with_impl": "serde_json::de::{impl#19}::deserialize_any",
+  "mod_info": {
+    "name": "de",
+    "loc": "src/lib.rs:418:1:418:12"
+  },
+  "visible": true,
+  "loc": "src/de.rs:2203:5:2213:6",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.de.read.parse_str(&mut self.de.scratch) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: self.de.read.parse_str(&mut self.de.scratch) matches core::result::Result::Err(err) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn test_deserialize_any_ok() {",
+            "    struct MockRead {",
+            "        data: Vec<u8>,",
+            "        pos: usize,",
+            "    }",
+            "",
+            "    impl Read<'_> for MockRead {",
+            "        fn parse_str(&mut self, scratch: &mut Vec<u8>) -> Result<Reference<'_, '_, str>> {",
+            "            scratch.extend_from_slice(&self.data[self.pos..]);",
+            "            self.pos += self.data.len();",
+            "            Ok(Reference::Borrowed(\"test\"))",
+            "        }",
+            "        fn discard(&mut self) {}",
+            "    }",
+            "",
+            "    struct TestVisitor;",
+            "",
+            "    impl de::Visitor<'_> for TestVisitor {",
+            "        type Value = String;",
+            "        ",
+            "        fn visit_borrowed_str(self, v: &'static str) -> Result<Self::Value> {",
+            "            Ok(v.to_string())",
+            "        }",
+            "",
+            "        fn visit_str(self, v: &str) -> Result<Self::Value> {",
+            "            Ok(v.to_string())",
+            "        }",
+            "    }",
+            "",
+            "    let mut mock_read = MockRead { data: b\"test\".to_vec(), pos: 0 };",
+            "    let mut deserializer = Deserializer {",
+            "        read: mock_read,",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "",
+            "    let result: Result<String> = deserializer.deserialize_any(TestVisitor);",
+            "    assert!(result.is_ok());",
+            "    assert_eq!(result.unwrap(), \"test\");",
+            "}",
+            "",
+            "fn test_deserialize_any_err() {",
+            "    struct MockRead {",
+            "        should_fail: bool,",
+            "    }",
+            "",
+            "    impl Read<'_> for MockRead {",
+            "        fn parse_str(&mut self, _: &mut Vec<u8>) -> Result<Reference<'_, '_, str>> {",
+            "            if self.should_fail {",
+            "                Err(Error)",
+            "            } else {",
+            "                Ok(Reference::Borrowed(\"test\"))",
+            "            }",
+            "        }",
+            "        fn discard(&mut self) {}",
+            "    }",
+            "",
+            "    struct TestVisitor;",
+            "",
+            "    impl de::Visitor<'_> for TestVisitor {",
+            "        type Value = String;",
+            "",
+            "        fn visit_borrowed_str(self, _: &'static str) -> Result<Self::Value> {",
+            "            Ok(\"test\".to_string())",
+            "        }",
+            "",
+            "        fn visit_str(self, _: &str) -> Result<Self::Value> {",
+            "            Ok(\"test\".to_string())",
+            "        }",
+            "    }",
+            "",
+            "    let mut mock_read_fail = MockRead { should_fail: true };",
+            "    let mut deserializer_fail = Deserializer {",
+            "        read: mock_read_fail,",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "",
+            "    let result: Result<String> = deserializer_fail.deserialize_any(TestVisitor);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.de.read.parse_str(&mut self.de.scratch) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: self.de.read.parse_str(&mut self.de.scratch) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Reference::Borrowed(s) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockRead {",
+                  "        input: Vec<u8>,",
+                  "        index: usize,",
+                  "    }",
+                  "",
+                  "    impl Read<'static> for MockRead {",
+                  "        fn parse_str(&mut self, buf: &mut String) -> Result<Reference<'static, 'static, str>> {",
+                  "            let slice = &self.input[self.index..];",
+                  "            let parsed_str = String::from_utf8(slice.to_vec()).map_err(|_| Error)?;",
+                  "            self.index += slice.len();",
+                  "            buf.push_str(&parsed_str);",
+                  "            Ok(Reference::Borrowed(parsed_str.as_str()))",
+                  "        }",
+                  "        ",
+                  "        fn discard(&mut self) {}",
+                  "    }",
+                  "",
+                  "    struct MockVisitor;",
+                  "",
+                  "    impl<'de> de::Visitor<'de> for MockVisitor {",
+                  "        type Value = String;",
+                  "",
+                  "        fn visit_borrowed_str(self, v: &'de str) -> Result<Self::Value> {",
+                  "            Ok(v.to_owned())",
+                  "        }",
+                  "",
+                  "        fn visit_str(self, v: &str) -> Result<Self::Value> {",
+                  "            Ok(v.to_owned())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockDeserializer {",
+                  "        read: MockRead,",
+                  "        scratch: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl Deserializer<MockRead> {",
+                  "        fn new(read: MockRead) -> Self {",
+                  "            Self {",
+                  "                read,",
+                  "                scratch: Vec::new(),",
+                  "                remaining_depth: 10,",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let input = b\"Hello, World!\".to_vec();",
+                  "    let read = MockRead { input, index: 0 };",
+                  "    let mut deserializer = MockDeserializer::new(read);",
+                  "    let visitor = MockVisitor;",
+                  "",
+                  "    let result = deserializer.deserialize_any(visitor).unwrap();",
+                  "    assert_eq!(result, \"Hello, World!\".to_owned());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling rustversion v1.0.20\n   Compiling ref-cast v1.0.24\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_stacker v0.1.12\n   Compiling serde_bytes v0.11.17\n   Compiling toml_edit v0.22.25\n   Compiling toml v0.8.21\n   Compiling trybuild v1.0.104\nerror[E0423]: expected value, found struct `Error`\n    --> src/de.rs:2718:76\n     |\n2718 |               let parsed_str = String::from_utf8(slice.to_vec()).map_err(|_| Error)?;\n     |                                                                              ^^^^^\n     |\n    ::: src/error.rs:17:1\n     |\n17   | / pub struct Error {\n18   | |     /// This `Box` allows us to keep the size of `Error` as small as possible. A\n19   | |     /// larger `Error` type was substantially slower due to all the functions\n20   | |     /// that pass around `Result<T, Error>`.\n21   | |     err: Box<ErrorImpl>,\n22   | | }\n     | |_- `Error` defined here\n     |\nhelp: use struct literal syntax instead\n     |\n2718 |             let parsed_str = String::from_utf8(slice.to_vec()).map_err(|_| Error { err: val })?;\n     |                                                                            ~~~~~~~~~~~~~~~~~~\nhelp: consider importing one of these unit structs instead\n     |\n2705 +    use std::fmt::Error;\n     |\n2705 +    use alloc::fmt::Error;\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> src/de.rs:2706:8\n     |\n2706 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `MockRead: read::private::Sealed` is not satisfied\n    --> src/de.rs:2715:28\n     |\n2715 |     impl Read<'static> for MockRead {\n     |                            ^^^^^^^^ the trait `read::private::Sealed` is not implemented for `MockRead`\n     |\n     = help: the following other types implement trait `read::private::Sealed`:\n               &mut R\n               IoRead<R>\n               SliceRead<'a>\n               StrRead<'a>\nnote: required by a bound in `read::Read`\n    --> src/read.rs:28:22\n     |\n28   | pub trait Read<'de>: private::Sealed {\n     |                      ^^^^^^^^^^^^^^^ required by this bound in `Read`\n     = note: `Read` is a \"sealed trait\", because to implement it you also need to implement `read::private::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it\n     = help: the following types implement the trait:\n               read::IoRead<R>\n               read::SliceRead<'a>\n               read::StrRead<'a>\n               &mut R\n\nerror[E0053]: method `parse_str` has an incompatible type for trait\n    --> src/de.rs:2716:38\n     |\n2716 |         fn parse_str(&mut self, buf: &mut String) -> Result<Reference<'static, 'static, str>> {\n     |                                      ^^^^^^^^^^^ expected `std::vec::Vec<u8>`, found `std::string::String`\n     |\nnote: type in trait\n    --> src/read.rs:67:45\n     |\n67   |     fn parse_str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Reference<'de, 's, str>>;\n     |                                             ^^^^^^^^^^^^^^^\n     = note: expected signature `fn(&'s mut MockRead, &'s mut std::vec::Vec<u8>) -> std::result::Result<read::Reference<'_, 's, _>, _>`\n                found signature `fn(&mut MockRead, &mut std::string::String) -> std::result::Result<read::Reference<'_, 'static, _>, _>`\nhelp: change the parameter type to match the trait\n     |\n2716 |         fn parse_str(&mut self, buf: &'s mut std::vec::Vec<u8>) -> Result<Reference<'static, 'static, str>> {\n     |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0046]: not all trait items implemented, missing: `next`, `peek`, `position`, `peek_position`, `byte_offset`, `parse_str_raw`, `ignore_str`, `decode_hex_escape`, `should_early_return_if_failed`, `set_failed`\n    --> src/de.rs:2715:5\n     |\n2715 |       impl Read<'static> for MockRead {\n     |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `next`, `peek`, `position`, `peek_position`, `byte_offset`, `parse_str_raw`, `ignore_str`, `decode_hex_escape`, `should_early_return_if_failed`, `set_failed` in implementation\n     |\n    ::: src/read.rs:30:5\n     |\n30   |       fn next(&mut self) -> Result<Option<u8>>;\n     |       ----------------------------------------- `next` from trait\n31   |       #[doc(hidden)]\n32   |       fn peek(&mut self) -> Result<Option<u8>>;\n     |       ----------------------------------------- `peek` from trait\n...\n46   |       fn position(&self) -> Position;\n     |       ------------------------------- `position` from trait\n...\n56   |       fn peek_position(&self) -> Position;\n     |       ------------------------------------ `peek_position` from trait\n...\n61   |       fn byte_offset(&self) -> usize;\n     |       ------------------------------- `byte_offset` from trait\n...\n76   | /     fn parse_str_raw<'s>(\n77   | |         &'s mut self,\n78   | |         scratch: &'s mut Vec<u8>,\n79   | |     ) -> Result<Reference<'de, 's, [u8]>>;\n     | |__________________________________________- `parse_str_raw` from trait\n...\n84   |       fn ignore_str(&mut self) -> Result<()>;\n     |       --------------------------------------- `ignore_str` from trait\n...\n89   |       fn decode_hex_escape(&mut self) -> Result<u16>;\n     |       ----------------------------------------------- `decode_hex_escape` from trait\n...\n111  |       const should_early_return_if_failed: bool;\n     |       ----------------------------------------- `should_early_return_if_failed` from trait\n...\n116  |       fn set_failed(&mut self, failed: &mut bool);\n     |       -------------------------------------------- `set_failed` from trait\n\nerror[E0049]: method `visit_borrowed_str` has 0 type parameters but its trait declaration has 1 type parameter\n    --> src/de.rs:2732:30\n     |\n2732 |           fn visit_borrowed_str(self, v: &'de str) -> Result<Self::Value> {\n     |                                ^ found 0 type parameters\n     |\n    ::: /home/abezbm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.219/src/de/mod.rs:1510:5\n     |\n1510 | /     fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>\n1511 | |     where\n1512 | |         E: Error,\n     | |_________________- expected 1 type parameter\n\nerror[E0049]: method `visit_str` has 0 type parameters but its trait declaration has 1 type parameter\n    --> src/de.rs:2736:21\n     |\n2736 |           fn visit_str(self, v: &str) -> Result<Self::Value> {\n     |                       ^ found 0 type parameters\n     |\n    ::: /home/abezbm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.219/src/de/mod.rs:1493:5\n     |\n1493 | /     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>\n1494 | |     where\n1495 | |         E: Error,\n     | |_________________- expected 1 type parameter\n\nerror[E0046]: not all trait items implemented, missing: `expecting`\n    --> src/de.rs:2729:5\n     |\n2729 |     impl<'de> de::Visitor<'de> for MockVisitor {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `expecting` in implementation\n     |\n     = help: implement the missing item: `fn expecting(&self, _: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { todo!() }`\n\nerror[E0592]: duplicate definitions with name `new`\n    --> src/de.rs:59:5\n     |\n59   |     pub fn new(read: R) -> Self {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ duplicate definitions for `new`\n...\n2747 |         fn new(read: MockRead) -> Self {\n     |         ------------------------------ other definition for `new`\n\nerror[E0599]: no function or associated item named `new` found for struct `MockDeserializer` in the current scope\n    --> src/de.rs:2758:46\n     |\n2741 |     struct MockDeserializer {\n     |     ----------------------- function or associated item `new` not found for this struct\n...\n2758 |     let mut deserializer = MockDeserializer::new(read);\n     |                                              ^^^ function or associated item not found in `MockDeserializer`\n\nSome errors have detailed explanations: E0046, E0049, E0053, E0277, E0423, E0592, E0599.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 9 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockReadInvalid {",
+                  "        input: Vec<u8>,",
+                  "        index: usize,",
+                  "    }",
+                  "",
+                  "    impl Read<'static> for MockReadInvalid {",
+                  "        fn parse_str(&mut self, buf: &mut String) -> Result<Reference<'static, 'static, str>> {",
+                  "            Err(Error)",
+                  "        }",
+                  "",
+                  "        fn discard(&mut self) {}",
+                  "    }",
+                  "",
+                  "    struct MockVisitor;",
+                  "",
+                  "    impl<'de> de::Visitor<'de> for MockVisitor {",
+                  "        type Value = String;",
+                  "",
+                  "        fn visit_borrowed_str(self, v: &'de str) -> Result<Self::Value> {",
+                  "            Ok(v.to_owned())",
+                  "        }",
+                  "",
+                  "        fn visit_str(self, v: &str) -> Result<Self::Value> {",
+                  "            Ok(v.to_owned())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockDeserializer {",
+                  "        read: MockReadInvalid,",
+                  "        scratch: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl Deserializer<MockReadInvalid> {",
+                  "        fn new(read: MockReadInvalid) -> Self {",
+                  "            Self {",
+                  "                read,",
+                  "                scratch: Vec::new(),",
+                  "                remaining_depth: 10,",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let input = b\"Invalid Input\".to_vec();",
+                  "    let read = MockReadInvalid { input, index: 0 };",
+                  "    let mut deserializer = MockDeserializer::new(read);",
+                  "    let visitor = MockVisitor;",
+                  "",
+                  "    // This should panic due to the error in parsing",
+                  "    let _ = deserializer.deserialize_any(visitor);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling rustversion v1.0.20\n   Compiling ref-cast v1.0.24\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.25\n   Compiling toml v0.8.21\n   Compiling trybuild v1.0.104\nerror[E0423]: expected value, found struct `Error`\n    --> src/de.rs:2718:17\n     |\n2718 |               Err(Error)\n     |                   ^^^^^\n     |\n    ::: src/error.rs:17:1\n     |\n17   | / pub struct Error {\n18   | |     /// This `Box` allows us to keep the size of `Error` as small as possible. A\n19   | |     /// larger `Error` type was substantially slower due to all the functions\n20   | |     /// that pass around `Result<T, Error>`.\n21   | |     err: Box<ErrorImpl>,\n22   | | }\n     | |_- `Error` defined here\n     |\nhelp: use struct literal syntax instead\n     |\n2718 |             Err(Error { err: val })\n     |                 ~~~~~~~~~~~~~~~~~~\nhelp: consider importing one of these unit structs instead\n     |\n2705 +    use std::fmt::Error;\n     |\n2705 +    use alloc::fmt::Error;\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> src/de.rs:2706:8\n     |\n2706 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `MockReadInvalid: read::private::Sealed` is not satisfied\n    --> src/de.rs:2716:28\n     |\n2716 |     impl Read<'static> for MockReadInvalid {\n     |                            ^^^^^^^^^^^^^^^ the trait `read::private::Sealed` is not implemented for `MockReadInvalid`\n     |\n     = help: the following other types implement trait `read::private::Sealed`:\n               &mut R\n               IoRead<R>\n               SliceRead<'a>\n               StrRead<'a>\nnote: required by a bound in `read::Read`\n    --> src/read.rs:28:22\n     |\n28   | pub trait Read<'de>: private::Sealed {\n     |                      ^^^^^^^^^^^^^^^ required by this bound in `Read`\n     = note: `Read` is a \"sealed trait\", because to implement it you also need to implement `read::private::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it\n     = help: the following types implement the trait:\n               read::IoRead<R>\n               read::SliceRead<'a>\n               read::StrRead<'a>\n               &mut R\n\nerror[E0053]: method `parse_str` has an incompatible type for trait\n    --> src/de.rs:2717:38\n     |\n2717 |         fn parse_str(&mut self, buf: &mut String) -> Result<Reference<'static, 'static, str>> {\n     |                                      ^^^^^^^^^^^ expected `std::vec::Vec<u8>`, found `std::string::String`\n     |\nnote: type in trait\n    --> src/read.rs:67:45\n     |\n67   |     fn parse_str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Reference<'de, 's, str>>;\n     |                                             ^^^^^^^^^^^^^^^\n     = note: expected signature `fn(&'s mut MockReadInvalid, &'s mut std::vec::Vec<u8>) -> std::result::Result<read::Reference<'_, 's, _>, _>`\n                found signature `fn(&mut MockReadInvalid, &mut std::string::String) -> std::result::Result<read::Reference<'_, 'static, _>, _>`\nhelp: change the parameter type to match the trait\n     |\n2717 |         fn parse_str(&mut self, buf: &'s mut std::vec::Vec<u8>) -> Result<Reference<'static, 'static, str>> {\n     |                                      ~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0046]: not all trait items implemented, missing: `next`, `peek`, `position`, `peek_position`, `byte_offset`, `parse_str_raw`, `ignore_str`, `decode_hex_escape`, `should_early_return_if_failed`, `set_failed`\n    --> src/de.rs:2716:5\n     |\n2716 |       impl Read<'static> for MockReadInvalid {\n     |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `next`, `peek`, `position`, `peek_position`, `byte_offset`, `parse_str_raw`, `ignore_str`, `decode_hex_escape`, `should_early_return_if_failed`, `set_failed` in implementation\n     |\n    ::: src/read.rs:30:5\n     |\n30   |       fn next(&mut self) -> Result<Option<u8>>;\n     |       ----------------------------------------- `next` from trait\n31   |       #[doc(hidden)]\n32   |       fn peek(&mut self) -> Result<Option<u8>>;\n     |       ----------------------------------------- `peek` from trait\n...\n46   |       fn position(&self) -> Position;\n     |       ------------------------------- `position` from trait\n...\n56   |       fn peek_position(&self) -> Position;\n     |       ------------------------------------ `peek_position` from trait\n...\n61   |       fn byte_offset(&self) -> usize;\n     |       ------------------------------- `byte_offset` from trait\n...\n76   | /     fn parse_str_raw<'s>(\n77   | |         &'s mut self,\n78   | |         scratch: &'s mut Vec<u8>,\n79   | |     ) -> Result<Reference<'de, 's, [u8]>>;\n     | |__________________________________________- `parse_str_raw` from trait\n...\n84   |       fn ignore_str(&mut self) -> Result<()>;\n     |       --------------------------------------- `ignore_str` from trait\n...\n89   |       fn decode_hex_escape(&mut self) -> Result<u16>;\n     |       ----------------------------------------------- `decode_hex_escape` from trait\n...\n111  |       const should_early_return_if_failed: bool;\n     |       ----------------------------------------- `should_early_return_if_failed` from trait\n...\n116  |       fn set_failed(&mut self, failed: &mut bool);\n     |       -------------------------------------------- `set_failed` from trait\n\nerror[E0049]: method `visit_borrowed_str` has 0 type parameters but its trait declaration has 1 type parameter\n    --> src/de.rs:2729:30\n     |\n2729 |           fn visit_borrowed_str(self, v: &'de str) -> Result<Self::Value> {\n     |                                ^ found 0 type parameters\n     |\n    ::: /home/abezbm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.219/src/de/mod.rs:1510:5\n     |\n1510 | /     fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E>\n1511 | |     where\n1512 | |         E: Error,\n     | |_________________- expected 1 type parameter\n\nerror[E0049]: method `visit_str` has 0 type parameters but its trait declaration has 1 type parameter\n    --> src/de.rs:2733:21\n     |\n2733 |           fn visit_str(self, v: &str) -> Result<Self::Value> {\n     |                       ^ found 0 type parameters\n     |\n    ::: /home/abezbm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.219/src/de/mod.rs:1493:5\n     |\n1493 | /     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>\n1494 | |     where\n1495 | |         E: Error,\n     | |_________________- expected 1 type parameter\n\nerror[E0046]: not all trait items implemented, missing: `expecting`\n    --> src/de.rs:2726:5\n     |\n2726 |     impl<'de> de::Visitor<'de> for MockVisitor {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `expecting` in implementation\n     |\n     = help: implement the missing item: `fn expecting(&self, _: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { todo!() }`\n\nerror[E0592]: duplicate definitions with name `new`\n    --> src/de.rs:59:5\n     |\n59   |     pub fn new(read: R) -> Self {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ duplicate definitions for `new`\n...\n2744 |         fn new(read: MockReadInvalid) -> Self {\n     |         ------------------------------------- other definition for `new`\n\nerror[E0599]: no function or associated item named `new` found for struct `MockDeserializer` in the current scope\n    --> src/de.rs:2755:46\n     |\n2738 |     struct MockDeserializer {\n     |     ----------------------- function or associated item `new` not found for this struct\n...\n2755 |     let mut deserializer = MockDeserializer::new(read);\n     |                                              ^^^ function or associated item not found in `MockDeserializer`\n\nSome errors have detailed explanations: E0046, E0049, E0053, E0277, E0423, E0592, E0599.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 9 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

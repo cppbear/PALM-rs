@@ -1,0 +1,229 @@
+// Answer 0
+
+#[test]
+fn test_fmt_message() {
+    let error_code = ErrorCode::Message(Box::from("Test message"));
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "Test message");
+}
+
+#[test]
+fn test_fmt_io() {
+    use std::io;
+    let io_error = io::Error::new(io::ErrorKind::Other, "I/O error");
+    let error_code = ErrorCode::Io(io_error);
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert!(output.contains("I/O error"));
+}
+
+#[test]
+fn test_fmt_eof_while_parsing_list() {
+    let error_code = ErrorCode::EofWhileParsingList;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "EOF while parsing a list");
+}
+
+#[test]
+fn test_fmt_eof_while_parsing_object() {
+    let error_code = ErrorCode::EofWhileParsingObject;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "EOF while parsing an object");
+}
+
+#[test]
+fn test_fmt_eof_while_parsing_string() {
+    let error_code = ErrorCode::EofWhileParsingString;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "EOF while parsing a string");
+}
+
+#[test]
+fn test_fmt_eof_while_parsing_value() {
+    let error_code = ErrorCode::EofWhileParsingValue;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "EOF while parsing a value");
+}
+
+#[test]
+fn test_fmt_expected_colon() {
+    let error_code = ErrorCode::ExpectedColon;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "expected `:`");
+}
+
+#[test]
+fn test_fmt_expected_list_comma_or_end() {
+    let error_code = ErrorCode::ExpectedListCommaOrEnd;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "expected `,` or `]`");
+}
+
+#[test]
+fn test_fmt_expected_object_comma_or_end() {
+    let error_code = ErrorCode::ExpectedObjectCommaOrEnd;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "expected `,` or `}`");
+}
+
+#[test]
+fn test_fmt_expected_some_ident() {
+    let error_code = ErrorCode::ExpectedSomeIdent;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "expected ident");
+}
+
+#[test]
+fn test_fmt_expected_some_value() {
+    let error_code = ErrorCode::ExpectedSomeValue;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "expected value");
+}
+
+#[test]
+fn test_fmt_expected_double_quote() {
+    let error_code = ErrorCode::ExpectedDoubleQuote;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "expected `\"`");
+}
+
+#[test]
+fn test_fmt_invalid_escape() {
+    let error_code = ErrorCode::InvalidEscape;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "invalid escape");
+}
+
+#[test]
+fn test_fmt_invalid_number() {
+    let error_code = ErrorCode::InvalidNumber;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "invalid number");
+}
+
+#[test]
+fn test_fmt_number_out_of_range() {
+    let error_code = ErrorCode::NumberOutOfRange;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "number out of range");
+}
+
+#[test]
+fn test_fmt_invalid_unicode_code_point() {
+    let error_code = ErrorCode::InvalidUnicodeCodePoint;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "invalid unicode code point");
+}
+
+#[test]
+fn test_fmt_control_character_while_parsing_string() {
+    let error_code = ErrorCode::ControlCharacterWhileParsingString;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "control character (\\u0000-\\u001F) found while parsing a string");
+}
+
+#[test]
+fn test_fmt_key_must_be_a_string() {
+    let error_code = ErrorCode::KeyMustBeAString;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "key must be a string");
+}
+
+#[test]
+fn test_fmt_expected_numeric_key() {
+    let error_code = ErrorCode::ExpectedNumericKey;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "invalid value: expected key to be a number in quotes");
+}
+
+#[test]
+fn test_fmt_float_key_must_be_finite() {
+    let error_code = ErrorCode::FloatKeyMustBeFinite;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "float key must be finite (got NaN or +/-inf)");
+}
+
+#[test]
+fn test_fmt_lone_leading_surrogate_in_hex_escape() {
+    let error_code = ErrorCode::LoneLeadingSurrogateInHexEscape;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "lone leading surrogate in hex escape");
+}
+
+#[test]
+fn test_fmt_trailing_comma() {
+    let error_code = ErrorCode::TrailingComma;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "trailing comma");
+}
+
+#[test]
+fn test_fmt_trailing_characters() {
+    let error_code = ErrorCode::TrailingCharacters;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "trailing characters");
+}
+
+#[test]
+fn test_fmt_unexpected_end_of_hex_escape() {
+    let error_code = ErrorCode::UnexpectedEndOfHexEscape;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "unexpected end of hex escape");
+}
+
+#[test]
+fn test_fmt_recursion_limit_exceeded() {
+    let error_code = ErrorCode::RecursionLimitExceeded;
+    let mut output = String::new();
+    let result = error_code.fmt(&mut output);
+    assert!(result.is_ok());
+    assert_eq!(output, "recursion limit exceeded");
+}
+

@@ -1,0 +1,134 @@
+{
+  "name": "serde::de::impls::<de::impls::CStringVisitor as de::Visitor<'de>>::visit_seq",
+  "name_with_impl": "serde::de::impls::{impl#13}::visit_seq",
+  "mod_info": {
+    "name": "de::impls",
+    "loc": "serde/src/de/mod.rs:122:1:122:11"
+  },
+  "visible": true,
+  "loc": "serde/src/de/impls.rs:788:5:800:6",
+  "fn_tests": [
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: seq.next_element() matches Ok(val) is true\n",
+        "// constraint: let Some(value) = tri!(seq.next_element()) is true\n",
+        "// constraint: seq.next_element() matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct MockSeq {",
+            "    data: Vec<Option<u8>>,",
+            "    index: usize,",
+            "}",
+            "",
+            "impl MockSeq {",
+            "    fn new(data: Vec<Option<u8>>) -> Self {",
+            "        MockSeq { data, index: 0 }",
+            "    }",
+            "}",
+            "",
+            "impl<'de> SeqAccess<'de> for MockSeq {",
+            "    type Error = serde_json::Error; // Using serde_json for the error type",
+            "",
+            "    fn next_element<T>(&mut self) -> Result<Option<T>, Self::Error>",
+            "    where",
+            "        T: Deserialize<'de>,",
+            "    {",
+            "        if self.index >= self.data.len() {",
+            "            return Ok(None);",
+            "        }",
+            "        let value = self.data[self.index].take();",
+            "        self.index += 1;",
+            "        match value {",
+            "            Some(v) => Ok(Some(serde_json::from_value(serde_json::json!(v)).unwrap())),",
+            "            None => Err(serde_json::Error::custom(\"Manual error for testing\")),",
+            "        }",
+            "    }",
+            "",
+            "    fn size_hint(&self) -> (usize, Option<usize>) {",
+            "        let remaining = self.data.len() - self.index;",
+            "        (remaining, Some(remaining))",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mock_seq = MockSeq::new(vec![Some(1), Some(2), Some(3)]);",
+                  "    let result: Result<CString, serde_json::Error> = visit_seq(mock_seq);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3203:55\n     |\n3203 |             Some(v) => Ok(Some(serde_json::from_value(serde_json::json!(v)).unwrap())),\n     |                                                       ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3204:25\n     |\n3204 |             None => Err(serde_json::Error::custom(\"Manual error for testing\")),\n     |                         ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n     |\nhelp: consider importing one of these items\n     |\n3176 +    use crate::__private::doc::Error;\n     |\n3176 +    use crate::__private::fmt::Error;\n     |\n3176 +    use crate::de::Error;\n     |\n3176 +    use crate::de::error::Error;\n     |\n       and 7 other candidates\nhelp: if you import `Error`, refer to it directly\n     |\n3204 -             None => Err(serde_json::Error::custom(\"Manual error for testing\")),\n3204 +             None => Err(Error::custom(\"Manual error for testing\")),\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> serde/src/de/impls.rs:3177:8\n     |\n3177 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0053]: method `size_hint` has an incompatible type for trait\n    --> serde/src/de/impls.rs:3208:28\n     |\n3208 |     fn size_hint(&self) -> (usize, Option<usize>) {\n     |                            ^^^^^^^^^^^^^^^^^^^^^^ expected `std::option::Option<usize>`, found `(usize, std::option::Option<usize>)`\n     |\nnote: type in trait\n    --> serde/src/de/mod.rs:1739:28\n     |\n1739 |     fn size_hint(&self) -> Option<usize> {\n     |                            ^^^^^^^^^^^^^\n     = note: expected signature `fn(&MockSeq) -> std::option::Option<usize>`\n                found signature `fn(&MockSeq) -> (usize, std::option::Option<usize>)`\nhelp: change the output type to match the trait\n     |\n3208 |     fn size_hint(&self) -> std::option::Option<usize> {\n     |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0046]: not all trait items implemented, missing: `next_element_seed`\n    --> serde/src/de/impls.rs:3190:1\n     |\n3190 |   impl<'de> SeqAccess<'de> for MockSeq {\n     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `next_element_seed` in implementation\n     |\n    ::: serde/src/de/mod.rs:1720:5\n     |\n1720 | /     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>\n1721 | |     where\n1722 | |         T: DeserializeSeed<'de>;\n     | |________________________________- `next_element_seed` from trait\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3203:32\n     |\n3203 |             Some(v) => Ok(Some(serde_json::from_value(serde_json::json!(v)).unwrap())),\n     |                                ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nerror[E0425]: cannot find function `visit_seq` in this scope\n    --> serde/src/de/impls.rs:3218:54\n     |\n3218 |     let result: Result<CString, serde_json::Error> = visit_seq(mock_seq);\n     |                                                      ^^^^^^^^^ not found in this scope\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3191:18\n     |\n3191 |     type Error = serde_json::Error; // Using serde_json for the error type\n     |                  ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3218:33\n     |\n3218 |     let result: Result<CString, serde_json::Error> = visit_seq(mock_seq);\n     |                                 ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nSome errors have detailed explanations: E0046, E0053, E0425, E0433.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 8 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mock_seq = MockSeq::new(vec![]);",
+                  "    let result: Result<CString, serde_json::Error> = visit_seq(mock_seq);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3203:55\n     |\n3203 |             Some(v) => Ok(Some(serde_json::from_value(serde_json::json!(v)).unwrap())),\n     |                                                       ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3204:25\n     |\n3204 |             None => Err(serde_json::Error::custom(\"Manual error for testing\")),\n     |                         ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n     |\nhelp: consider importing one of these items\n     |\n3176 +    use crate::__private::doc::Error;\n     |\n3176 +    use crate::__private::fmt::Error;\n     |\n3176 +    use crate::de::Error;\n     |\n3176 +    use crate::de::error::Error;\n     |\n       and 7 other candidates\nhelp: if you import `Error`, refer to it directly\n     |\n3204 -             None => Err(serde_json::Error::custom(\"Manual error for testing\")),\n3204 +             None => Err(Error::custom(\"Manual error for testing\")),\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> serde/src/de/impls.rs:3177:8\n     |\n3177 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0053]: method `size_hint` has an incompatible type for trait\n    --> serde/src/de/impls.rs:3208:28\n     |\n3208 |     fn size_hint(&self) -> (usize, Option<usize>) {\n     |                            ^^^^^^^^^^^^^^^^^^^^^^ expected `std::option::Option<usize>`, found `(usize, std::option::Option<usize>)`\n     |\nnote: type in trait\n    --> serde/src/de/mod.rs:1739:28\n     |\n1739 |     fn size_hint(&self) -> Option<usize> {\n     |                            ^^^^^^^^^^^^^\n     = note: expected signature `fn(&MockSeq) -> std::option::Option<usize>`\n                found signature `fn(&MockSeq) -> (usize, std::option::Option<usize>)`\nhelp: change the output type to match the trait\n     |\n3208 |     fn size_hint(&self) -> std::option::Option<usize> {\n     |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0046]: not all trait items implemented, missing: `next_element_seed`\n    --> serde/src/de/impls.rs:3190:1\n     |\n3190 |   impl<'de> SeqAccess<'de> for MockSeq {\n     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `next_element_seed` in implementation\n     |\n    ::: serde/src/de/mod.rs:1720:5\n     |\n1720 | /     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>\n1721 | |     where\n1722 | |         T: DeserializeSeed<'de>;\n     | |________________________________- `next_element_seed` from trait\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3203:32\n     |\n3203 |             Some(v) => Ok(Some(serde_json::from_value(serde_json::json!(v)).unwrap())),\n     |                                ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nerror[E0425]: cannot find function `visit_seq` in this scope\n    --> serde/src/de/impls.rs:3218:54\n     |\n3218 |     let result: Result<CString, serde_json::Error> = visit_seq(mock_seq);\n     |                                                      ^^^^^^^^^ not found in this scope\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3191:18\n     |\n3191 |     type Error = serde_json::Error; // Using serde_json for the error type\n     |                  ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3218:33\n     |\n3218 |     let result: Result<CString, serde_json::Error> = visit_seq(mock_seq);\n     |                                 ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nSome errors have detailed explanations: E0046, E0053, E0425, E0433.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 8 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Manual error for testing\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mock_seq = MockSeq::new(vec![Some(1), None, Some(3)]);",
+                  "    let _ = visit_seq(mock_seq);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3203:55\n     |\n3203 |             Some(v) => Ok(Some(serde_json::from_value(serde_json::json!(v)).unwrap())),\n     |                                                       ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3204:25\n     |\n3204 |             None => Err(serde_json::Error::custom(\"Manual error for testing\")),\n     |                         ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n     |\nhelp: consider importing one of these items\n     |\n3176 +    use crate::__private::doc::Error;\n     |\n3176 +    use crate::__private::fmt::Error;\n     |\n3176 +    use crate::de::Error;\n     |\n3176 +    use crate::de::error::Error;\n     |\n       and 7 other candidates\nhelp: if you import `Error`, refer to it directly\n     |\n3204 -             None => Err(serde_json::Error::custom(\"Manual error for testing\")),\n3204 +             None => Err(Error::custom(\"Manual error for testing\")),\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> serde/src/de/impls.rs:3177:8\n     |\n3177 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0053]: method `size_hint` has an incompatible type for trait\n    --> serde/src/de/impls.rs:3208:28\n     |\n3208 |     fn size_hint(&self) -> (usize, Option<usize>) {\n     |                            ^^^^^^^^^^^^^^^^^^^^^^ expected `std::option::Option<usize>`, found `(usize, std::option::Option<usize>)`\n     |\nnote: type in trait\n    --> serde/src/de/mod.rs:1739:28\n     |\n1739 |     fn size_hint(&self) -> Option<usize> {\n     |                            ^^^^^^^^^^^^^\n     = note: expected signature `fn(&MockSeq) -> std::option::Option<usize>`\n                found signature `fn(&MockSeq) -> (usize, std::option::Option<usize>)`\nhelp: change the output type to match the trait\n     |\n3208 |     fn size_hint(&self) -> std::option::Option<usize> {\n     |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0046]: not all trait items implemented, missing: `next_element_seed`\n    --> serde/src/de/impls.rs:3190:1\n     |\n3190 |   impl<'de> SeqAccess<'de> for MockSeq {\n     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `next_element_seed` in implementation\n     |\n    ::: serde/src/de/mod.rs:1720:5\n     |\n1720 | /     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>\n1721 | |     where\n1722 | |         T: DeserializeSeed<'de>;\n     | |________________________________- `next_element_seed` from trait\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3203:32\n     |\n3203 |             Some(v) => Ok(Some(serde_json::from_value(serde_json::json!(v)).unwrap())),\n     |                                ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nerror[E0425]: cannot find function `visit_seq` in this scope\n    --> serde/src/de/impls.rs:3219:13\n     |\n3219 |     let _ = visit_seq(mock_seq);\n     |             ^^^^^^^^^ not found in this scope\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> serde/src/de/impls.rs:3191:18\n     |\n3191 |     type Error = serde_json::Error; // Using serde_json for the error type\n     |                  ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nSome errors have detailed explanations: E0046, E0053, E0425, E0433.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 7 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

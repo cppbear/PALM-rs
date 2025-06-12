@@ -1,0 +1,819 @@
+{
+  "name": "indexmap::map::slice::map::slice::Slice<K, V>::get_disjoint_opt_mut",
+  "name_with_impl": "indexmap::map::slice::{impl#1}::get_disjoint_opt_mut",
+  "mod_info": {
+    "name": "map::slice",
+    "loc": "src/map.rs:7:1:7:11"
+  },
+  "visible": true,
+  "loc": "src/map/slice.rs:288:5:318:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: i in 0..N is true\n",
+        "// constraint: indices[i] matches Some(idx) is false\n",
+        "// constraint: i in 0..N is false\n",
+        "// expected return value/type: Ok(out)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct GetDisjointMutError {",
+            "    reason: String,",
+            "}",
+            "",
+            "struct Entry<K, V> {",
+            "    key: K,",
+            "    value: V,",
+            "}",
+            "",
+            "struct SliceMap<K, V> {",
+            "    entries: Vec<Entry<K, V>>,",
+            "}",
+            "",
+            "impl<K, V> SliceMap<K, V> {",
+            "    fn len(&self) -> usize {",
+            "        self.entries.len()",
+            "    }",
+            "    ",
+            "    fn get_disjoint_opt_mut<const N: usize>(",
+            "        &mut self,",
+            "        indices: [Option<usize>; N],",
+            "    ) -> Result<[Option<(&K, &mut V)>; N], GetDisjointMutError> {",
+            "        let len = self.len();",
+            "        for i in 0..N {",
+            "            if let Some(idx) = indices[i] {",
+            "                if idx >= len {",
+            "                    return Err(GetDisjointMutError {",
+            "                        reason: \"IndexOutOfBounds\".to_string(),",
+            "                    });",
+            "                } else if indices[..i].contains(&Some(idx)) {",
+            "                    return Err(GetDisjointMutError {",
+            "                        reason: \"OverlappingIndices\".to_string(),",
+            "                    });",
+            "                }",
+            "            }",
+            "        }",
+            "",
+            "        let entries_ptr = self.entries.as_mut_ptr();",
+            "        let out = indices.map(|idx_opt| {",
+            "            match idx_opt {",
+            "                Some(idx) => {",
+            "                    let kv = unsafe { (&mut (*(entries_ptr.add(idx))).value, &mut (*(entries_ptr.add(idx))).key) };",
+            "                    Some(kv)",
+            "                }",
+            "                None => None,",
+            "            }",
+            "        });",
+            "",
+            "        Ok(out)",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = SliceMap {",
+                  "        entries: vec![",
+                  "            Entry { key: 'a', value: 1 },",
+                  "            Entry { key: 'b', value: 2 },",
+                  "            Entry { key: 'c', value: 3 },",
+                  "        ],",
+                  "    };",
+                  "    ",
+                  "    let indices = [Some(0), Some(1), None];",
+                  "    let result = map.get_disjoint_opt_mut(indices);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    if let Ok(out) = result {",
+                  "        assert_eq!(out[0], Some((&'a', &mut 1)));",
+                  "        assert_eq!(out[1], Some((&'b', &mut 2)));",
+                  "        assert_eq!(out[2], None);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:678:30\n    |\n678 |                     let kv = unsafe { (&mut (*(entries_ptr.add(idx))).value, &mut (*(entries_ptr.add(idx))).key) };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:685:12\n    |\n685 |         Ok(out)\n    |         -- ^^^ types differ in mutability\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&mut V, &mut K)>; N]`\nhelp: the type constructed contains `[Option<(&mut V, &mut K)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:685:9\n    |\n685 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = SliceMap {",
+                  "        entries: vec![",
+                  "            Entry { key: 'a', value: 1 },",
+                  "            Entry { key: 'b', value: 2 },",
+                  "            Entry { key: 'c', value: 3 },",
+                  "        ],",
+                  "    };",
+                  "    ",
+                  "    let indices = [Some(0), Some(0), None];",
+                  "    let result = map.get_disjoint_opt_mut(indices);",
+                  "    ",
+                  "    assert!(result.is_err());",
+                  "    if let Err(error) = result {",
+                  "        assert_eq!(error.reason, \"OverlappingIndices\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:678:30\n    |\n678 |                     let kv = unsafe { (&mut (*(entries_ptr.add(idx))).value, &mut (*(entries_ptr.add(idx))).key) };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:685:12\n    |\n685 |         Ok(out)\n    |         -- ^^^ types differ in mutability\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&mut V, &mut K)>; N]`\nhelp: the type constructed contains `[Option<(&mut V, &mut K)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:685:9\n    |\n685 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = SliceMap {",
+                  "        entries: vec![",
+                  "            Entry { key: 'a', value: 1 },",
+                  "            Entry { key: 'b', value: 2 },",
+                  "            Entry { key: 'c', value: 3 },",
+                  "        ],",
+                  "    };",
+                  "    ",
+                  "    let indices = [Some(0), Some(2), Some(3)];  // 3 is out of bounds",
+                  "    let result = map.get_disjoint_opt_mut(indices);",
+                  "    ",
+                  "    assert!(result.is_err());",
+                  "    if let Err(error) = result {",
+                  "        assert_eq!(error.reason, \"IndexOutOfBounds\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:678:30\n    |\n678 |                     let kv = unsafe { (&mut (*(entries_ptr.add(idx))).value, &mut (*(entries_ptr.add(idx))).key) };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:685:12\n    |\n685 |         Ok(out)\n    |         -- ^^^ types differ in mutability\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&mut V, &mut K)>; N]`\nhelp: the type constructed contains `[Option<(&mut V, &mut K)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:685:9\n    |\n685 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = SliceMap {",
+                  "        entries: vec![",
+                  "            Entry { key: 'a', value: 1 },",
+                  "            Entry { key: 'b', value: 2 },",
+                  "            Entry { key: 'c', value: 3 },",
+                  "        ],",
+                  "    };",
+                  "    ",
+                  "    let indices = [None, None, None];",
+                  "    let result = map.get_disjoint_opt_mut(indices);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    if let Ok(out) = result {",
+                  "        assert_eq!(out, [None, None, None]);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:678:30\n    |\n678 |                     let kv = unsafe { (&mut (*(entries_ptr.add(idx))).value, &mut (*(entries_ptr.add(idx))).key) };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:685:12\n    |\n685 |         Ok(out)\n    |         -- ^^^ types differ in mutability\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&mut V, &mut K)>; N]`\nhelp: the type constructed contains `[Option<(&mut V, &mut K)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:685:9\n    |\n685 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = SliceMap {",
+                  "        entries: vec![",
+                  "            Entry { key: 'a', value: 1 },",
+                  "            Entry { key: 'b', value: 2 },",
+                  "        ],",
+                  "    };",
+                  "    ",
+                  "    let indices = [Some(0), None];",
+                  "    let result = map.get_disjoint_opt_mut(indices);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    if let Ok(out) = result {",
+                  "        assert_eq!(out[0], Some((&'a', &mut 1)));",
+                  "        assert_eq!(out[1], None);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:678:30\n    |\n678 |                     let kv = unsafe { (&mut (*(entries_ptr.add(idx))).value, &mut (*(entries_ptr.add(idx))).key) };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:685:12\n    |\n685 |         Ok(out)\n    |         -- ^^^ types differ in mutability\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&mut V, &mut K)>; N]`\nhelp: the type constructed contains `[Option<(&mut V, &mut K)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:685:9\n    |\n685 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: i in 0..N is true\n",
+        "// constraint: indices[i] matches Some(idx) is true\n",
+        "// constraint: idx >= len is true, with bound idx == len\n",
+        "// expected return value/type: Err(GetDisjointMutError::IndexOutOfBounds)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct GetDisjointMutError {",
+            "    kind: String,",
+            "}",
+            "",
+            "impl GetDisjointMutError {",
+            "    fn index_out_of_bounds() -> Self {",
+            "        GetDisjointMutError { kind: \"IndexOutOfBounds\".to_string() }",
+            "    }",
+            "",
+            "    fn overlapping_indices() -> Self {",
+            "        GetDisjointMutError { kind: \"OverlappingIndices\".to_string() }",
+            "    }",
+            "}",
+            "",
+            "struct MyMap<K, V> {",
+            "    entries: Vec<(K, V)>,",
+            "}",
+            "",
+            "impl<K, V> MyMap<K, V> {",
+            "    fn len(&self) -> usize {",
+            "        self.entries.len()",
+            "    }",
+            "",
+            "    pub(crate) fn get_disjoint_opt_mut<const N: usize>(",
+            "        &mut self,",
+            "        indices: [Option<usize>; N],",
+            "    ) -> Result<[Option<(&K, &mut V)>; N], GetDisjointMutError> {",
+            "        let len = self.len();",
+            "        for i in 0..N {",
+            "            if let Some(idx) = indices[i] {",
+            "                if idx >= len {",
+            "                    return Err(GetDisjointMutError::index_out_of_bounds());",
+            "                } else if indices[..i].contains(&Some(idx)) {",
+            "                    return Err(GetDisjointMutError::overlapping_indices());",
+            "                }",
+            "            }",
+            "        }",
+            "",
+            "        let entries_ptr = self.entries.as_mut_ptr();",
+            "        let out = indices.map(|idx_opt| {",
+            "            match idx_opt {",
+            "                Some(idx) => {",
+            "                    let kv = unsafe { (*(entries_ptr.add(idx))).0 }; // Simplified for testing",
+            "                    Some((&kv.0, &mut kv.1)) // Assuming we can return a reference to V",
+            "                }",
+            "                None => None,",
+            "            }",
+            "        });",
+            "",
+            "        Ok(out)",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut my_map: MyMap<i32, i32> = MyMap { entries: vec![(1, 2), (3, 4)] };",
+                  "    let indices = [Some(2), None]; // Valid length with an out-of-bounds index",
+                  "    let result = my_map.get_disjoint_opt_mut::<2>(indices);",
+                  "    assert!(result.is_err());",
+                  "    assert_eq!(result.unwrap_err().kind, \"IndexOutOfBounds\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:679:30\n    |\n679 |                     let kv = unsafe { (*(entries_ptr.add(idx))).0 }; // Simplified for testing\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0609]: no field `0` on type `K`\n   --> src/map/slice.rs:680:31\n    |\n655 | impl<K, V> MyMap<K, V> {\n    |      - type parameter 'K' declared here\n...\n680 |                     Some((&kv.0, &mut kv.1)) // Assuming we can return a reference to V\n    |                               ^ unknown field\n\nerror[E0609]: no field `1` on type `K`\n   --> src/map/slice.rs:680:42\n    |\n655 | impl<K, V> MyMap<K, V> {\n    |      - type parameter 'K' declared here\n...\n680 |                     Some((&kv.0, &mut kv.1)) // Assuming we can return a reference to V\n    |                                          ^ unknown field\n\nFor more information about this error, try `rustc --explain E0609`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 3 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: i in 0..N is true\n",
+        "// constraint: indices[i] matches Some(idx) is true\n",
+        "// constraint: idx >= len is false\n",
+        "// may panic: indices[..i] may panic in certain situations\n",
+        "// constraint: indices[..i].contains(&Some(idx)) is true\n",
+        "// expected return value/type: Err(GetDisjointMutError::OverlappingIndices)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestMap {",
+                  "        entries: Vec<(i32, i32)>,",
+                  "    }",
+                  "",
+                  "    impl TestMap {",
+                  "        fn new() -> Self {",
+                  "            TestMap {",
+                  "                entries: vec![(1, 10), (2, 20), (3, 30)],",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.entries.len()",
+                  "        }",
+                  "",
+                  "        fn get_disjoint_opt_mut<const N: usize>(",
+                  "            &mut self,",
+                  "            indices: [Option<usize>; N],",
+                  "        ) -> Result<[Option<(&i32, &mut i32)>; N], GetDisjointMutError> {",
+                  "            // Implementation of the function to be tested",
+                  "            let len = self.len();",
+                  "            for i in 0..N {",
+                  "                if let Some(idx) = indices[i] {",
+                  "                    if idx >= len {",
+                  "                        return Err(GetDisjointMutError::IndexOutOfBounds);",
+                  "                    } else if indices[..i].contains(&Some(idx)) {",
+                  "                        return Err(GetDisjointMutError::OverlappingIndices);",
+                  "                    }",
+                  "                }",
+                  "            }",
+                  "",
+                  "            let entries_ptr = self.entries.as_mut_ptr();",
+                  "            let out = indices.map(|idx_opt| {",
+                  "                match idx_opt {",
+                  "                    Some(idx) => {",
+                  "                        let kv = unsafe { (*(entries_ptr.add(idx))).ref_mut() };",
+                  "                        Some(kv)",
+                  "                    }",
+                  "                    None => None,",
+                  "                }",
+                  "            });",
+                  "",
+                  "            Ok(out)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    #[derive(Debug)]",
+                  "    enum GetDisjointMutError {",
+                  "        IndexOutOfBounds,",
+                  "        OverlappingIndices,",
+                  "    }",
+                  "",
+                  "    let mut test_map = TestMap::new();",
+                  "    ",
+                  "    // Testing overlapping indices",
+                  "    let indices = [Some(0), Some(0), None]; // Overlapping index at position 0",
+                  "    let result = test_map.get_disjoint_opt_mut::<3>(indices);",
+                  "    ",
+                  "    assert_eq!(result, Err(GetDisjointMutError::OverlappingIndices));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:674:34\n    |\n674 |                         let kv = unsafe { (*(entries_ptr.add(idx))).ref_mut() };\n    |                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `Result<[Option<(&i32, &mut i32)>; 3], llmtests::test_get_disjoint_opt_mut_06::GetDisjointMutError>`\n   --> src/map/slice.rs:697:5\n    |\n697 |     assert_eq!(result, Err(GetDisjointMutError::OverlappingIndices));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     Result<[Option<(&i32, &mut i32)>; 3], llmtests::test_get_disjoint_opt_mut_06::GetDisjointMutError>\n    |     Result<[Option<(&i32, &mut i32)>; 3], llmtests::test_get_disjoint_opt_mut_06::GetDisjointMutError>\n    |\nnote: an implementation of `PartialEq` might be missing for `llmtests::test_get_disjoint_opt_mut_06::GetDisjointMutError`\n   --> src/map/slice.rs:686:5\n    |\n686 |     enum GetDisjointMutError {\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::test_get_disjoint_opt_mut_06::GetDisjointMutError` with `#[derive(PartialEq)]`\n    |\n686 +     #[derive(PartialEq)]\n687 |     enum GetDisjointMutError {\n    |\n\nerror[E0599]: no method named `ref_mut` found for tuple `(i32, i32)` in the current scope\n   --> src/map/slice.rs:674:69\n    |\n674 |                         let kv = unsafe { (*(entries_ptr.add(idx))).ref_mut() };\n    |                                                                     ^^^^^^^ method not found in `(i32, i32)`\n\nSome errors have detailed explanations: E0369, E0599.\nFor more information about an error, try `rustc --explain E0369`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 3 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: i in 0..N is true\n",
+        "// constraint: indices[i] matches Some(idx) is true\n",
+        "// constraint: idx >= len is false\n",
+        "// may panic: indices[..i] may panic in certain situations\n",
+        "// constraint: indices[..i].contains(&Some(idx)) is false\n",
+        "// constraint: i in 0..N is false\n",
+        "// expected return value/type: Ok(out)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct GetDisjointMutError {",
+            "    kind: String,",
+            "}",
+            "",
+            "struct ExampleMap<K, V> {",
+            "    entries: Vec<(K, V)>,",
+            "}",
+            "",
+            "impl<K, V> ExampleMap<K, V> {",
+            "    fn len(&self) -> usize {",
+            "        self.entries.len()",
+            "    }",
+            "",
+            "    fn get_disjoint_opt_mut<const N: usize>(",
+            "        &mut self,",
+            "        indices: [Option<usize>; N],",
+            "    ) -> Result<[Option<(&K, &mut V)>; N], GetDisjointMutError> {",
+            "        // Implementation as provided...",
+            "        let len = self.len();",
+            "        for i in 0..N {",
+            "            if let Some(idx) = indices[i] {",
+            "                if idx >= len {",
+            "                    return Err(GetDisjointMutError { kind: \"IndexOutOfBounds\".to_string() });",
+            "                } else if indices[..i].contains(&Some(idx)) {",
+            "                    return Err(GetDisjointMutError { kind: \"OverlappingIndices\".to_string() });",
+            "                }",
+            "            }",
+            "        }",
+            "",
+            "        let entries_ptr = self.entries.as_mut_ptr();",
+            "        let out = indices.map(|idx_opt| {",
+            "            match idx_opt {",
+            "                Some(idx) => {",
+            "                    let kv = unsafe { (*(entries_ptr.add(idx))).1 };",
+            "                    Some((&self.entries[idx].0, kv))",
+            "                }",
+            "                None => None,",
+            "            }",
+            "        });",
+            "",
+            "        Ok(out)",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut example_map = ExampleMap {",
+                  "        entries: vec![",
+                  "            (1, \"a\"),",
+                  "            (2, \"b\"),",
+                  "            (3, \"c\"),",
+                  "        ],",
+                  "    };",
+                  "    let result: Result<[Option<(&i32, &mut &str)>; 2], GetDisjointMutError> = example_map.get_disjoint_opt_mut([Some(0), Some(2)]);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:670:30\n    |\n670 |                     let kv = unsafe { (*(entries_ptr.add(idx))).1 };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:677:12\n    |\n645 | impl<K, V> ExampleMap<K, V> {\n    |         - found this type parameter\n...\n677 |         Ok(out)\n    |         -- ^^^ expected `[Option<(&K, &mut V)>; N]`, found `[Option<(&K, V)>; N]`\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&K, V)>; N]`\nhelp: the type constructed contains `[Option<(&K, V)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:677:9\n    |\n677 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut example_map = ExampleMap {",
+                  "        entries: vec![",
+                  "            (1, \"a\"),",
+                  "            (2, \"b\"),",
+                  "            (3, \"c\"),",
+                  "        ],",
+                  "    };",
+                  "    let result: Result<[Option<(&i32, &mut &str)>; 1], GetDisjointMutError> = example_map.get_disjoint_opt_mut([Some(3)]);",
+                  "    assert!(result.is_err());",
+                  "    if let Err(e) = result {",
+                  "        assert_eq!(e.kind, \"IndexOutOfBounds\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:670:30\n    |\n670 |                     let kv = unsafe { (*(entries_ptr.add(idx))).1 };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:677:12\n    |\n645 | impl<K, V> ExampleMap<K, V> {\n    |         - found this type parameter\n...\n677 |         Ok(out)\n    |         -- ^^^ expected `[Option<(&K, &mut V)>; N]`, found `[Option<(&K, V)>; N]`\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&K, V)>; N]`\nhelp: the type constructed contains `[Option<(&K, V)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:677:9\n    |\n677 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut example_map = ExampleMap {",
+                  "        entries: vec![",
+                  "            (1, \"a\"),",
+                  "            (2, \"b\"),",
+                  "            (3, \"c\"),",
+                  "        ],",
+                  "    };",
+                  "    let result: Result<[Option<(&i32, &mut &str)>; 2], GetDisjointMutError> = example_map.get_disjoint_opt_mut([Some(0), Some(0)]);",
+                  "    assert!(result.is_err());",
+                  "    if let Err(e) = result {",
+                  "        assert_eq!(e.kind, \"OverlappingIndices\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:670:30\n    |\n670 |                     let kv = unsafe { (*(entries_ptr.add(idx))).1 };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:677:12\n    |\n645 | impl<K, V> ExampleMap<K, V> {\n    |         - found this type parameter\n...\n677 |         Ok(out)\n    |         -- ^^^ expected `[Option<(&K, &mut V)>; N]`, found `[Option<(&K, V)>; N]`\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&K, V)>; N]`\nhelp: the type constructed contains `[Option<(&K, V)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:677:9\n    |\n677 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut example_map = ExampleMap {",
+                  "        entries: vec![",
+                  "            (1, \"a\"),",
+                  "            (2, \"b\"),",
+                  "            (3, \"c\"),",
+                  "        ],",
+                  "    };",
+                  "    let result: Result<[Option<(&i32, &mut &str)>; 3], GetDisjointMutError> = example_map.get_disjoint_opt_mut([Some(0), None, Some(2)]);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:670:30\n    |\n670 |                     let kv = unsafe { (*(entries_ptr.add(idx))).1 };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:677:12\n    |\n645 | impl<K, V> ExampleMap<K, V> {\n    |         - found this type parameter\n...\n677 |         Ok(out)\n    |         -- ^^^ expected `[Option<(&K, &mut V)>; N]`, found `[Option<(&K, V)>; N]`\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&K, V)>; N]`\nhelp: the type constructed contains `[Option<(&K, V)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:677:9\n    |\n677 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut example_map = ExampleMap::<i32, &str> {",
+                  "        entries: vec![],",
+                  "    };",
+                  "    let result: Result<[Option<(&i32, &mut &str)>; 1], GetDisjointMutError> = example_map.get_disjoint_opt_mut([Some(0)]);",
+                  "    assert!(result.is_err());",
+                  "    if let Err(e) = result {",
+                  "        assert_eq!(e.kind, \"IndexOutOfBounds\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror: usage of an `unsafe` block\n   --> src/map/slice.rs:670:30\n    |\n670 |                     let kv = unsafe { (*(entries_ptr.add(idx))).1 };\n    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\nnote: the lint level is defined here\n   --> src/lib.rs:2:9\n    |\n2   | #![deny(unsafe_code)]\n    |         ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/slice.rs:677:12\n    |\n645 | impl<K, V> ExampleMap<K, V> {\n    |         - found this type parameter\n...\n677 |         Ok(out)\n    |         -- ^^^ expected `[Option<(&K, &mut V)>; N]`, found `[Option<(&K, V)>; N]`\n    |         |\n    |         arguments to this enum variant are incorrect\n    |\n    = note: expected array `[Option<(&K, &mut V)>; N]`\n               found array `[Option<(&K, V)>; N]`\nhelp: the type constructed contains `[Option<(&K, V)>; N]` due to the type of the argument passed\n   --> src/map/slice.rs:677:9\n    |\n677 |         Ok(out)\n    |         ^^^---^\n    |            |\n    |            this argument influences the type of `Ok`\nnote: tuple variant defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:531:5\n    |\n531 |     Ok(#[stable(feature = \"rust1\", since = \"1.0.0\")] T),\n    |     ^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "// constraint: i in 0..N is false\n",
+        "// expected return value/type: Ok(out)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestMap<K, V> {",
+                  "        entries: Vec<(K, V)>,",
+                  "    }",
+                  "",
+                  "    impl<K, V> TestMap<K, V> {",
+                  "        fn new(entries: Vec<(K, V)>) -> Self {",
+                  "            TestMap { entries }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.entries.len()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    #[derive(Debug, PartialEq)]",
+                  "    enum GetDisjointMutError {",
+                  "        IndexOutOfBounds,",
+                  "        OverlappingIndices,",
+                  "    }",
+                  "",
+                  "    let mut map = TestMap::new(vec![(1, \"a\"), (2, \"b\"), (3, \"c\")]);",
+                  "    let indices = [Some(0), Some(1), None]; // Indices are valid and non-overlapping",
+                  "",
+                  "    let result: Result<[Option<(&i32, &mut &str)>; 3], GetDisjointMutError> =",
+                  "        map.get_disjoint_opt_mut(indices);",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `get_disjoint_opt_mut` found for struct `TestMap` in the current scope\n   --> src/map/slice.rs:663:13\n    |\n639 |     struct TestMap<K, V> {\n    |     -------------------- method `get_disjoint_opt_mut` not found for this struct\n...\n663 |         map.get_disjoint_opt_mut(indices);\n    |             ^^^^^^^^^^^^^^^^^^^^ method not found in `TestMap<{integer}, &str>`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestMap<K, V> {",
+                  "        entries: Vec<(K, V)>,",
+                  "    }",
+                  "",
+                  "    impl<K, V> TestMap<K, V> {",
+                  "        fn new(entries: Vec<(K, V)>) -> Self {",
+                  "            TestMap { entries }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.entries.len()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    #[derive(Debug, PartialEq)]",
+                  "    enum GetDisjointMutError {",
+                  "        IndexOutOfBounds,",
+                  "        OverlappingIndices,",
+                  "    }",
+                  "",
+                  "    let mut map = TestMap::new(vec![(1, \"a\"), (2, \"b\"), (3, \"c\")]);",
+                  "    let indices = [Some(0), Some(3), None]; // Index 3 is out of bounds",
+                  "",
+                  "    let result: Result<[Option<(&i32, &mut &str)>; 3], GetDisjointMutError> =",
+                  "        map.get_disjoint_opt_mut(indices);",
+                  "",
+                  "    assert_eq!(result, Err(GetDisjointMutError::IndexOutOfBounds));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `get_disjoint_opt_mut` found for struct `TestMap` in the current scope\n   --> src/map/slice.rs:663:13\n    |\n639 |     struct TestMap<K, V> {\n    |     -------------------- method `get_disjoint_opt_mut` not found for this struct\n...\n663 |         map.get_disjoint_opt_mut(indices);\n    |             ^^^^^^^^^^^^^^^^^^^^ method not found in `TestMap<{integer}, &str>`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestMap<K, V> {",
+                  "        entries: Vec<(K, V)>,",
+                  "    }",
+                  "",
+                  "    impl<K, V> TestMap<K, V> {",
+                  "        fn new(entries: Vec<(K, V)>) -> Self {",
+                  "            TestMap { entries }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.entries.len()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    #[derive(Debug, PartialEq)]",
+                  "    enum GetDisjointMutError {",
+                  "        IndexOutOfBounds,",
+                  "        OverlappingIndices,",
+                  "    }",
+                  "",
+                  "    let mut map = TestMap::new(vec![(1, \"a\"), (2, \"b\"), (3, \"c\")]);",
+                  "    let indices = [Some(0), Some(0), None]; // Indices are overlapping",
+                  "",
+                  "    let result: Result<[Option<(&i32, &mut &str)>; 3], GetDisjointMutError> =",
+                  "        map.get_disjoint_opt_mut(indices);",
+                  "",
+                  "    assert_eq!(result, Err(GetDisjointMutError::OverlappingIndices));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.9.3\n   Compiling rand_core v0.6.4\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/slice.rs:635:8\n    |\n635 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `get_disjoint_opt_mut` found for struct `TestMap` in the current scope\n   --> src/map/slice.rs:663:13\n    |\n639 |     struct TestMap<K, V> {\n    |     -------------------- method `get_disjoint_opt_mut` not found for this struct\n...\n663 |         map.get_disjoint_opt_mut(indices);\n    |             ^^^^^^^^^^^^^^^^^^^^ method not found in `TestMap<{integer}, &str>`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

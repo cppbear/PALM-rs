@@ -1,0 +1,106 @@
+// Answer 0
+
+#[test]
+fn test_approximate_size_empty() {
+    struct Inst;
+    struct InstPtr;
+    
+    struct Prefix {
+        // Assuming Prefix has an `approximate_size()` method,
+        // we provide a minimal implementation here
+    }
+    
+    impl Prefix {
+        fn approximate_size(&self) -> usize {
+            0 // Placeholder for the size of prefixes
+        }
+    }
+
+    struct Regex {
+        len: usize,
+        matches: Vec<InstPtr>,
+        captures: Vec<Option<String>>,
+        capture_name_idx: Vec<String>,
+        byte_classes: Vec<u8>,
+        prefixes: Prefix,
+    }
+
+    impl Regex {
+        fn approximate_size(&self) -> usize {
+            (self.len * std::mem::size_of::<Inst>())
+            + (self.matches.len() * std::mem::size_of::<InstPtr>())
+            + (self.captures.len() * std::mem::size_of::<Option<String>>())
+            + (self.capture_name_idx.len() *
+                (std::mem::size_of::<String>() + std::mem::size_of::<usize>()))
+            + (self.byte_classes.len() * std::mem::size_of::<u8>())
+            + self.prefixes.approximate_size()
+        }
+    }
+
+    let regex = Regex {
+        len: 0,
+        matches: Vec::new(),
+        captures: Vec::new(),
+        capture_name_idx: Vec::new(),
+        byte_classes: Vec::new(),
+        prefixes: Prefix {},
+    };
+
+    assert_eq!(regex.approximate_size(), 0);
+}
+
+#[test]
+fn test_approximate_size_with_data() {
+    struct Inst;
+    struct InstPtr;
+    
+    struct Prefix {
+        // Assuming Prefix has an `approximate_size()` method,
+    }
+    
+    impl Prefix {
+        fn approximate_size(&self) -> usize {
+            20 // Placeholder for the size of prefixes
+        }
+    }
+
+    struct Regex {
+        len: usize,
+        matches: Vec<InstPtr>,
+        captures: Vec<Option<String>>,
+        capture_name_idx: Vec<String>,
+        byte_classes: Vec<u8>,
+        prefixes: Prefix,
+    }
+
+    impl Regex {
+        fn approximate_size(&self) -> usize {
+            (self.len * std::mem::size_of::<Inst>())
+            + (self.matches.len() * std::mem::size_of::<InstPtr>())
+            + (self.captures.len() * std::mem::size_of::<Option<String>>())
+            + (self.capture_name_idx.len() *
+                (std::mem::size_of::<String>() + std::mem::size_of::<usize>()))
+            + (self.byte_classes.len() * std::mem::size_of::<u8>())
+            + self.prefixes.approximate_size()
+        }
+    }
+
+    let regex = Regex {
+        len: 1,
+        matches: vec![InstPtr {}],
+        captures: vec![Some("capture".to_string())],
+        capture_name_idx: vec!["name".to_string()],
+        byte_classes: vec![0u8],
+        prefixes: Prefix {},
+    };
+
+    let expected_size = (1 * std::mem::size_of::<Inst>())
+        + (1 * std::mem::size_of::<InstPtr>())
+        + (1 * std::mem::size_of::<Option<String>>())
+        + (1 * (std::mem::size_of::<String>() + std::mem::size_of::<usize>()))
+        + (1 * std::mem::size_of::<u8>())
+        + 20; // Size from prefixes
+
+    assert_eq!(regex.approximate_size(), expected_size);
+}
+

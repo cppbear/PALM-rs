@@ -1,0 +1,785 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "// Mock implementations for the Reader and Visitor traits.",
+      "struct MockReader<'a> {",
+      "    input: &'a [u8],",
+      "    position: usize,",
+      "}",
+      "",
+      "impl<'a> MockReader<'a> {",
+      "    fn new(input: &'a [u8]) -> Self {",
+      "        MockReader { input, position: 0 }",
+      "    }",
+      "}",
+      "",
+      "impl<'de> Read<'de> for MockReader<'_> {",
+      "    const should_early_return_if_failed: bool = false;",
+      "",
+      "    fn next(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.input.len() {",
+      "            let byte = self.input[self.position];",
+      "            self.position += 1;",
+      "            Ok(Some(byte))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn peek(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.input.len() {",
+      "            Ok(Some(self.input[self.position]))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn discard(&mut self) {",
+      "        self.position += 1;",
+      "    }",
+      "",
+      "    fn position(&self) -> Position {",
+      "        Position { line: 1, column: self.position as u32 }",
+      "    }",
+      "",
+      "    fn peek_position(&self) -> Position {",
+      "        Position { line: 1, column: self.position as u32 }",
+      "    }",
+      "",
+      "    fn byte_offset(&self) -> usize {",
+      "        self.position",
+      "    }",
+      "",
+      "    fn parse_str<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Reference<'de, 's, str>> {",
+      "        // Mock implementation",
+      "        Ok(Reference::Str(\"\"))",
+      "    }",
+      "",
+      "    fn parse_str_raw<'s>(&'s mut self, scratch: &'s mut Vec<u8>) -> Result<Reference<'de, 's, [u8]>> {",
+      "        // Mock implementation",
+      "        Ok(Reference::Bytes(&[]))",
+      "    }",
+      "",
+      "    fn ignore_str(&mut self) -> Result<()> {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn decode_hex_escape(&mut self) -> Result<u16> {",
+      "        Ok(0)",
+      "    }",
+      "",
+      "    fn set_failed(&mut self, _failed: &mut bool) {}",
+      "}",
+      "",
+      "struct MockVisitor {}",
+      "",
+      "impl MockVisitor {",
+      "    fn new() -> Self {",
+      "        MockVisitor {}",
+      "    }",
+      "}",
+      "",
+      "impl<'de> de::Visitor<'de> for MockVisitor {",
+      "    type Value = ();",
+      "",
+      "    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {",
+      "        formatter.write_str(\"a map\")",
+      "    }",
+      "",
+      "    fn visit_map<V>(self, _map: V) -> Result<Self::Value>",
+      "    where",
+      "        V: de::MapAccess<'de>,",
+      "    {",
+      "        Ok(())",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+          "    let mut deserializer = Deserializer::new(mock_reader);",
+          "    let visitor = MockVisitor::new();",
+          "",
+          "    let _ = deserializer.deserialize_map(visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(deserializer.parse_whitespace(), Ok(_)));"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(deserializer.parse_whitespace(), Ok(_)));"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(deserializer.peek(), Ok(Some(b'{'))));"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(deserializer.remaining_depth == 0);"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(ret, Err(_)));"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(value, Err(_)));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(deserializer.parse_whitespace(), Ok(_)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(deserializer.parse_whitespace(), Ok(_)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(deserializer.peek(), Ok(Some(b'{'))));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(deserializer.remaining_depth == 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(ret, Err(_)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\"}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    assert!(matches!(value, Err(_)));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mock_reader = MockReader::new(b\"\");",
+          "    let mut deserializer = Deserializer::new(mock_reader);",
+          "    let visitor = MockVisitor::new();",
+          "",
+          "    let _ = deserializer.deserialize_map(visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek = result.unwrap();",
+            "    assert!(peek.is_none());"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek = result.unwrap();",
+            "    assert_eq!(deserializer.peek_error(ErrorCode::EofWhileParsingValue), deserializer.fix_position(ErrorCode::EofWhileParsingValue));"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek = result.unwrap();",
+            "    let value = deserializer.deserialize_map(visitor);",
+            "    assert!(value.is_err());"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek = result.unwrap();",
+            "    let value = deserializer.deserialize_map(visitor);",
+            "    assert_eq!(value.unwrap_err(), deserializer.fix_position(ErrorCode::EofWhileParsingValue));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek = result.unwrap();",
+            "    assert!(peek.is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek = result.unwrap();",
+            "    assert_eq!(deserializer.peek_error(ErrorCode::EofWhileParsingValue), deserializer.fix_position(ErrorCode::EofWhileParsingValue));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek = result.unwrap();",
+            "    let value = deserializer.deserialize_map(visitor);",
+            "    assert!(value.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek = result.unwrap();",
+            "    let value = deserializer.deserialize_map(visitor);",
+            "    assert_eq!(value.unwrap_err(), deserializer.fix_position(ErrorCode::EofWhileParsingValue));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+          "    let mut deserializer = Deserializer::new(mock_reader);",
+          "    let visitor = MockVisitor::new();",
+          "",
+          "    let _ = deserializer.deserialize_map(visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.parse_whitespace().is_ok(), true);"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.peek().unwrap(), Some(b'{' as u8));"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.remaining_depth == 0, true);"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.deserialize_map(visitor).is_err(), true);"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.fix_position(deserializer.deserialize_map(visitor).unwrap_err()).is_err(), true);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.parse_whitespace().is_ok(), true);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.peek().unwrap(), Some(b'{' as u8));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.remaining_depth == 0, true);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.deserialize_map(visitor).is_err(), true);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"[\\\"value\\\"]\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    assert_eq!(deserializer.fix_position(deserializer.deserialize_map(visitor).unwrap_err()).is_err(), true);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+          "    let mut deserializer = Deserializer::new(mock_reader);",
+          "    let visitor = MockVisitor::new();",
+          "",
+          "    let _ = deserializer.deserialize_map(visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.is_ok(), true);"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek_result = deserializer.peek();",
+            "    assert_eq!(peek_result.unwrap(), Some(b'{'));"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek_result = deserializer.peek();",
+            "    deserializer.remaining_depth = 0;",
+            "    let ret = visitor.visit_map(MapAccess::new(&mut deserializer));",
+            "    assert!(ret.is_err());"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek_result = deserializer.peek();",
+            "    deserializer.remaining_depth = 0;",
+            "    let ret = visitor.visit_map(MapAccess::new(&mut deserializer));",
+            "    let value = result;",
+            "    assert!(value.is_err());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.is_ok(), true);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek_result = deserializer.peek();",
+            "    assert_eq!(peek_result.unwrap(), Some(b'{'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek_result = deserializer.peek();",
+            "    deserializer.remaining_depth = 0;",
+            "    let ret = visitor.visit_map(MapAccess::new(&mut deserializer));",
+            "    assert!(ret.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": \\\"value\\\",}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let peek_result = deserializer.peek();",
+            "    deserializer.remaining_depth = 0;",
+            "    let ret = visitor.visit_map(MapAccess::new(&mut deserializer));",
+            "    let value = result;",
+            "    assert!(value.is_err());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mock_reader = MockReader::new(b\"{\\\"key\\\": {\\\"nested_key\\\": {}}}\");",
+          "    let mut deserializer = Deserializer::new(mock_reader);",
+          "    deserializer.remaining_depth = 0; // Simulate recursion limit",
+          "    let visitor = MockVisitor::new();",
+          "",
+          "    let _ = deserializer.deserialize_map(visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": {\\\"nested_key\\\": {}}}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    deserializer.remaining_depth = 0;",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.deserialize_map(visitor);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": {\\\"nested_key\\\": {}}}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    deserializer.remaining_depth = 0;",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.deserialize_map(visitor);",
+            "    assert_eq!(result.err().unwrap().kind(), ErrorCode::RecursionLimitExceeded);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": {\\\"nested_key\\\": {}}}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    deserializer.remaining_depth = 0; // Simulate recursion limit",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": {\\\"nested_key\\\": {}}}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    deserializer.remaining_depth = 0;",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.deserialize_map(visitor);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": {\\\"nested_key\\\": {}}}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    deserializer.remaining_depth = 0; // Simulate recursion limit",
+            "    let visitor = MockVisitor::new();",
+            "",
+            "    let _ = deserializer.deserialize_map(visitor);",
+            "    let mock_reader = MockReader::new(b\"{\\\"key\\\": {\\\"nested_key\\\": {}}}\");",
+            "    let mut deserializer = Deserializer::new(mock_reader);",
+            "    deserializer.remaining_depth = 0;",
+            "    let visitor = MockVisitor::new();",
+            "    let result = deserializer.deserialize_map(visitor);",
+            "    assert_eq!(result.err().unwrap().kind(), ErrorCode::RecursionLimitExceeded);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

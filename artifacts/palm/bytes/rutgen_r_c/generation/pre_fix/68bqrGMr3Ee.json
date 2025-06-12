@@ -1,0 +1,181 @@
+{
+  "name": "bytes::bytes::shallow_clone_arc",
+  "name_with_impl": "bytes::bytes::shallow_clone_arc",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1477:1:1490:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: old_size > usize::MAX >> 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockShared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let mut shared = MockShared {",
+                  "        buf: std::ptr::null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(usize::MAX >> 1), // Trigger overflow",
+                  "    };",
+                  "",
+                  "    let shared_ptr = &mut shared as *mut MockShared as *mut Shared;",
+                  "    let ptr = std::ptr::null(); // Unsafe pointer",
+                  "    let len = 0usize; // Zero-length for simplicity",
+                  "",
+                  "    unsafe {",
+                  "        shallow_clone_arc(shared_ptr, ptr, len);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockShared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let mut shared = MockShared {",
+                  "        buf: std::ptr::null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(1), // Initial count",
+                  "    };",
+                  "",
+                  "    let shared_ptr = &mut shared as *mut MockShared as *mut Shared;",
+                  "    let ptr = std::ptr::null(); // Unsafe pointer",
+                  "    let len = 0usize; // Zero-length for simplicity",
+                  "",
+                  "    let cloned_bytes: Bytes;",
+                  "",
+                  "    unsafe {",
+                  "        cloned_bytes = shallow_clone_arc(shared_ptr, ptr, len);",
+                  "    }",
+                  "",
+                  "    assert_eq!(cloned_bytes.len, len);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: old_size > usize::MAX >> 1 is false, with bound old_size == usize::MAX >> 1\n",
+        "// expected return value/type: Bytes {\n        ptr,\n        len,\n        data: AtomicPtr::new(shared as _),\n        vtable: &SHARED_VTABLE,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::AtomicUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [
+            "fn test_shallow_clone_arc_valid() {",
+            "    ",
+            "    struct Shared {",
+            "        buf: *mut u8,",
+            "        cap: usize,",
+            "        ref_cnt: AtomicUsize,",
+            "    }",
+            "",
+            "    unsafe {",
+            "        let shared_instance = Shared {",
+            "            buf: core::ptr::null_mut(),",
+            "            cap: 1024,",
+            "            ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "        };",
+            "",
+            "        let shared_ptr = &shared_instance as *const Shared as *mut Shared;",
+            "        let ptr: *const u8 = core::ptr::null();",
+            "        let len: usize = 0;",
+            "",
+            "        let result = shallow_clone_arc(shared_ptr, ptr, len);",
+            "",
+            "        assert_eq!(result.len, len);",
+            "        assert_eq!(result.ptr, ptr);",
+            "        assert_eq!(result.data.load(Ordering::Relaxed), shared_ptr as *mut ());",
+            "        assert_eq!(result.vtable, &SHARED_VTABLE);",
+            "        assert_eq!(shared_instance.ref_cnt.load(Ordering::Relaxed), usize::MAX >> 1 + 1);",
+            "    }",
+            "}",
+            "",
+            "#[should_panic]",
+            "fn test_shallow_clone_arc_panic() {",
+            "",
+            "    struct Shared {",
+            "        buf: *mut u8,",
+            "        cap: usize,",
+            "        ref_cnt: AtomicUsize,",
+            "    }",
+            "",
+            "    unsafe {",
+            "        let shared_instance = Shared {",
+            "            buf: core::ptr::null_mut(),",
+            "            cap: 1024,",
+            "            ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1),",
+            "        };",
+            "",
+            "        let shared_ptr = &shared_instance as *const Shared as *mut Shared;",
+            "        let ptr: *const u8 = core::ptr::null();",
+            "        let len: usize = 0;",
+            "",
+            "        shallow_clone_arc(shared_ptr, ptr, len);",
+            "    }",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    }
+  ]
+}

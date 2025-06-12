@@ -1,0 +1,1 @@
+fn next_char(&self, at: InputAt) -> Char { (**self).next_char(at) }

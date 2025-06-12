@@ -1,0 +1,2 @@
+cd /home/rumono/quote
+fuzz-target-generator --edition=2018 --crate-type lib --crate-name quote src/lib.rs -o /home/rumono/quote/target/doc --cfg 'feature="default"' --cfg 'feature="proc-macro"' --check-cfg 'cfg(docsrs)' --check-cfg 'cfg(feature, values("default", "proc-macro"))' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat -C metadata=e6ba74b7ed639c23 -L dependency=/home/rumono/quote/target/debug/deps --extern proc_macro2=/home/rumono/quote/target/debug/deps/libproc_macro2-7cdd93c7e52e7134.rmeta --crate-version 1.0.40

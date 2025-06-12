@@ -1,0 +1,2036 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct MockRead<'a> {",
+      "    buffer: &'a [u8],",
+      "    position: usize,",
+      "}",
+      "",
+      "impl<'a> MockRead<'a> {",
+      "    fn new(buffer: &'a [u8]) -> Self {",
+      "        Self { buffer, position: 0 }",
+      "    }",
+      "}",
+      "",
+      "impl<'de> Read<'de> for MockRead<'de> {",
+      "    const should_early_return_if_failed: bool = false;",
+      "",
+      "    fn next(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.buffer.len() {",
+      "            let byte = self.buffer[self.position];",
+      "            self.position += 1;",
+      "            Ok(Some(byte))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn peek(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.buffer.len() {",
+      "            Ok(Some(self.buffer[self.position]))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn discard(&mut self) {",
+      "        self.position += 1;",
+      "    }",
+      "",
+      "    fn position(&self) -> Position {",
+      "        Position {",
+      "            line: 1,",
+      "            column: self.position as u32,",
+      "        }",
+      "    }",
+      "",
+      "    fn peek_position(&self) -> Position {",
+      "        Position {",
+      "            line: 1,",
+      "            column: self.position as u32,",
+      "        }",
+      "    }",
+      "",
+      "    fn byte_offset(&self) -> usize {",
+      "        self.position",
+      "    }",
+      "",
+      "    fn parse_str<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Reference<'de, 's, str>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn parse_str_raw<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Reference<'de, 's, [u8]>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn ignore_str(&mut self) -> Result<()> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn decode_hex_escape(&mut self) -> Result<u16> {",
+      "        unimplemented!()",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(b\"1\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let _ = deserializer.ignore_decimal();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.ignore_decimal(), Ok(()));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Err(deserializer.peek_error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    deserializer.read = MockRead::new(b\"0e\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Ok(()));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    deserializer.read = MockRead::new(b\"0e\");",
+            "    deserializer.read = MockRead::new(b\"ae\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Err(deserializer.peek_error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    deserializer.read = MockRead::new(b\"0e\");",
+            "    deserializer.read = MockRead::new(b\"ae\");",
+            "    deserializer.read = MockRead::new(b\"1e3\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Ok(()));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    deserializer.read = MockRead::new(b\"0e\");",
+            "    deserializer.read = MockRead::new(b\"ae\");",
+            "    deserializer.read = MockRead::new(b\"1e3\");",
+            "    deserializer.read = MockRead::new(b\"999\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Ok(()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"1\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.ignore_decimal(), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"1\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Err(deserializer.peek_error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"1\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    deserializer.read = MockRead::new(b\"0e\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"1\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    deserializer.read = MockRead::new(b\"0e\");",
+            "    deserializer.read = MockRead::new(b\"ae\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Err(deserializer.peek_error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"1\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    deserializer.read = MockRead::new(b\"0e\");",
+            "    deserializer.read = MockRead::new(b\"ae\");",
+            "    deserializer.read = MockRead::new(b\"1e3\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"1\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"1\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    deserializer.read = MockRead::new(b\"\");",
+            "    deserializer.read = MockRead::new(b\"0e\");",
+            "    deserializer.read = MockRead::new(b\"ae\");",
+            "    deserializer.read = MockRead::new(b\"1e3\");",
+            "    deserializer.read = MockRead::new(b\"999\");",
+            "    assert_eq!(deserializer.ignore_decimal(), Ok(()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(b\"123\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let _ = deserializer.ignore_decimal();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert!(deserializer.peek_or_null().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.peek_or_null().unwrap(), Some(b'1'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert!(deserializer.ignore_decimal().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.scratch.len(), 3);"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.remaining_depth, 1);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert!(deserializer.peek_or_null().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.peek_or_null().unwrap(), Some(b'1'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert!(deserializer.ignore_decimal().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.scratch.len(), 3);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"123\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.remaining_depth, 1);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(b\"123e10\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let _ = deserializer.ignore_decimal();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'1'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'1'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'2'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'2'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'3'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'3'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'e'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'e'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'1'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'1'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'0'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'0'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), None);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'1'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'1'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'2'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'2'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'3'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'3'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'e'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'e'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'1'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'1'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), Some(b'0'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.next().unwrap(), Some(b'0'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123e10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.peek().unwrap(), None);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(b\"456E10\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let _ = deserializer.ignore_decimal();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert_eq!(result.err().unwrap().err, ErrorCode::InvalidNumber);"
+          ],
+          [
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456Eabc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456Eabc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert_eq!(result.err().unwrap().err, ErrorCode::InvalidNumber);"
+          ],
+          [
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456Eabc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"0\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456Eabc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"0\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"123abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_ok());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"456E10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"456E10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert_eq!(result.err().unwrap().err, ErrorCode::InvalidNumber);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"456E10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456Eabc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"456E10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456Eabc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert_eq!(result.err().unwrap().err, ErrorCode::InvalidNumber);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"456E10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456Eabc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"0\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"456E10\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456E10\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"456Eabc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"0\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut buffer = b\"123abc\".to_vec();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(&buffer),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_ok());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(b\".\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let _ = deserializer.ignore_decimal();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert!(deserializer.ignore_decimal().is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.position, 1);"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert!(deserializer.peek().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.peek().unwrap(), Some(b'.'));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.eat_char();",
+            "    assert!(deserializer.peek().is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.eat_char();",
+            "    assert_eq!(deserializer.position().column, 1);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\".\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert!(deserializer.ignore_decimal().is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\".\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.read.position, 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\".\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert!(deserializer.peek().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\".\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    assert_eq!(deserializer.peek().unwrap(), Some(b'.'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\".\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.eat_char();",
+            "    assert!(deserializer.peek().is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\".\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\".\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.eat_char();",
+            "    assert_eq!(deserializer.position().column, 1);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(b\"a\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let _ = deserializer.ignore_decimal();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"a\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert!(deserializer.ignore_decimal().is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"a\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.read.position, 1);"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"a\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.remaining_depth, 1);"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"a\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert!(deserializer.scratch.is_empty());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"a\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"a\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert!(deserializer.ignore_decimal().is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"a\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"a\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.read.position, 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"a\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"a\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert_eq!(deserializer.remaining_depth, 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"a\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(b\"a\"), scratch: Vec::new(), remaining_depth: 1 };",
+            "    assert!(deserializer.scratch.is_empty());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(b\"0\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let _ = deserializer.ignore_decimal();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.position(), Position { line: 1, column: 3 });"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0012e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.position(), Position { line: 1, column: 8 });"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0012e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0012e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0012e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0.123\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.position(), Position { line: 1, column: 5 });"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"0\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.position(), Position { line: 1, column: 3 });",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"0\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0012e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.position(), Position { line: 1, column: 8 });",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"0\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0012e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"0\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0012e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"0\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0e\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0012e10\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"0.123\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.position(), Position { line: 1, column: 5 });",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(b\"123456789\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let _ = deserializer.ignore_decimal();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.remaining_depth, 1);"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.read.position, 9);"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert!(deserializer.peek_or_null().unwrap().is_none());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert!(deserializer.peek().unwrap().is_none());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer_invalid = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer_invalid.ignore_decimal();",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer_invalid = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer_invalid.ignore_decimal();",
+            "    assert_eq!(deserializer_invalid.peek_error(ErrorCode::InvalidNumber).err, ErrorCode::InvalidNumber);"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer_invalid = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer_invalid.ignore_decimal();",
+            "    assert_eq!(deserializer_invalid.remaining_depth, 1);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123456789\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.remaining_depth, 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123456789\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert_eq!(deserializer.read.position, 9);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123456789\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert!(deserializer.peek_or_null().unwrap().is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123456789\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    assert!(deserializer.peek().unwrap().is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123456789\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer_invalid = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer_invalid.ignore_decimal();",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123456789\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer_invalid = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer_invalid.ignore_decimal();",
+            "    assert_eq!(deserializer_invalid.peek_error(ErrorCode::InvalidNumber).err, ErrorCode::InvalidNumber);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(b\"123456789\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer = Deserializer {",
+            "    read: MockRead::new(b\"123456789\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let _ = deserializer.ignore_decimal();",
+            "    let mut deserializer_invalid = Deserializer {",
+            "    read: MockRead::new(b\"\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer_invalid.ignore_decimal();",
+            "    assert_eq!(deserializer_invalid.remaining_depth, 1);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

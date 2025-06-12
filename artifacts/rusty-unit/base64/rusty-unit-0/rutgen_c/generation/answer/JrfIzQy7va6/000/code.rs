@@ -1,0 +1,60 @@
+// Answer 0
+
+#[test]
+fn test_encode_table_standard_alphabet() {
+    let standard_alphabet = Alphabet {
+        symbols: [
+            b'A', b'B', b'C', b'D', b'E', b'F', b'G', b'H',
+            b'I', b'J', b'K', b'L', b'M', b'N', b'O', b'P',
+            b'Q', b'R', b'S', b'T', b'U', b'V', b'W', b'X',
+            b'Y', b'Z', b'a', b'b', b'c', b'd', b'e', b'f',
+            b'g', b'h', b'i', b'j', b'k', b'l', b'm', b'n',
+            b'o', b'p', b'q', b'r', b's', b't', b'u', b'v',
+            b'w', b'x', b'y', b'z', b'0', b'1', b'2', b'3',
+            b'4', b'5', b'6', b'7', b'8', b'9', b'+', b'/',
+        ],
+    };
+
+    let encode_table_result = encode_table(&standard_alphabet);
+    assert_eq!(encode_table_result[0], b'A');
+    assert_eq!(encode_table_result[25], b'Z');
+    assert_eq!(encode_table_result[26], b'a');
+    assert_eq!(encode_table_result[51], b'z');
+    assert_eq!(encode_table_result[62], b'+');
+    assert_eq!(encode_table_result[63], b'/');
+}
+
+#[test]
+fn test_encode_table_empty_alphabet() {
+    let empty_alphabet = Alphabet {
+        symbols: [0; 64],
+    };
+
+    let encode_table_result = encode_table(&empty_alphabet);
+    for &byte in &encode_table_result {
+        assert_eq!(byte, 0);
+    }
+}
+
+#[test]
+fn test_encode_table_alphabet_with_nonprintable() {
+    let nonprintable_alphabet = Alphabet {
+        symbols: [
+            0, 1, 2, 3, 4, 5, 6, 7,
+            8, 9, 10, 11, 12, 13, 14, 15,
+            16, 17, 18, 19, 20, 21, 22, 23,
+            24, 25, 26, 27, 28, 29, 30, 31,
+            32, 33, 34, 35, 36, 37, 38, 39,
+            40, 41, 42, 43, 44, 45, 46, 47,
+            48, 49, 50, 51, 52, 53, 54, 55,
+            56, 57, 58, 59, 60, 61, 62, 63,
+        ],
+    };
+
+    let encode_table_result = encode_table(&nonprintable_alphabet);
+    assert_eq!(encode_table_result[0], 0);
+    assert_eq!(encode_table_result[31], 31);
+    assert_eq!(encode_table_result[32], 32);
+    assert_eq!(encode_table_result[63], 63);
+}
+

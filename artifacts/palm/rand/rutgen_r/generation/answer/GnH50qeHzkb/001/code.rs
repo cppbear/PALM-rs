@@ -1,0 +1,97 @@
+// Answer 0
+
+fn sample_test() {
+    struct MockRng;
+
+    impl Rng for MockRng {
+        fn gen_range(&mut self, low: u32, high: u32) -> u32 {
+            (low + high) / 2 // Simulate a middle value
+        }
+        // Other Rng trait methods can be stubbed as needed
+    }
+
+    struct TestDistr {
+        func: fn(u32) -> u32,
+        distr: MockDistr,
+    }
+
+    struct MockDistr;
+
+    impl MockDistr {
+        fn sample<R: Rng>(&self, _: &mut R) -> u32 {
+            42 // Simulated sample value
+        }
+    }
+
+    let distr = TestDistr {
+        func: |x| x + 1,
+        distr: MockDistr,
+    };
+
+    let mut rng = MockRng;
+
+    let result = distr.sample(&mut rng);
+    assert_eq!(result, 43); // 42 from distr + 1 from func
+}
+
+fn sample_boundary_test() {
+    struct MockRng;
+
+    impl Rng for MockRng {
+        fn gen_range(&mut self, low: u32, high: u32) -> u32 {
+            low // Returning lower boundary
+        }
+    }
+
+    struct TestDistr {
+        func: fn(u32) -> u32,
+        distr: MockDistr,
+    }
+
+    struct MockDistr;
+
+    impl MockDistr {
+        fn sample<R: Rng>(&self, _: &mut R) -> u32 {
+            0 // Simulating the lowest possible sample
+        }
+    }
+
+    let distr = TestDistr {
+        func: |x| x + 1,
+        distr: MockDistr,
+    };
+
+    let mut rng = MockRng;
+    
+    let result = distr.sample(&mut rng);
+    assert_eq!(result, 1); // 0 from distr + 1 from func
+}
+
+fn sample_panic_test() {
+    struct MockDistr;
+
+    impl MockDistr {
+        fn sample<R: Rng>(&self, _: &mut R) -> u32 {
+            panic!("Simulated panic in sample method");
+        }
+    }
+
+    struct TestDistr {
+        func: fn(u32) -> u32,
+        distr: MockDistr,
+    }
+
+    let distr = TestDistr {
+        func: |x| x + 1,
+        distr: MockDistr,
+    };
+
+    let mut rng = MockRng;
+
+    let result = std::panic::catch_unwind(|| {
+        distr.sample(&mut rng)
+    });
+
+    assert!(result.is_err()); // Confirm that panic occurred
+}
+

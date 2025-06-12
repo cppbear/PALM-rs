@@ -1,0 +1,508 @@
+{
+  "name": "bytes::bytes::bytes::Bytes::slice_ref",
+  "name_with_impl": "bytes::bytes::{impl#0}::slice_ref",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": true,
+  "loc": "src/bytes.rs:440:5:471:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: subset.is_empty() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"123456\");",
+                  "    let subset: &[u8] = &[];",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(subslice.len(), 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset pointer\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"123456\");",
+                  "    let subset = &b\"abcdef\"[..]; // Invalid subset, causes panic",
+                  "    bytes.slice_ref(subset);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset is out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"123456\");",
+                  "    let subset = &b\"4567\"[..]; // Valid subset but not contained in bytes",
+                  "    bytes.slice_ref(subset);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"abcdef\");",
+                  "    let subset = &bytes[1..4]; // Valid subset",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(&subslice[..], b\"BCD\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: subset.is_empty() is false\n",
+        "// constraint: sub_p >= bytes_p is true, with bound sub_p == bytes_p\n",
+        "// constraint: sub_p + sub_len <= bytes_p + bytes_len is true, with bound sub_p + sub_len == bytes_p + bytes_len\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let subset = &b\"012345678\"[..]; // full slice, meets the criteria",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(&subslice[..], b\"012345678\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let subset = &b\"2345\"[..]; // valid non-empty subset",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(&subslice[..], b\"2345\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset pointer is smaller than self pointer\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let subset = &b\"123\"[..]; // valid non-empty subset, but offsetting condition will be false",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(&subslice[..], b\"2345\"); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset is out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let subset = &b\"56789\"[..]; // This triggers an out of bounds condition",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(&subslice[..], b\"2345\"); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let subset: &[u8] = &[]; // empty subset",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(&subslice[..], b\"\"); // We expect an empty slice",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: subset.is_empty() is false\n",
+        "// constraint: sub_p >= bytes_p is true, with bound sub_p == bytes_p\n",
+        "// constraint: sub_p + sub_len <= bytes_p + bytes_len is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"example\");",
+                  "    let subset = &[]; // empty subset",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(subslice.len(), 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset pointer\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"example\");",
+                  "    let subset = &b\"ample\"[..]; // subset pointer is smaller",
+                  "    let _ = bytes.slice_ref(subset);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset is out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"example\");",
+                  "    let subset = &b\"exampleXXX\"[..]; // subset out of bounds",
+                  "    let _ = bytes.slice_ref(subset);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"example\");",
+                  "    let subset = &b\"exam\"[..]; // valid subset",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(&subslice[..], b\"exam\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset is out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"example\");",
+                  "    let subset = &b\"amplee\"[..]; // overflow beyond bounds",
+                  "    let _ = bytes.slice_ref(subset);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: subset.is_empty() is false\n",
+        "// constraint: sub_p >= bytes_p is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let as_slice = bytes.as_ref();",
+                  "    let subset = &as_slice[2..6];",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(&subslice[..], b\"2345\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset pointer\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let subset = &b\"01\"[..];",
+                  "    let _ = bytes.slice_ref(subset);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"subset is out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let as_slice = bytes.as_ref();",
+                  "    let subset = &as_slice[5..10]; // Out of bounds",
+                  "    let _ = bytes.slice_ref(subset);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"012345678\");",
+                  "    let subset: &[u8] = &[];",
+                  "    let subslice = bytes.slice_ref(subset);",
+                  "    assert_eq!(subslice.len(), 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

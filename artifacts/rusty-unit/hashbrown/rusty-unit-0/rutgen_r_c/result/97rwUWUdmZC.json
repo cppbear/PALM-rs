@@ -1,0 +1,810 @@
+{
+    "function_name": "hashbrown::raw::raw::TableLayout::calculate_layout_for",
+    "tests": 19,
+    "tests_lines": [
+        8,
+        9,
+        12,
+        11,
+        9,
+        15,
+        12,
+        13,
+        16,
+        13,
+        13,
+        17,
+        18,
+        15,
+        15,
+        12,
+        5,
+        7,
+        7
+    ],
+    "oracles": 19,
+    "oracles_compiled": 15,
+    "oracles_compiled_rate": 78.94736842105263,
+    "tests_compiled": 15,
+    "tests_compiled_rate": 78.94736842105263,
+    "oracles_run": 15,
+    "oracles_passed": 4,
+    "oracles_passed_rate": 26.666666666666668,
+    "tests_run": 15,
+    "tests_passed": 4,
+    "tests_passed_rate": 26.666666666666668,
+    "lines": 15,
+    "lines_covered": 15,
+    "lines_coveraged_rate": 100.0,
+    "branches": 2,
+    "branches_covered": 2,
+    "branches_coverage_rate": 100.0,
+    "codes_lines": [
+        261,
+        262,
+        264,
+        266,
+        267,
+        268,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280
+    ],
+    "codes_lines_covered": [
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    let result = layout.calculate_layout_for(0);",
+                "    ",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                261,
+                262
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    // Using a non-power-of-two value should still result in None",
+                "    let result = layout.calculate_layout_for(3);",
+                "    ",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                261,
+                262
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    let buckets: usize = 4; // 2^2",
+                "    let result = layout.calculate_layout_for(buckets);",
+                " ",
+                "    assert!(result.is_some());",
+                "    let (calculated_layout, ctrl_offset) = result.unwrap();",
+                "    assert!(calculated_layout.size() > 0);",
+                "    assert!(ctrl_offset > 0);",
+                "}"
+            ],
+            [
+                261,
+                262,
+                264,
+                266,
+                267,
+                268,
+                272,
+                274,
+                275,
+                276,
+                277,
+                278,
+                279,
+                280
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    // This would cause size.checked_mul to result in None",
+                "    let large_buckets = usize::MAX / 2 + 1; // Exceeds the capacity for checked_mul",
+                "    ",
+                "    let result = layout.calculate_layout_for(large_buckets);",
+                "    ",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                261,
+                262,
+                264,
+                266,
+                267,
+                268,
+                272,
+                273,
+                280
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    let buckets: usize = 1 << 31; // Large power of two",
+                "    let result = layout.calculate_layout_for(buckets);",
+                "    ",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                261,
+                262,
+                264,
+                266,
+                267,
+                268,
+                272,
+                274,
+                275,
+                276,
+                277,
+                278,
+                279,
+                280
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestStruct;",
+                "    impl TestStruct {",
+                "        fn get_table_layout() -> TableLayout {",
+                "            TableLayout::new::<TestStruct>()",
+                "        }",
+                "    }",
+                "",
+                "    let layout = TestStruct::get_table_layout();",
+                "    let buckets = 8; // 8 is a power of two",
+                "    let result = layout.calculate_layout_for(buckets);",
+                "    assert!(result.is_some());",
+                "}"
+            ],
+            [
+                261,
+                262,
+                264,
+                266,
+                267,
+                268,
+                272,
+                274,
+                275,
+                276,
+                277,
+                278,
+                279,
+                280
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestStruct;",
+                "    impl TestStruct {",
+                "        fn get_table_layout() -> TableLayout {",
+                "            TableLayout::new::<TestStruct>()",
+                "        }",
+                "    }",
+                "",
+                "    let layout = TestStruct::get_table_layout();",
+                "    let buckets = usize::MAX / layout.size + 1; // causes checked_mul to return None",
+                "    let result = layout.calculate_layout_for(buckets);",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct TestStruct;",
+                "    impl TestStruct {",
+                "        fn get_table_layout() -> TableLayout {",
+                "            TableLayout::new::<TestStruct>()",
+                "        }",
+                "    }",
+                "",
+                "    let layout = TestStruct::get_table_layout();",
+                "    let buckets = 8; // 8 is a power of two",
+                "    let ctrl_offset = layout.size.checked_mul(buckets).unwrap() + layout.ctrl_align - 1;",
+                "",
+                "    // Set the layout size to cause checked_add to overflow",
+                "    let bad_buckets = isize::MAX as usize - (ctrl_offset + 1); // forces overflow on addition",
+                "    let result = layout.calculate_layout_for(bad_buckets);",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                261,
+                262
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestStruct;",
+                "    impl TestStruct {",
+                "        fn get_table_layout() -> TableLayout {",
+                "            TableLayout::new::<TestStruct>()",
+                "        }",
+                "    }",
+                "",
+                "    let layout = TestStruct::get_table_layout();",
+                "    let buckets = 8; // 8 is a power of two",
+                "    let ctrl_offset = layout.size.checked_mul(buckets).unwrap() + layout.ctrl_align - 1;",
+                "",
+                "    // Set the length to be too large",
+                "    const INVALID_LENGTH: usize = isize::MAX as usize; // set len to something that will cause failure",
+                "    let bad_buckets = INVALID_LENGTH - ctrl_offset - Group::WIDTH; // forces overflow on addition",
+                "    let result = layout.calculate_layout_for(bad_buckets);",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                261,
+                262
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Group;",
+                "    impl Group {",
+                "        const WIDTH: usize = 16;  // Example value for Group::WIDTH",
+                "    }",
+                "",
+                "    let layout = TableLayout::new::<u8>(); // Use u8 as a generic type for TableLayout",
+                "    let buckets = isize::MAX as usize / 2 / layout.size; // Calculate a safe number of buckets",
+                "    ",
+                "    // Ensuring we hit the `len > isize::MAX as usize - (ctrl_align - 1)` condition.",
+                "    let (layout_result, ctrl_offset_result) = layout.calculate_layout_for(buckets).unwrap();",
+                "    ",
+                "    assert!(layout_result.size() == 0);",
+                "    assert!(ctrl_offset_result == 0);",
+                "}"
+            ],
+            [
+                261,
+                262
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Group;",
+                "    impl Group {",
+                "        const WIDTH: usize = 16;  // Example value for Group::WIDTH",
+                "    }",
+                "",
+                "    let layout = TableLayout::new::<u8>(); // Use u8 as a generic type for TableLayout",
+                "    let buckets = 16; // 16 is a power of two",
+                "",
+                "    let result = layout.calculate_layout_for(buckets);",
+                "    ",
+                "    assert!(result.is_some());",
+                "    let (layout_result, ctrl_offset_result) = result.unwrap();",
+                "    assert!(ctrl_offset_result > 0);",
+                "}"
+            ],
+            [
+                261,
+                262,
+                264,
+                266,
+                267,
+                268,
+                272,
+                274,
+                275,
+                276,
+                277,
+                278,
+                279,
+                280
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Group;",
+                "    impl Group {",
+                "        const WIDTH: usize = 16;  // Example value for Group::WIDTH",
+                "    }",
+                "",
+                "    let layout = TableLayout::new::<u8>(); // Use u8 as a generic type for TableLayout",
+                "    let buckets = 10; // 10 is not a power of two",
+                "",
+                "    // This should panic due to the debug_assert failure",
+                "    let _ = layout.calculate_layout_for(buckets);",
+                "}"
+            ],
+            [
+                261,
+                262
+            ]
+        ],
+        [
+            [
+                "{",
+                "    test_calculate_layout_for_valid();",
+                "    test_calculate_layout_for_exceeds_max();",
+                "    test_calculate_layout_for_zero_buckets();",
+                "}"
+            ],
+            [
+                261,
+                262,
+                264,
+                266,
+                267,
+                268,
+                272,
+                274,
+                275,
+                276,
+                277,
+                278,
+                279,
+                280
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let layout_4: TableLayout = TableLayout::new::<u8>(); // Using u8 as the type for initialization",
+                "",
+                "    // Testing with a bucket size that is not a power of two",
+                "    let result = layout_4.calculate_layout_for(3); // 3 is not a power of two",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                261,
+                262
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let layout_0: TableLayout = TableLayout::new::<u8>(); // Using u8 as the type for initialization",
+                "",
+                "    // Testing with zero buckets",
+                "    let result = layout_0.calculate_layout_for(0); // 0 is not a power of two",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                261,
+                262
+            ]
+        ]
+    ],
+    "codes_branches": [
+        {
+            "start_line": 272,
+            "start_column": 12,
+            "end_line": 272,
+            "end_column": 56,
+            "positive": true,
+            "negative": true
+        }
+    ],
+    "codes_branches_covered": [
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    let result = layout.calculate_layout_for(0);",
+                "    ",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    // Using a non-power-of-two value should still result in None",
+                "    let result = layout.calculate_layout_for(3);",
+                "    ",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    let buckets: usize = 4; // 2^2",
+                "    let result = layout.calculate_layout_for(buckets);",
+                " ",
+                "    assert!(result.is_some());",
+                "    let (calculated_layout, ctrl_offset) = result.unwrap();",
+                "    assert!(calculated_layout.size() > 0);",
+                "    assert!(ctrl_offset > 0);",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": true
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    // This would cause size.checked_mul to result in None",
+                "    let large_buckets = usize::MAX / 2 + 1; // Exceeds the capacity for checked_mul",
+                "    ",
+                "    let result = layout.calculate_layout_for(large_buckets);",
+                "    ",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": true,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Dummy;",
+                "",
+                "    let layout = TableLayout::new::<Dummy>();",
+                "    let buckets: usize = 1 << 31; // Large power of two",
+                "    let result = layout.calculate_layout_for(buckets);",
+                "    ",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": true
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestStruct;",
+                "    impl TestStruct {",
+                "        fn get_table_layout() -> TableLayout {",
+                "            TableLayout::new::<TestStruct>()",
+                "        }",
+                "    }",
+                "",
+                "    let layout = TestStruct::get_table_layout();",
+                "    let buckets = 8; // 8 is a power of two",
+                "    let result = layout.calculate_layout_for(buckets);",
+                "    assert!(result.is_some());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": true
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestStruct;",
+                "    impl TestStruct {",
+                "        fn get_table_layout() -> TableLayout {",
+                "            TableLayout::new::<TestStruct>()",
+                "        }",
+                "    }",
+                "",
+                "    let layout = TestStruct::get_table_layout();",
+                "    let buckets = usize::MAX / layout.size + 1; // causes checked_mul to return None",
+                "    let result = layout.calculate_layout_for(buckets);",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestStruct;",
+                "    impl TestStruct {",
+                "        fn get_table_layout() -> TableLayout {",
+                "            TableLayout::new::<TestStruct>()",
+                "        }",
+                "    }",
+                "",
+                "    let layout = TestStruct::get_table_layout();",
+                "    let buckets = 8; // 8 is a power of two",
+                "    let ctrl_offset = layout.size.checked_mul(buckets).unwrap() + layout.ctrl_align - 1;",
+                "",
+                "    // Set the layout size to cause checked_add to overflow",
+                "    let bad_buckets = isize::MAX as usize - (ctrl_offset + 1); // forces overflow on addition",
+                "    let result = layout.calculate_layout_for(bad_buckets);",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestStruct;",
+                "    impl TestStruct {",
+                "        fn get_table_layout() -> TableLayout {",
+                "            TableLayout::new::<TestStruct>()",
+                "        }",
+                "    }",
+                "",
+                "    let layout = TestStruct::get_table_layout();",
+                "    let buckets = 8; // 8 is a power of two",
+                "    let ctrl_offset = layout.size.checked_mul(buckets).unwrap() + layout.ctrl_align - 1;",
+                "",
+                "    // Set the length to be too large",
+                "    const INVALID_LENGTH: usize = isize::MAX as usize; // set len to something that will cause failure",
+                "    let bad_buckets = INVALID_LENGTH - ctrl_offset - Group::WIDTH; // forces overflow on addition",
+                "    let result = layout.calculate_layout_for(bad_buckets);",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Group;",
+                "    impl Group {",
+                "        const WIDTH: usize = 16;  // Example value for Group::WIDTH",
+                "    }",
+                "",
+                "    let layout = TableLayout::new::<u8>(); // Use u8 as a generic type for TableLayout",
+                "    let buckets = isize::MAX as usize / 2 / layout.size; // Calculate a safe number of buckets",
+                "    ",
+                "    // Ensuring we hit the `len > isize::MAX as usize - (ctrl_align - 1)` condition.",
+                "    let (layout_result, ctrl_offset_result) = layout.calculate_layout_for(buckets).unwrap();",
+                "    ",
+                "    assert!(layout_result.size() == 0);",
+                "    assert!(ctrl_offset_result == 0);",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Group;",
+                "    impl Group {",
+                "        const WIDTH: usize = 16;  // Example value for Group::WIDTH",
+                "    }",
+                "",
+                "    let layout = TableLayout::new::<u8>(); // Use u8 as a generic type for TableLayout",
+                "    let buckets = 16; // 16 is a power of two",
+                "",
+                "    let result = layout.calculate_layout_for(buckets);",
+                "    ",
+                "    assert!(result.is_some());",
+                "    let (layout_result, ctrl_offset_result) = result.unwrap();",
+                "    assert!(ctrl_offset_result > 0);",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": true
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct Group;",
+                "    impl Group {",
+                "        const WIDTH: usize = 16;  // Example value for Group::WIDTH",
+                "    }",
+                "",
+                "    let layout = TableLayout::new::<u8>(); // Use u8 as a generic type for TableLayout",
+                "    let buckets = 10; // 10 is not a power of two",
+                "",
+                "    // This should panic due to the debug_assert failure",
+                "    let _ = layout.calculate_layout_for(buckets);",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    test_calculate_layout_for_valid();",
+                "    test_calculate_layout_for_exceeds_max();",
+                "    test_calculate_layout_for_zero_buckets();",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": true
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let layout_4: TableLayout = TableLayout::new::<u8>(); // Using u8 as the type for initialization",
+                "",
+                "    // Testing with a bucket size that is not a power of two",
+                "    let result = layout_4.calculate_layout_for(3); // 3 is not a power of two",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    let layout_0: TableLayout = TableLayout::new::<u8>(); // Using u8 as the type for initialization",
+                "",
+                "    // Testing with zero buckets",
+                "    let result = layout_0.calculate_layout_for(0); // 0 is not a power of two",
+                "    assert!(result.is_none());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 272,
+                    "start_column": 12,
+                    "end_line": 272,
+                    "end_column": 56,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ]
+    ],
+    "file_path": "/home/abezbm/rusty-unit/evaluation/hashbrown/rusty-unit-0/src/raw/mod.rs"
+}

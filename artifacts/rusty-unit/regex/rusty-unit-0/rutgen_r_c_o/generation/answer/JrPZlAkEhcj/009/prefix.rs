@@ -1,0 +1,236 @@
+// Answer 0
+
+#[test]
+fn test_shortest_match_at_valid_input_1() {
+    let text: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let start: usize = 0;
+
+    let program_cache = RefCell::new(ProgramCacheInner {
+        pikevm: pikevm::Cache::default(),
+        backtrack: backtrack::Cache::default(),
+        dfa: dfa::Cache::default(),
+        dfa_reverse: dfa::Cache::default(),
+    });
+
+    let match_type = MatchType::Dfa;
+    let ro = Arc::new(ExecReadOnly {
+        res: vec!["example_regex".to_string()],
+        nfa: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: true,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        dfa: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: false,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        dfa_reverse: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: true,
+            is_anchored_start: false,
+            is_anchored_end: true,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        suffixes: LiteralSearcher::default(),
+        match_type,
+    });
+
+    let exec_no_sync = ExecNoSync {
+        ro: &ro,
+        cache: &program_cache,
+    };
+
+    exec_no_sync.shortest_match_at(text, start);
+}
+
+#[test]
+fn test_shortest_match_at_valid_input_2() {
+    let text: &[u8] = &[11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+    let start: usize = 1;
+
+    let program_cache = RefCell::new(ProgramCacheInner {
+        pikevm: pikevm::Cache::default(),
+        backtrack: backtrack::Cache::default(),
+        dfa: dfa::Cache::default(),
+        dfa_reverse: dfa::Cache::default(),
+    });
+
+    let match_type = MatchType::DfaMany;
+    let ro = Arc::new(ExecReadOnly {
+        res: vec!["example_regex_2".to_string()],
+        nfa: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: true,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        dfa: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: false,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        dfa_reverse: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: true,
+            is_anchored_start: false,
+            is_anchored_end: true,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        suffixes: LiteralSearcher::default(),
+        match_type,
+    });
+
+    let exec_no_sync = ExecNoSync {
+        ro: &ro,
+        cache: &program_cache,
+    };
+
+    exec_no_sync.shortest_match_at(text, start);
+}
+
+#[test]
+fn test_shortest_match_at_large_input() {
+    let text: Vec<u8> = (1..=1 << 20).map(|x| x as u8).collect();
+    let start: usize = 100;
+
+    let program_cache = RefCell::new(ProgramCacheInner {
+        pikevm: pikevm::Cache::default(),
+        backtrack: backtrack::Cache::default(),
+        dfa: dfa::Cache::default(),
+        dfa_reverse: dfa::Cache::default(),
+    });
+
+    let match_type = MatchType::Dfa;
+    let ro = Arc::new(ExecReadOnly {
+        res: vec!["large_input_regex".to_string()],
+        nfa: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: true,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        dfa: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: false,
+            is_anchored_start: false,
+            is_anchored_end: false,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        dfa_reverse: Program {
+            insts: vec![],
+            matches: vec![],
+            captures: vec![],
+            capture_name_idx: Arc::new(HashMap::new()),
+            start: 0,
+            byte_classes: vec![],
+            only_utf8: false,
+            is_bytes: false,
+            is_dfa: true,
+            is_reverse: true,
+            is_anchored_start: false,
+            is_anchored_end: true,
+            has_unicode_word_boundary: false,
+            prefixes: LiteralSearcher::default(),
+            dfa_size_limit: 1024,
+        },
+        suffixes: LiteralSearcher::default(),
+        match_type,
+    });
+
+    let exec_no_sync = ExecNoSync {
+        ro: &ro,
+        cache: &program_cache,
+    };
+
+    exec_no_sync.shortest_match_at(&text, start);
+}
+

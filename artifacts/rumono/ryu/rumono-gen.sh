@@ -1,0 +1,2 @@
+cd /home/rumono/ryu
+fuzz-target-generator --edition=2018 --crate-type lib --crate-name ryu src/lib.rs -o /home/rumono/ryu/target/doc --check-cfg 'cfg(docsrs)' --check-cfg 'cfg(feature, values("no-panic", "small"))' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat -C metadata=e358f8a77e13ad2e -L dependency=/home/rumono/ryu/target/debug/deps --crate-version 1.0.20 --cfg check_cfg --check-cfg 'cfg(check_cfg)' --check-cfg 'cfg(exhaustive)'

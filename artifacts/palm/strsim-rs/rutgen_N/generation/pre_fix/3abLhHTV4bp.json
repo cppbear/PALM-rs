@@ -1,0 +1,168 @@
+{
+  "name": "strsim::GrowingHashmapChar<ValueType>::grow",
+  "name_with_impl": "strsim::{impl#5}::grow",
+  "mod_info": {
+    "name": "",
+    "loc": "src/lib.rs:1:1:1307:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:534:5:564:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct GrowingHashmapMapElemChar {",
+            "    key: char,",
+            "    value: i32,",
+            "}",
+            "",
+            "struct GrowingHashmap<ValueType> {",
+            "    mask: usize,",
+            "    used: i32,",
+            "    fill: i32,",
+            "    map: Option<Vec<GrowingHashmapMapElemChar>>,",
+            "}",
+            "",
+            "impl<ValueType> GrowingHashmap<ValueType> {",
+            "    fn new(size: usize) -> Self {",
+            "        Self {",
+            "            mask: size - 1,",
+            "            used: 0,",
+            "            fill: 0,",
+            "            map: Some(vec![GrowingHashmapMapElemChar::default(); size]),",
+            "        }",
+            "    }",
+            "",
+            "    fn lookup(&self, key: char) -> usize {",
+            "        // Simplified lookup for testing purpose",
+            "        key as usize & self.mask",
+            "    }",
+            "",
+            "    fn grow(&mut self, min_used: i32) {",
+            "        let mut new_size = self.mask + 1;",
+            "        while new_size <= min_used {",
+            "            new_size <<= 1;",
+            "        }",
+            "",
+            "        self.fill = self.used;",
+            "        self.mask = new_size - 1;",
+            "",
+            "        let old_map = std::mem::replace(",
+            "            self.map",
+            "                .as_mut()",
+            "                .expect(\"callers have to ensure map is allocated\"),",
+            "            vec![GrowingHashmapMapElemChar::default(); new_size as usize],",
+            "        );",
+            "",
+            "        for elem in old_map {",
+            "            if elem.value != Default::default() {",
+            "                let j = self.lookup(elem.key);",
+            "                let new_elem = &mut self.map.as_mut().expect(\"map created above\")[j];",
+            "                new_elem.key = elem.key;",
+            "                new_elem.value = elem.value;",
+            "                self.used -= 1;",
+            "                if self.used == 0 {",
+            "                    break;",
+            "                }",
+            "            }",
+            "        }",
+            "",
+            "        self.used = self.fill;",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut hashmap = GrowingHashmap::<i32>::new(4);",
+                  "    hashmap.used = 3;",
+                  "    hashmap.fill = 3;",
+                  "",
+                  "    hashmap.grow(5);",
+                  "",
+                  "    assert_eq!(hashmap.mask, 7);",
+                  "    assert_eq!(hashmap.map.as_ref().unwrap().len(), 8);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling strsim v0.11.1 (/home/abezbm/rust-utgen-test-crates-new/strsim-rs)\nwarning: unused macro definition: `assert_delta`\n   --> src/lib.rs:760:18\n    |\n760 |     macro_rules! assert_delta {\n    |                  ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/lib.rs:1312:8\n     |\n1312 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0392]: type parameter `ValueType` is never used\n    --> src/lib.rs:1319:23\n     |\n1319 | struct GrowingHashmap<ValueType> {\n     |                       ^^^^^^^^^ unused type parameter\n     |\n     = help: consider removing `ValueType`, referring to it in a field, or using a marker such as `PhantomData`\n     = help: if you intended `ValueType` to be a const parameter, use `const ValueType: /* Type */` instead\n\nerror[E0277]: the trait bound `llmtests::GrowingHashmapMapElemChar: Clone` is not satisfied\n    --> src/lib.rs:1332:28\n     |\n1332 |             map: Some(vec![GrowingHashmapMapElemChar::default(); size]),\n     |                       -----^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-------\n     |                       |    |\n     |                       |    the trait `Clone` is not implemented for `llmtests::GrowingHashmapMapElemChar`\n     |                       required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\nhelp: consider annotating `llmtests::GrowingHashmapMapElemChar` with `#[derive(Clone)]`\n     |\n1314 + #[derive(Clone)]\n1315 | struct GrowingHashmapMapElemChar {\n     |\n\nerror[E0308]: mismatched types\n    --> src/lib.rs:1343:27\n     |\n1343 |         while new_size <= min_used {\n     |               --------    ^^^^^^^^ expected `usize`, found `i32`\n     |               |\n     |               expected because this is `usize`\n     |\nhelp: you can convert an `i32` to a `usize` and panic if the converted value doesn't fit\n     |\n1343 |         while new_size <= min_used.try_into().unwrap() {\n     |                                   ++++++++++++++++++++\n\nerror[E0277]: the trait bound `llmtests::GrowingHashmapMapElemChar: Clone` is not satisfied\n    --> src/lib.rs:1354:18\n     |\n1354 |             vec![GrowingHashmapMapElemChar::default(); new_size as usize],\n     |             -----^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^--------------------\n     |             |    |\n     |             |    the trait `Clone` is not implemented for `llmtests::GrowingHashmapMapElemChar`\n     |             required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\nhelp: consider annotating `llmtests::GrowingHashmapMapElemChar` with `#[derive(Clone)]`\n     |\n1314 + #[derive(Clone)]\n1315 | struct GrowingHashmapMapElemChar {\n     |\n\nerror[E0282]: type annotations needed\n    --> src/lib.rs:1377:23\n     |\n1377 |     let mut hashmap = GrowingHashmap::<i32>::new(4);\n     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type of the type parameter `ValueType` declared on the struct `GrowingHashmap`\n\nSome errors have detailed explanations: E0277, E0282, E0308, E0392.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `strsim` (lib test) generated 2 warnings\nerror: could not compile `strsim` (lib test) due to 5 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut hashmap = GrowingHashmap::<i32>::new(4);",
+                  "    hashmap.used = 2;",
+                  "    hashmap.fill = 2;",
+                  "",
+                  "    hashmap.grow(2);",
+                  "",
+                  "    assert_eq!(hashmap.mask, 3);",
+                  "    assert_eq!(hashmap.map.as_ref().unwrap().len(), 4);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling strsim v0.11.1 (/home/abezbm/rust-utgen-test-crates-new/strsim-rs)\nwarning: unused macro definition: `assert_delta`\n   --> src/lib.rs:760:18\n    |\n760 |     macro_rules! assert_delta {\n    |                  ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/lib.rs:1312:8\n     |\n1312 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0392]: type parameter `ValueType` is never used\n    --> src/lib.rs:1319:23\n     |\n1319 | struct GrowingHashmap<ValueType> {\n     |                       ^^^^^^^^^ unused type parameter\n     |\n     = help: consider removing `ValueType`, referring to it in a field, or using a marker such as `PhantomData`\n     = help: if you intended `ValueType` to be a const parameter, use `const ValueType: /* Type */` instead\n\nerror[E0277]: the trait bound `llmtests::GrowingHashmapMapElemChar: Clone` is not satisfied\n    --> src/lib.rs:1332:28\n     |\n1332 |             map: Some(vec![GrowingHashmapMapElemChar::default(); size]),\n     |                       -----^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-------\n     |                       |    |\n     |                       |    the trait `Clone` is not implemented for `llmtests::GrowingHashmapMapElemChar`\n     |                       required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\nhelp: consider annotating `llmtests::GrowingHashmapMapElemChar` with `#[derive(Clone)]`\n     |\n1314 + #[derive(Clone)]\n1315 | struct GrowingHashmapMapElemChar {\n     |\n\nerror[E0308]: mismatched types\n    --> src/lib.rs:1343:27\n     |\n1343 |         while new_size <= min_used {\n     |               --------    ^^^^^^^^ expected `usize`, found `i32`\n     |               |\n     |               expected because this is `usize`\n     |\nhelp: you can convert an `i32` to a `usize` and panic if the converted value doesn't fit\n     |\n1343 |         while new_size <= min_used.try_into().unwrap() {\n     |                                   ++++++++++++++++++++\n\nerror[E0277]: the trait bound `llmtests::GrowingHashmapMapElemChar: Clone` is not satisfied\n    --> src/lib.rs:1354:18\n     |\n1354 |             vec![GrowingHashmapMapElemChar::default(); new_size as usize],\n     |             -----^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^--------------------\n     |             |    |\n     |             |    the trait `Clone` is not implemented for `llmtests::GrowingHashmapMapElemChar`\n     |             required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\nhelp: consider annotating `llmtests::GrowingHashmapMapElemChar` with `#[derive(Clone)]`\n     |\n1314 + #[derive(Clone)]\n1315 | struct GrowingHashmapMapElemChar {\n     |\n\nerror[E0282]: type annotations needed\n    --> src/lib.rs:1377:23\n     |\n1377 |     let mut hashmap = GrowingHashmap::<i32>::new(4);\n     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type of the type parameter `ValueType` declared on the struct `GrowingHashmap`\n\nSome errors have detailed explanations: E0277, E0282, E0308, E0392.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `strsim` (lib test) generated 2 warnings\nerror: could not compile `strsim` (lib test) due to 5 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut hashmap = GrowingHashmap::<i32>::new(8);",
+                  "    hashmap.used = 5;",
+                  "    hashmap.fill = 5;",
+                  "",
+                  "    hashmap.grow(10);",
+                  "",
+                  "    assert_eq!(hashmap.mask, 15);",
+                  "    assert_eq!(hashmap.map.as_ref().unwrap().len(), 16);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling strsim v0.11.1 (/home/abezbm/rust-utgen-test-crates-new/strsim-rs)\nwarning: unused macro definition: `assert_delta`\n   --> src/lib.rs:760:18\n    |\n760 |     macro_rules! assert_delta {\n    |                  ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/lib.rs:1312:8\n     |\n1312 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0392]: type parameter `ValueType` is never used\n    --> src/lib.rs:1319:23\n     |\n1319 | struct GrowingHashmap<ValueType> {\n     |                       ^^^^^^^^^ unused type parameter\n     |\n     = help: consider removing `ValueType`, referring to it in a field, or using a marker such as `PhantomData`\n     = help: if you intended `ValueType` to be a const parameter, use `const ValueType: /* Type */` instead\n\nerror[E0277]: the trait bound `llmtests::GrowingHashmapMapElemChar: Clone` is not satisfied\n    --> src/lib.rs:1332:28\n     |\n1332 |             map: Some(vec![GrowingHashmapMapElemChar::default(); size]),\n     |                       -----^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-------\n     |                       |    |\n     |                       |    the trait `Clone` is not implemented for `llmtests::GrowingHashmapMapElemChar`\n     |                       required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\nhelp: consider annotating `llmtests::GrowingHashmapMapElemChar` with `#[derive(Clone)]`\n     |\n1314 + #[derive(Clone)]\n1315 | struct GrowingHashmapMapElemChar {\n     |\n\nerror[E0308]: mismatched types\n    --> src/lib.rs:1343:27\n     |\n1343 |         while new_size <= min_used {\n     |               --------    ^^^^^^^^ expected `usize`, found `i32`\n     |               |\n     |               expected because this is `usize`\n     |\nhelp: you can convert an `i32` to a `usize` and panic if the converted value doesn't fit\n     |\n1343 |         while new_size <= min_used.try_into().unwrap() {\n     |                                   ++++++++++++++++++++\n\nerror[E0277]: the trait bound `llmtests::GrowingHashmapMapElemChar: Clone` is not satisfied\n    --> src/lib.rs:1354:18\n     |\n1354 |             vec![GrowingHashmapMapElemChar::default(); new_size as usize],\n     |             -----^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^--------------------\n     |             |    |\n     |             |    the trait `Clone` is not implemented for `llmtests::GrowingHashmapMapElemChar`\n     |             required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\nhelp: consider annotating `llmtests::GrowingHashmapMapElemChar` with `#[derive(Clone)]`\n     |\n1314 + #[derive(Clone)]\n1315 | struct GrowingHashmapMapElemChar {\n     |\n\nerror[E0282]: type annotations needed\n    --> src/lib.rs:1377:23\n     |\n1377 |     let mut hashmap = GrowingHashmap::<i32>::new(8);\n     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type of the type parameter `ValueType` declared on the struct `GrowingHashmap`\n\nSome errors have detailed explanations: E0277, E0282, E0308, E0392.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `strsim` (lib test) generated 2 warnings\nerror: could not compile `strsim` (lib test) due to 5 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,574 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct CustomReplacer<'a> {",
+      "    replacement: &'a [u8],",
+      "}",
+      "",
+      "impl<'a> CustomReplacer<'a> {",
+      "    fn new(replacement: &'a [u8]) -> Self {",
+      "        CustomReplacer { replacement }",
+      "    }",
+      "}",
+      "",
+      "impl<'a> Replacer for CustomReplacer<'a> {",
+      "    fn no_expansion(&self) -> Option<&'a [u8]> {",
+      "        Some(self.replacement)",
+      "    }",
+      "",
+      "    fn replace_append(&self, _captures: &Captures, _dst: &mut Vec<u8>) {",
+      "        // No expansion logic for the purpose of this test",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"foo\").unwrap();",
+          "    let text = b\"bar\";",
+          "    let limit = 0;",
+          "    let rep = b\"baz\";",
+          "    regex.replacen(text, limit, rep);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let regex = Regex::new(\"foo\").unwrap();",
+            "    let text = b\"bar\";",
+            "    let limit = 0;",
+            "    let rep = b\"baz\";",
+            "    let result = regex.replacen(text, limit, CustomReplacer::new(rep));",
+            "    assert_eq!(result, Cow::Borrowed(text));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let regex = Regex::new(\"foo\").unwrap();",
+            "    let text = b\"bar\";",
+            "    let limit = 0;",
+            "    let rep = b\"baz\";",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"foo\").unwrap();",
+            "    let text = b\"bar\";",
+            "    let limit = 0;",
+            "    let rep = b\"baz\";",
+            "    let result = regex.replacen(text, limit, CustomReplacer::new(rep));",
+            "    assert_eq!(result, Cow::Borrowed(text));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"a\").unwrap();",
+          "    let text = b\"abcabc\";",
+          "    let limit = 2;",
+          "    let rep = b\"x\";",
+          "    regex.replacen(text, limit, rep);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let regex = Regex::new(\"a\").unwrap();",
+            "    let text = b\"abcabc\";",
+            "    let limit = 2;",
+            "    let rep = b\"x\";",
+            "    let result = regex.replacen(text, limit, CustomReplacer::new(rep));",
+            "    assert_eq!(result, Cow::Owned(b\"xbcbc\".to_vec()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let regex = Regex::new(\"a\").unwrap();",
+            "    let text = b\"abcabc\";",
+            "    let limit = 2;",
+            "    let rep = b\"x\";",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"a\").unwrap();",
+            "    let text = b\"abcabc\";",
+            "    let limit = 2;",
+            "    let rep = b\"x\";",
+            "    let result = regex.replacen(text, limit, CustomReplacer::new(rep));",
+            "    assert_eq!(result, Cow::Owned(b\"xbcbc\".to_vec()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"foo\").unwrap();",
+          "    let text = b\"bar\";",
+          "    let limit = 0;",
+          "    let rep = CustomReplacer::new(b\"baz\");",
+          "    regex.replacen(text, limit, rep);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let regex = Regex::new(\"foo\").unwrap();",
+            "    let text = b\"bar\";",
+            "    let limit = 0;",
+            "    let rep = CustomReplacer::new(b\"baz\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result == Cow::Borrowed(text));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let regex = Regex::new(\"foo\").unwrap();",
+            "    let text = b\"bar\";",
+            "    let limit = 0;",
+            "    let rep = CustomReplacer::new(b\"baz\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"foo\").unwrap();",
+            "    let text = b\"bar\";",
+            "    let limit = 0;",
+            "    let rep = CustomReplacer::new(b\"baz\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result == Cow::Borrowed(text));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"a\").unwrap();",
+          "    let text = b\"abcabac\";",
+          "    let limit = 2;",
+          "    let rep = CustomReplacer::new(b\"xyz\");",
+          "    regex.replacen(text, limit, rep);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let regex = Regex::new(\"a\").unwrap();",
+            "    let text = b\"abcabac\";",
+            "    let limit = 2;",
+            "    let rep = CustomReplacer::new(b\"xyz\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert_eq!(result, Cow::Owned(b\"xyzbcxyzc\".to_vec()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let regex = Regex::new(\"a\").unwrap();",
+            "    let text = b\"abcabac\";",
+            "    let limit = 2;",
+            "    let rep = CustomReplacer::new(b\"xyz\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"a\").unwrap();",
+            "    let text = b\"abcabac\";",
+            "    let limit = 2;",
+            "    let rep = CustomReplacer::new(b\"xyz\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert_eq!(result, Cow::Owned(b\"xyzbcxyzc\".to_vec()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"e\").unwrap();",
+          "    let text = b\"elephant elephant\";",
+          "    let limit = 5;",
+          "    let rep = CustomReplacer::new(b\"z\");",
+          "    regex.replacen(text, limit, rep);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let regex = Regex::new(\"e\").unwrap();",
+            "    let text = b\"elephant elephant\";",
+            "    let limit = 5;",
+            "    let rep = CustomReplacer::new(b\"z\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert_eq!(result, Cow::Owned(b\"zlphant zlphant\".to_vec()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let regex = Regex::new(\"e\").unwrap();",
+            "    let text = b\"elephant elephant\";",
+            "    let limit = 5;",
+            "    let rep = CustomReplacer::new(b\"z\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"e\").unwrap();",
+            "    let text = b\"elephant elephant\";",
+            "    let limit = 5;",
+            "    let rep = CustomReplacer::new(b\"z\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert_eq!(result, Cow::Owned(b\"zlphant zlphant\".to_vec()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"o\").unwrap();",
+          "    let text = b\"onomatopoeia\";",
+          "    let limit = 3;",
+          "    let rep = CustomReplacer::new(b\"oo\");",
+          "    regex.replacen(text, limit, rep);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(matches!(result, Cow::Owned(_)));"
+          ],
+          [
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert_eq!(result, Cow::Owned(b\"onooomatopoeia\".to_vec()));"
+          ],
+          [
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result.len() < text.len());"
+          ],
+          [
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result.contains(&b'o'));"
+          ],
+          [
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result.matches(&b\"oo\").count() <= limit);"
+          ],
+          [
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert_eq!(result.to_mut().len(), 15);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(matches!(result, Cow::Owned(_)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert_eq!(result, Cow::Owned(b\"onooomatopoeia\".to_vec()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result.len() < text.len());",
+            "}"
+          ],
+          [
+            "{",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result.contains(&b'o'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result.matches(&b\"oo\").count() <= limit);",
+            "}"
+          ],
+          [
+            "{",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"o\").unwrap();",
+            "    let text = b\"onomatopoeia\";",
+            "    let limit = 3;",
+            "    let rep = CustomReplacer::new(b\"oo\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert_eq!(result.to_mut().len(), 15);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let regex = Regex::new(\"z\").unwrap();",
+          "    let text = b\"zzzzzzzz\";",
+          "    let limit = 1;",
+          "    let rep = CustomReplacer::new(b\"X\");",
+          "    regex.replacen(text, limit, rep);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result == Cow::Owned(b\"Xzzzzzzzz\".to_vec()));"
+          ],
+          [
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result.len() == text.len());"
+          ],
+          [
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result[0..1] == b\"X\");"
+          ],
+          [
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result[1..] == b\"zzzzzzzz\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result == Cow::Owned(b\"Xzzzzzzzz\".to_vec()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result.len() == text.len());",
+            "}"
+          ],
+          [
+            "{",
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result[0..1] == b\"X\");",
+            "}"
+          ],
+          [
+            "{",
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    regex.replacen(text, limit, rep);",
+            "    let regex = Regex::new(\"z\").unwrap();",
+            "    let text = b\"zzzzzzzz\";",
+            "    let limit = 1;",
+            "    let rep = CustomReplacer::new(b\"X\");",
+            "    let result = regex.replacen(text, limit, rep);",
+            "    assert!(result[1..] == b\"zzzzzzzz\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

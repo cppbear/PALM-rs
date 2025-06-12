@@ -1,0 +1,45 @@
+// Answer 0
+
+#[test]
+fn test_decode_hex_val_slow_valid_digits() {
+    assert_eq!(decode_hex_val_slow(b'0'), Some(0));
+    assert_eq!(decode_hex_val_slow(b'1'), Some(1));
+    assert_eq!(decode_hex_val_slow(b'2'), Some(2));
+    assert_eq!(decode_hex_val_slow(b'3'), Some(3));
+    assert_eq!(decode_hex_val_slow(b'4'), Some(4));
+    assert_eq!(decode_hex_val_slow(b'5'), Some(5));
+    assert_eq!(decode_hex_val_slow(b'6'), Some(6));
+    assert_eq!(decode_hex_val_slow(b'7'), Some(7));
+    assert_eq!(decode_hex_val_slow(b'8'), Some(8));
+    assert_eq!(decode_hex_val_slow(b'9'), Some(9));
+}
+
+#[test]
+fn test_decode_hex_val_slow_valid_uppercase_hex() {
+    assert_eq!(decode_hex_val_slow(b'A'), Some(10));
+    assert_eq!(decode_hex_val_slow(b'B'), Some(11));
+    assert_eq!(decode_hex_val_slow(b'C'), Some(12));
+    assert_eq!(decode_hex_val_slow(b'D'), Some(13));
+    assert_eq!(decode_hex_val_slow(b'E'), Some(14));
+    assert_eq!(decode_hex_val_slow(b'F'), Some(15));
+}
+
+#[test]
+fn test_decode_hex_val_slow_valid_lowercase_hex() {
+    assert_eq!(decode_hex_val_slow(b'a'), Some(10));
+    assert_eq!(decode_hex_val_slow(b'b'), Some(11));
+    assert_eq!(decode_hex_val_slow(b'c'), Some(12));
+    assert_eq!(decode_hex_val_slow(b'd'), Some(13));
+    assert_eq!(decode_hex_val_slow(b'e'), Some(14));
+    assert_eq!(decode_hex_val_slow(b'f'), Some(15));
+}
+
+#[test]
+fn test_decode_hex_val_slow_invalid_character() {
+    assert_eq!(decode_hex_val_slow(b'g'), None);
+    assert_eq!(decode_hex_val_slow(b'G'), None);
+    assert_eq!(decode_hex_val_slow(b'@'), None);
+    assert_eq!(decode_hex_val_slow(b'{' ), None);
+    assert_eq!(decode_hex_val_slow(255), None);
+}
+

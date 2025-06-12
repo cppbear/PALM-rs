@@ -1,0 +1,1 @@
+fn as_bytes_str(text: &str) -> &[u8] { text.as_bytes() }

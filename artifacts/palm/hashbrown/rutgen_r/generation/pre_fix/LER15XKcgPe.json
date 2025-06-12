@@ -1,0 +1,686 @@
+{
+  "name": "hashbrown::raw::raw::RawTableInner::prepare_rehash_in_place",
+  "name_with_impl": "hashbrown::raw::{impl#13}::prepare_rehash_in_place",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:2034:5:2069:6",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: i in (0..self.buckets()).step_by(Group::WIDTH) is true\n",
+        "// constraint: i in (0..self.buckets()).step_by(Group::WIDTH) is false\n",
+        "// constraint: unlikely(self.buckets() < Group::WIDTH) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Group {",
+                  "        control: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl Group {",
+                  "        const WIDTH: usize = 4;",
+                  "",
+                  "        fn load_aligned(control_bytes: &Vec<u8>, index: usize) -> Self {",
+                  "            let start = index..index + Self::WIDTH;",
+                  "            Self { control: control_bytes[start].to_vec() }",
+                  "        }",
+                  "",
+                  "        fn convert_special_to_empty_and_full_to_deleted(&mut self) {",
+                  "            for byte in &mut self.control {",
+                  "                *byte = match *byte {",
+                  "                    0 => 0, // Tag::EMPTY",
+                  "                    1 => 0, // Tag::DELETED",
+                  "                    _ => 2, // FULL -> Tag::DELETED",
+                  "                }",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn store_aligned(&self, control_bytes: &mut Vec<u8>, index: usize) {",
+                  "            let start = index..index + Self::WIDTH;",
+                  "            control_bytes[start].copy_from_slice(&self.control);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RawTableInner {",
+                  "        buckets: usize,",
+                  "        ctrl: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl RawTableInner {",
+                  "        fn buckets(&self) -> usize {",
+                  "            self.buckets",
+                  "        }",
+                  "",
+                  "        fn ctrl(&mut self, index: usize) -> &mut Vec<u8> {",
+                  "            &mut self.ctrl",
+                  "        }",
+                  "",
+                  "        unsafe fn prepare_rehash_in_place(&mut self) {",
+                  "            for i in (0..self.buckets()).step_by(Group::WIDTH) {",
+                  "                let mut group = Group::load_aligned(&self.ctrl, i);",
+                  "                group.convert_special_to_empty_and_full_to_deleted();",
+                  "                group.store_aligned(&mut self.ctrl, i);",
+                  "            }",
+                  "",
+                  "            if self.buckets() < Group::WIDTH {",
+                  "                self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);",
+                  "            } else {",
+                  "                self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut raw_table = RawTableInner {",
+                  "        buckets: 8,",
+                  "        ctrl: vec![1, 0, 2, 1, 0, 2, 1, 1],",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        raw_table.prepare_rehash_in_place();",
+                  "    }",
+                  "",
+                  "    assert_eq!(raw_table.ctrl, vec![0, 0, 2, 0, 0, 2, 2, 2]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling crossbeam-utils v0.8.21\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling rayon-core v1.12.1\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nwarning: unused variable: `index`\n    --> src/raw/mod.rs:4527:28\n     |\n4527 |         fn ctrl(&mut self, index: usize) -> &mut Vec<u8> {\n     |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_index`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4539:30\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 -------------^^^^-----------\n     |                 |        |   |\n     |                 |        |   immutable borrow occurs here\n     |                 |        mutable borrow later used here\n     |                 mutable borrow occurs here\n     |\nhelp: try adding a local storing this...\n    --> src/raw/mod.rs:4539:30\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                              ^^^^^^^^^^^^^^\nhelp: ...and then using that local here\n    --> src/raw/mod.rs:4539:26\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                          ^^^^^^^^^^^^^^^^^^^\n\nerror[E0502]: cannot borrow `self.ctrl` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4539:63\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 ---------                    ---------------  ^^^^^^^^^ immutable borrow occurs here\n     |                 |                            |\n     |                 |                            mutable borrow later used by call\n     |                 mutable borrow occurs here\n     |\n     = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4539:102\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 ---------                    --------------- mutable borrow later used by call       ^^^^ immutable borrow occurs here\n     |                 |\n     |                 mutable borrow occurs here\n\nerror[E0502]: cannot borrow `self.ctrl` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4541:61\n     |\n4541 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------  ^^^^^^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n     |\n     = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4541:71\n     |\n4541 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------            ^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4541:87\n     |\n4541 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------                            ^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n\nFor more information about this error, try `rustc --explain E0502`.\nwarning: `hashbrown` (lib test) generated 14 warnings\nerror: could not compile `hashbrown` (lib test) due to 6 previous errors; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Group {",
+                  "        control: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl Group {",
+                  "        const WIDTH: usize = 4;",
+                  "",
+                  "        fn load_aligned(control_bytes: &Vec<u8>, index: usize) -> Self {",
+                  "            let start = index..index + Self::WIDTH;",
+                  "            Self { control: control_bytes[start].to_vec() }",
+                  "        }",
+                  "",
+                  "        fn convert_special_to_empty_and_full_to_deleted(&mut self) {",
+                  "            for byte in &mut self.control {",
+                  "                *byte = match *byte {",
+                  "                    0 => 0, // Tag::EMPTY",
+                  "                    1 => 0, // Tag::DELETED",
+                  "                    _ => 2, // FULL -> Tag::DELETED",
+                  "                }",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn store_aligned(&self, control_bytes: &mut Vec<u8>, index: usize) {",
+                  "            let start = index..index + Self::WIDTH;",
+                  "            control_bytes[start].copy_from_slice(&self.control);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RawTableInner {",
+                  "        buckets: usize,",
+                  "        ctrl: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl RawTableInner {",
+                  "        fn buckets(&self) -> usize {",
+                  "            self.buckets",
+                  "        }",
+                  "",
+                  "        fn ctrl(&mut self, index: usize) -> &mut Vec<u8> {",
+                  "            &mut self.ctrl",
+                  "        }",
+                  "",
+                  "        unsafe fn prepare_rehash_in_place(&mut self) {",
+                  "            for i in (0..self.buckets()).step_by(Group::WIDTH) {",
+                  "                let mut group = Group::load_aligned(&self.ctrl, i);",
+                  "                group.convert_special_to_empty_and_full_to_deleted();",
+                  "                group.store_aligned(&mut self.ctrl, i);",
+                  "            }",
+                  "",
+                  "            if self.buckets() < Group::WIDTH {",
+                  "                self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);",
+                  "            } else {",
+                  "                self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut raw_table = RawTableInner {",
+                  "        buckets: 2,",
+                  "        ctrl: vec![1, 0, 2, 1],",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        raw_table.prepare_rehash_in_place();",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling crossbeam-utils v0.8.21\n   Compiling libc v0.2.172\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling rayon-core v1.12.1\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nwarning: unused variable: `index`\n    --> src/raw/mod.rs:4528:28\n     |\n4528 |         fn ctrl(&mut self, index: usize) -> &mut Vec<u8> {\n     |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_index`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4540:30\n     |\n4540 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 -------------^^^^-----------\n     |                 |        |   |\n     |                 |        |   immutable borrow occurs here\n     |                 |        mutable borrow later used here\n     |                 mutable borrow occurs here\n     |\nhelp: try adding a local storing this...\n    --> src/raw/mod.rs:4540:30\n     |\n4540 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                              ^^^^^^^^^^^^^^\nhelp: ...and then using that local here\n    --> src/raw/mod.rs:4540:26\n     |\n4540 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                          ^^^^^^^^^^^^^^^^^^^\n\nerror[E0502]: cannot borrow `self.ctrl` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4540:63\n     |\n4540 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 ---------                    ---------------  ^^^^^^^^^ immutable borrow occurs here\n     |                 |                            |\n     |                 |                            mutable borrow later used by call\n     |                 mutable borrow occurs here\n     |\n     = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4540:102\n     |\n4540 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 ---------                    --------------- mutable borrow later used by call       ^^^^ immutable borrow occurs here\n     |                 |\n     |                 mutable borrow occurs here\n\nerror[E0502]: cannot borrow `self.ctrl` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4542:61\n     |\n4542 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------  ^^^^^^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n     |\n     = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4542:71\n     |\n4542 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------            ^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4542:87\n     |\n4542 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------                            ^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n\nFor more information about this error, try `rustc --explain E0502`.\nwarning: `hashbrown` (lib test) generated 14 warnings\nerror: could not compile `hashbrown` (lib test) due to 6 previous errors; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Group {",
+                  "        control: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl Group {",
+                  "        const WIDTH: usize = 4;",
+                  "",
+                  "        fn load_aligned(control_bytes: &Vec<u8>, index: usize) -> Self {",
+                  "            let start = index..index + Self::WIDTH;",
+                  "            Self { control: control_bytes[start].to_vec() }",
+                  "        }",
+                  "",
+                  "        fn convert_special_to_empty_and_full_to_deleted(&mut self) {",
+                  "            for byte in &mut self.control {",
+                  "                *byte = match *byte {",
+                  "                    0 => 0, // Tag::EMPTY",
+                  "                    1 => 0, // Tag::DELETED",
+                  "                    _ => 2, // FULL -> Tag::DELETED",
+                  "                }",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn store_aligned(&self, control_bytes: &mut Vec<u8>, index: usize) {",
+                  "            let start = index..index + Self::WIDTH;",
+                  "            control_bytes[start].copy_from_slice(&self.control);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RawTableInner {",
+                  "        buckets: usize,",
+                  "        ctrl: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl RawTableInner {",
+                  "        fn buckets(&self) -> usize {",
+                  "            self.buckets",
+                  "        }",
+                  "",
+                  "        fn ctrl(&mut self, index: usize) -> &mut Vec<u8> {",
+                  "            &mut self.ctrl",
+                  "        }",
+                  "",
+                  "        unsafe fn prepare_rehash_in_place(&mut self) {",
+                  "            for i in (0..self.buckets()).step_by(Group::WIDTH) {",
+                  "                let mut group = Group::load_aligned(&self.ctrl, i);",
+                  "                group.convert_special_to_empty_and_full_to_deleted();",
+                  "                group.store_aligned(&mut self.ctrl, i);",
+                  "            }",
+                  "",
+                  "            if self.buckets() < Group::WIDTH {",
+                  "                self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);",
+                  "            } else {",
+                  "                self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut raw_table = RawTableInner {",
+                  "        buckets: 0,",
+                  "        ctrl: vec![],",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        raw_table.prepare_rehash_in_place();",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling rayon-core v1.12.1\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nwarning: unused variable: `index`\n    --> src/raw/mod.rs:4527:28\n     |\n4527 |         fn ctrl(&mut self, index: usize) -> &mut Vec<u8> {\n     |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_index`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4539:30\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 -------------^^^^-----------\n     |                 |        |   |\n     |                 |        |   immutable borrow occurs here\n     |                 |        mutable borrow later used here\n     |                 mutable borrow occurs here\n     |\nhelp: try adding a local storing this...\n    --> src/raw/mod.rs:4539:30\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                              ^^^^^^^^^^^^^^\nhelp: ...and then using that local here\n    --> src/raw/mod.rs:4539:26\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                          ^^^^^^^^^^^^^^^^^^^\n\nerror[E0502]: cannot borrow `self.ctrl` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4539:63\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 ---------                    ---------------  ^^^^^^^^^ immutable borrow occurs here\n     |                 |                            |\n     |                 |                            mutable borrow later used by call\n     |                 mutable borrow occurs here\n     |\n     = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4539:102\n     |\n4539 |                 self.ctrl[0..self.buckets()].copy_from_slice(&self.ctrl[Group::WIDTH..Group::WIDTH + self.buckets()]);\n     |                 ---------                    --------------- mutable borrow later used by call       ^^^^ immutable borrow occurs here\n     |                 |\n     |                 mutable borrow occurs here\n\nerror[E0502]: cannot borrow `self.ctrl` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4541:61\n     |\n4541 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------  ^^^^^^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n     |\n     = help: use `.split_at_mut(position)` to obtain two mutable non-overlapping sub-slices\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4541:71\n     |\n4541 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------            ^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n\nerror[E0502]: cannot borrow `*self` as immutable because it is also borrowed as mutable\n    --> src/raw/mod.rs:4541:87\n     |\n4541 |                 self.ctrl[0..Group::WIDTH].copy_from_slice(&self.ctrl[self.buckets()..self.buckets() + Group::WIDTH]);\n     |                 ---------                  ---------------                            ^^^^ immutable borrow occurs here\n     |                 |                          |\n     |                 |                          mutable borrow later used by call\n     |                 mutable borrow occurs here\n\nFor more information about this error, try `rustc --explain E0502`.\nwarning: `hashbrown` (lib test) generated 14 warnings\nerror: could not compile `hashbrown` (lib test) due to 6 previous errors; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: i in (0..self.buckets()).step_by(Group::WIDTH) is false\n",
+        "// constraint: unlikely(self.buckets() < Group::WIDTH) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct RawTableInner {",
+                  "        // Assume necessary fields for RawTableInner",
+                  "    }",
+                  "    ",
+                  "    struct Group {",
+                  "        // Assume necessary fields and methods for Group",
+                  "    }",
+                  "    ",
+                  "    impl RawTableInner {",
+                  "        fn buckets(&self) -> usize {",
+                  "            0 // Edge case: zero buckets",
+                  "        }",
+                  "        ",
+                  "        unsafe fn ctrl(&self, index: usize) -> *mut Group {",
+                  "            std::ptr::null_mut() // Just a placeholder for the test",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    impl Group {",
+                  "        // Assume necessary methods exist",
+                  "        fn load_aligned(ctrl: *mut Group) -> Self {",
+                  "            // Placeholder implementation",
+                  "            Group {}",
+                  "        }",
+                  "",
+                  "        fn convert_special_to_empty_and_full_to_deleted(self) -> Self {",
+                  "            // Placeholder implementation",
+                  "            self",
+                  "        }",
+                  "",
+                  "        fn store_aligned(self, ctrl: *mut Group) {",
+                  "            // No operation for the test",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut table = RawTableInner {};",
+                  "    ",
+                  "    unsafe {",
+                  "        table.prepare_rehash_in_place();",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling crossbeam-utils v0.8.21\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling rayon-core v1.12.1\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `prepare_rehash_in_place` found for struct `llmtests::test_prepare_rehash_in_place_03::RawTableInner` in the current scope\n    --> src/raw/mod.rs:4527:15\n     |\n4489 |     struct RawTableInner {\n     |     -------------------- method `prepare_rehash_in_place` not found for this struct\n...\n4527 |         table.prepare_rehash_in_place();\n     |               ^^^^^^^^^^^^^^^^^^^^^^^ method not found in `RawTableInner`\n\nwarning: unused variable: `index`\n    --> src/raw/mod.rs:4502:31\n     |\n4502 |         unsafe fn ctrl(&self, index: usize) -> *mut Group {\n     |                               ^^^^^ help: if this is intentional, prefix it with an underscore: `_index`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `ctrl`\n    --> src/raw/mod.rs:4509:25\n     |\n4509 |         fn load_aligned(ctrl: *mut Group) -> Self {\n     |                         ^^^^ help: if this is intentional, prefix it with an underscore: `_ctrl`\n\nwarning: unused variable: `ctrl`\n    --> src/raw/mod.rs:4519:32\n     |\n4519 |         fn store_aligned(self, ctrl: *mut Group) {\n     |                                ^^^^ help: if this is intentional, prefix it with an underscore: `_ctrl`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `hashbrown` (lib test) generated 16 warnings\nerror: could not compile `hashbrown` (lib test) due to 1 previous error; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct RawTableInner {",
+                  "        // Assume necessary fields for RawTableInner",
+                  "    }",
+                  "",
+                  "    struct Group {",
+                  "        // Assume necessary fields and methods for Group",
+                  "    }",
+                  "    ",
+                  "    impl RawTableInner {",
+                  "        fn buckets(&self) -> usize {",
+                  "            1 // One bucket",
+                  "        }",
+                  "        ",
+                  "        unsafe fn ctrl(&self, index: usize) -> *mut Group {",
+                  "            std::ptr::null_mut() // Just a placeholder for the test",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    impl Group {",
+                  "        fn load_aligned(ctrl: *mut Group) -> Self {",
+                  "            Group {}",
+                  "        }",
+                  "",
+                  "        fn convert_special_to_empty_and_full_to_deleted(self) -> Self {",
+                  "            self",
+                  "        }",
+                  "",
+                  "        fn store_aligned(self, ctrl: *mut Group) {",
+                  "            // No operation for the test",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut table = RawTableInner {};",
+                  "    ",
+                  "    unsafe {",
+                  "        table.prepare_rehash_in_place();",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling crossbeam-utils v0.8.21\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling rayon-core v1.12.1\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `prepare_rehash_in_place` found for struct `llmtests::test_prepare_rehash_in_place_04::RawTableInner` in the current scope\n    --> src/raw/mod.rs:4525:15\n     |\n4490 |     struct RawTableInner {\n     |     -------------------- method `prepare_rehash_in_place` not found for this struct\n...\n4525 |         table.prepare_rehash_in_place();\n     |               ^^^^^^^^^^^^^^^^^^^^^^^ method not found in `RawTableInner`\n\nwarning: unused variable: `index`\n    --> src/raw/mod.rs:4503:31\n     |\n4503 |         unsafe fn ctrl(&self, index: usize) -> *mut Group {\n     |                               ^^^^^ help: if this is intentional, prefix it with an underscore: `_index`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `ctrl`\n    --> src/raw/mod.rs:4509:25\n     |\n4509 |         fn load_aligned(ctrl: *mut Group) -> Self {\n     |                         ^^^^ help: if this is intentional, prefix it with an underscore: `_ctrl`\n\nwarning: unused variable: `ctrl`\n    --> src/raw/mod.rs:4517:32\n     |\n4517 |         fn store_aligned(self, ctrl: *mut Group) {\n     |                                ^^^^ help: if this is intentional, prefix it with an underscore: `_ctrl`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `hashbrown` (lib test) generated 16 warnings\nerror: could not compile `hashbrown` (lib test) due to 1 previous error; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct RawTableInner {",
+                  "        // Assume necessary fields for RawTableInner",
+                  "    }",
+                  "",
+                  "    struct Group {",
+                  "        // Simulate different control bytes setup",
+                  "    }",
+                  "    ",
+                  "    impl RawTableInner {",
+                  "        fn buckets(&self) -> usize {",
+                  "            5 // Less than Group::WIDTH (assumed 8 for this test)",
+                  "        }",
+                  "        ",
+                  "        unsafe fn ctrl(&self, index: usize) -> *mut Group {",
+                  "            std::ptr::null_mut() // Just a placeholder for the test",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    impl Group {",
+                  "        fn load_aligned(ctrl: *mut Group) -> Self {",
+                  "            Group {}",
+                  "        }",
+                  "",
+                  "        fn convert_special_to_empty_and_full_to_deleted(self) -> Self {",
+                  "            self",
+                  "        }",
+                  "",
+                  "        fn store_aligned(self, ctrl: *mut Group) {",
+                  "            // No operation for the test",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut table = RawTableInner {};",
+                  "    ",
+                  "    unsafe {",
+                  "        table.prepare_rehash_in_place();",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling crossbeam-utils v0.8.21\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling rayon-core v1.12.1\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `prepare_rehash_in_place` found for struct `llmtests::test_prepare_rehash_in_place_05::RawTableInner` in the current scope\n    --> src/raw/mod.rs:4524:15\n     |\n4489 |     struct RawTableInner {\n     |     -------------------- method `prepare_rehash_in_place` not found for this struct\n...\n4524 |         table.prepare_rehash_in_place();\n     |               ^^^^^^^^^^^^^^^^^^^^^^^ method not found in `RawTableInner`\n\nwarning: unused variable: `index`\n    --> src/raw/mod.rs:4502:31\n     |\n4502 |         unsafe fn ctrl(&self, index: usize) -> *mut Group {\n     |                               ^^^^^ help: if this is intentional, prefix it with an underscore: `_index`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `ctrl`\n    --> src/raw/mod.rs:4508:25\n     |\n4508 |         fn load_aligned(ctrl: *mut Group) -> Self {\n     |                         ^^^^ help: if this is intentional, prefix it with an underscore: `_ctrl`\n\nwarning: unused variable: `ctrl`\n    --> src/raw/mod.rs:4516:32\n     |\n4516 |         fn store_aligned(self, ctrl: *mut Group) {\n     |                                ^^^^ help: if this is intentional, prefix it with an underscore: `_ctrl`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `hashbrown` (lib test) generated 16 warnings\nerror: could not compile `hashbrown` (lib test) due to 1 previous error; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: i in (0..self.buckets()).step_by(Group::WIDTH) is false\n",
+        "// constraint: unlikely(self.buckets() < Group::WIDTH) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct Group {",
+            "    control_bytes: Vec<Tag>,",
+            "}",
+            "",
+            "impl Group {",
+            "    const WIDTH: usize = 4; // Example width",
+            "",
+            "    fn load_aligned(control_bytes: &[Tag]) -> Self {",
+            "        Self {",
+            "            control_bytes: control_bytes.to_vec(),",
+            "        }",
+            "    }",
+            "",
+            "    fn store_aligned(&self, control_bytes: &mut [Tag]) {",
+            "        control_bytes.copy_from_slice(&self.control_bytes);",
+            "    }",
+            "",
+            "    fn convert_special_to_empty_and_full_to_deleted(self) -> Self {",
+            "        let mut new_bytes = self.control_bytes.clone();",
+            "        for byte in &mut new_bytes {",
+            "            *byte = match *byte {",
+            "                Tag::FULL => Tag::DELETED,",
+            "                Tag::DELETED => Tag::EMPTY,",
+            "                Tag::EMPTY => Tag::EMPTY,",
+            "            };",
+            "        }",
+            "        Self {",
+            "            control_bytes: new_bytes,",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "#[derive(Clone, Copy, Debug)]",
+            "enum Tag {",
+            "    EMPTY,",
+            "    DELETED,",
+            "    FULL,",
+            "}",
+            "",
+            "struct RawTableInner {",
+            "    control: Vec<Tag>,",
+            "}",
+            "",
+            "impl RawTableInner {",
+            "    fn new(buckets: usize) -> Self {",
+            "        let control = vec![Tag::EMPTY; buckets];",
+            "        Self { control }",
+            "    }",
+            "",
+            "    fn buckets(&self) -> usize {",
+            "        self.control.len()",
+            "    }",
+            "",
+            "    fn ctrl(&mut self, index: usize) -> &mut [Tag] {",
+            "        &mut self.control[index..]",
+            "    }",
+            "}",
+            "",
+            "impl RawTableInner {",
+            "    unsafe fn prepare_rehash_in_place(&mut self) {",
+            "        for i in (0..self.buckets()).step_by(Group::WIDTH) {",
+            "            let group = Group::load_aligned(self.ctrl(i));",
+            "            let group = group.convert_special_to_empty_and_full_to_deleted();",
+            "            group.store_aligned(self.ctrl(i));",
+            "        }",
+            "",
+            "        if self.buckets() < Group::WIDTH {",
+            "            self.ctrl(0)",
+            "                .copy_to(self.ctrl(Group::WIDTH), self.buckets());",
+            "        } else {",
+            "            self.ctrl(0)",
+            "                .copy_to(self.ctrl(self.buckets()), Group::WIDTH);",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "#[should_panic]",
+            "fn test_prepare_rehash_in_place_empty_table() {",
+            "    let mut table = RawTableInner::new(0);",
+            "    unsafe {",
+            "        table.prepare_rehash_in_place(); // this should cause undefined behavior due to unallocated table",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut table = RawTableInner::new(8);",
+                  "    unsafe {",
+                  "        table.prepare_rehash_in_place();",
+                  "    }",
+                  "    assert_eq!(table.control, vec![Tag::EMPTY; 8]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling crossbeam-utils v0.8.21\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling rayon-core v1.12.1\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `copy_to` found for mutable reference `&mut [llmtests::Tag]` in the current scope\n    --> src/raw/mod.rs:4555:18\n     |\n4554 | /             self.ctrl(0)\n4555 | |                 .copy_to(self.ctrl(Group::WIDTH), self.buckets());\n     | |                 -^^^^^^^ method not found in `&mut [Tag]`\n     | |_________________|\n     |\n\nerror[E0599]: no method named `copy_to` found for mutable reference `&mut [llmtests::Tag]` in the current scope\n    --> src/raw/mod.rs:4558:18\n     |\n4557 | /             self.ctrl(0)\n4558 | |                 .copy_to(self.ctrl(self.buckets()), Group::WIDTH);\n     | |                 -^^^^^^^ method not found in `&mut [Tag]`\n     | |_________________|\n     |\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::vec::Vec<llmtests::Tag>`\n    --> src/raw/mod.rs:4582:5\n     |\n4582 |     assert_eq!(table.control, vec![Tag::EMPTY; 8]);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::vec::Vec<llmtests::Tag>\n     |     std::vec::Vec<llmtests::Tag>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::Tag`\n    --> src/raw/mod.rs:4520:1\n     |\n4520 | enum Tag {\n     | ^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::Tag` with `#[derive(PartialEq)]`\n     |\n4520 + #[derive(PartialEq)]\n4521 | enum Tag {\n     |\n\nSome errors have detailed explanations: E0369, E0599.\nFor more information about an error, try `rustc --explain E0369`.\nwarning: `hashbrown` (lib test) generated 13 warnings\nerror: could not compile `hashbrown` (lib test) due to 3 previous errors; 13 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut table = RawTableInner::new(8);",
+                  "    table.control.fill(Tag::FULL);",
+                  "    unsafe {",
+                  "        table.prepare_rehash_in_place();",
+                  "    }",
+                  "    assert_eq!(table.control, vec![Tag::DELETED; 8]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling rayon-core v1.12.1\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `copy_to` found for mutable reference `&mut [llmtests::Tag]` in the current scope\n    --> src/raw/mod.rs:4555:18\n     |\n4554 | /             self.ctrl(0)\n4555 | |                 .copy_to(self.ctrl(Group::WIDTH), self.buckets());\n     | |                 -^^^^^^^ method not found in `&mut [Tag]`\n     | |_________________|\n     |\n\nerror[E0599]: no method named `copy_to` found for mutable reference `&mut [llmtests::Tag]` in the current scope\n    --> src/raw/mod.rs:4558:18\n     |\n4557 | /             self.ctrl(0)\n4558 | |                 .copy_to(self.ctrl(self.buckets()), Group::WIDTH);\n     | |                 -^^^^^^^ method not found in `&mut [Tag]`\n     | |_________________|\n     |\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::vec::Vec<llmtests::Tag>`\n    --> src/raw/mod.rs:4583:5\n     |\n4583 |     assert_eq!(table.control, vec![Tag::DELETED; 8]);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::vec::Vec<llmtests::Tag>\n     |     std::vec::Vec<llmtests::Tag>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::Tag`\n    --> src/raw/mod.rs:4520:1\n     |\n4520 | enum Tag {\n     | ^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::Tag` with `#[derive(PartialEq)]`\n     |\n4520 + #[derive(PartialEq)]\n4521 | enum Tag {\n     |\n\nSome errors have detailed explanations: E0369, E0599.\nFor more information about an error, try `rustc --explain E0369`.\nwarning: `hashbrown` (lib test) generated 13 warnings\nerror: could not compile `hashbrown` (lib test) due to 3 previous errors; 13 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut table = RawTableInner::new(8);",
+                  "    table.control[0] = Tag::FULL;",
+                  "    table.control[1] = Tag::DELETED;",
+                  "    table.control[2] = Tag::EMPTY;",
+                  "    table.control[3] = Tag::FULL;",
+                  "    unsafe {",
+                  "        table.prepare_rehash_in_place();",
+                  "    }",
+                  "    assert_eq!(table.control, vec![Tag::DELETED, Tag::EMPTY, Tag::EMPTY, Tag::DELETED, Tag::EMPTY, Tag::EMPTY, Tag::EMPTY, Tag::EMPTY]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling crossbeam-utils v0.8.21\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling rayon-core v1.12.1\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `copy_to` found for mutable reference `&mut [llmtests::Tag]` in the current scope\n    --> src/raw/mod.rs:4555:18\n     |\n4554 | /             self.ctrl(0)\n4555 | |                 .copy_to(self.ctrl(Group::WIDTH), self.buckets());\n     | |                 -^^^^^^^ method not found in `&mut [Tag]`\n     | |_________________|\n     |\n\nerror[E0599]: no method named `copy_to` found for mutable reference `&mut [llmtests::Tag]` in the current scope\n    --> src/raw/mod.rs:4558:18\n     |\n4557 | /             self.ctrl(0)\n4558 | |                 .copy_to(self.ctrl(self.buckets()), Group::WIDTH);\n     | |                 -^^^^^^^ method not found in `&mut [Tag]`\n     | |_________________|\n     |\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::vec::Vec<llmtests::Tag>`\n    --> src/raw/mod.rs:4586:5\n     |\n4586 |     assert_eq!(table.control, vec![Tag::DELETED, Tag::EMPTY, Tag::EMPTY, Tag::DELETED, Tag::EMPTY, Tag::EMPTY, Tag::EMPTY, Tag::EMPTY]);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::vec::Vec<llmtests::Tag>\n     |     std::vec::Vec<llmtests::Tag>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::Tag`\n    --> src/raw/mod.rs:4520:1\n     |\n4520 | enum Tag {\n     | ^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::Tag` with `#[derive(PartialEq)]`\n     |\n4520 + #[derive(PartialEq)]\n4521 | enum Tag {\n     |\n\nSome errors have detailed explanations: E0369, E0599.\nFor more information about an error, try `rustc --explain E0369`.\nwarning: `hashbrown` (lib test) generated 13 warnings\nerror: could not compile `hashbrown` (lib test) due to 3 previous errors; 13 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut table = RawTableInner::new(3);",
+                  "    table.control[0] = Tag::FULL;",
+                  "    table.control[1] = Tag::DELETED;",
+                  "    table.control[2] = Tag::EMPTY;",
+                  "    unsafe {",
+                  "        table.prepare_rehash_in_place();",
+                  "    }",
+                  "    assert_eq!(table.control, vec![Tag::DELETED, Tag::EMPTY, Tag::EMPTY]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling crossbeam-utils v0.8.21\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling rayon-core v1.12.1\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0599]: no method named `copy_to` found for mutable reference `&mut [llmtests::Tag]` in the current scope\n    --> src/raw/mod.rs:4555:18\n     |\n4554 | /             self.ctrl(0)\n4555 | |                 .copy_to(self.ctrl(Group::WIDTH), self.buckets());\n     | |                 -^^^^^^^ method not found in `&mut [Tag]`\n     | |_________________|\n     |\n\nerror[E0599]: no method named `copy_to` found for mutable reference `&mut [llmtests::Tag]` in the current scope\n    --> src/raw/mod.rs:4558:18\n     |\n4557 | /             self.ctrl(0)\n4558 | |                 .copy_to(self.ctrl(self.buckets()), Group::WIDTH);\n     | |                 -^^^^^^^ method not found in `&mut [Tag]`\n     | |_________________|\n     |\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::vec::Vec<llmtests::Tag>`\n    --> src/raw/mod.rs:4585:5\n     |\n4585 |     assert_eq!(table.control, vec![Tag::DELETED, Tag::EMPTY, Tag::EMPTY]);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::vec::Vec<llmtests::Tag>\n     |     std::vec::Vec<llmtests::Tag>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::Tag`\n    --> src/raw/mod.rs:4520:1\n     |\n4520 | enum Tag {\n     | ^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::Tag` with `#[derive(PartialEq)]`\n     |\n4520 + #[derive(PartialEq)]\n4521 | enum Tag {\n     |\n\nSome errors have detailed explanations: E0369, E0599.\nFor more information about an error, try `rustc --explain E0369`.\nwarning: `hashbrown` (lib test) generated 13 warnings\nerror: could not compile `hashbrown` (lib test) due to 3 previous errors; 13 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

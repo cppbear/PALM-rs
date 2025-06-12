@@ -1,0 +1,359 @@
+{
+  "name": "rand::distr::weighted::weighted_index::distr::weighted::weighted_index::WeightedIndex<X>::weight",
+  "name_with_impl": "rand::distr::weighted::weighted_index::{impl#4}::weight",
+  "mod_info": {
+    "name": "distr::weighted::weighted_index",
+    "loc": "src/distr/weighted/mod.rs:18:1:18:20"
+  },
+  "visible": true,
+  "loc": "src/distr/weighted/weighted_index.rs:308:5:324:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: index.cmp(&self.cumulative_weights.len()) matches Greater is true\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::cmp::Ordering::*;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct WeightedIndex {",
+                  "        cumulative_weights: Vec<u32>,",
+                  "        total_weight: u32,",
+                  "    }",
+                  "",
+                  "    impl WeightedIndex {",
+                  "        fn new(weights: &[u32]) -> Result<Self, ()> {",
+                  "            let cumulative_weights: Vec<u32> = weights.iter().cloned().scan(0, |state, weight| {",
+                  "                *state += weight;",
+                  "                Some(*state)",
+                  "            }).collect();",
+                  "            let total_weight = cumulative_weights.last().cloned().unwrap_or(0);",
+                  "            Ok(WeightedIndex {",
+                  "                cumulative_weights,",
+                  "                total_weight,",
+                  "            })",
+                  "        }",
+                  "",
+                  "        pub fn weight(&self, index: usize) -> Option<u32> {",
+                  "            use core::cmp::Ordering::*;",
+                  "",
+                  "            let mut weight = match index.cmp(&self.cumulative_weights.len()) {",
+                  "                Less => self.cumulative_weights[index].clone(),",
+                  "                Equal => self.total_weight.clone(),",
+                  "                Greater => return None,",
+                  "            };",
+                  "",
+                  "            if index > 0 {",
+                  "                weight -= &self.cumulative_weights[index - 1];",
+                  "            }",
+                  "            Some(weight)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let weights = [0, 1, 2];",
+                  "    let dist = WeightedIndex::new(&weights).unwrap();",
+                  "    assert_eq!(dist.weight(3), None); // Test with index greater than length",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: index.cmp(&self.cumulative_weights.len()) matches Equal is true\n",
+        "// constraint: index.cmp(&self.cumulative_weights.len()) matches Equal is true\n",
+        "// constraint: index > 0 is false, with bound index == 0\n",
+        "// expected return value/type: Some(weight)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::cmp::Ordering::*;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct WeightedIndex {",
+                  "        cumulative_weights: Vec<u32>,",
+                  "        total_weight: u32,",
+                  "    }",
+                  "",
+                  "    impl WeightedIndex {",
+                  "        pub fn new(weights: &[u32]) -> Result<Self, &'static str> {",
+                  "            let total_weight = weights.iter().sum();",
+                  "            let cumulative_weights = weights.iter().scan(0, |state, &x| {",
+                  "                *state += x;",
+                  "                Some(*state)",
+                  "            }).collect();",
+                  "            Ok(WeightedIndex {",
+                  "                cumulative_weights,",
+                  "                total_weight,",
+                  "            })",
+                  "        }",
+                  "",
+                  "        pub fn weight(&self, index: usize) -> Option<u32> {",
+                  "            use std::cmp::Ordering::*;",
+                  "",
+                  "            let mut weight = match index.cmp(&self.cumulative_weights.len()) {",
+                  "                Less => self.cumulative_weights[index].clone(),",
+                  "                Equal => self.total_weight.clone(),",
+                  "                Greater => return None,",
+                  "            };",
+                  "",
+                  "            if index > 0 {",
+                  "                weight -= &self.cumulative_weights[index - 1];",
+                  "            }",
+                  "            Some(weight)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let weights = [0, 1, 2];",
+                  "    let dist = WeightedIndex::new(&weights).unwrap();",
+                  "    ",
+                  "    assert_eq!(dist.weight(0), Some(0));",
+                  "    assert_eq!(dist.weight(1), Some(1));",
+                  "    assert_eq!(dist.weight(2), Some(2));",
+                  "    assert_eq!(dist.weight(3), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: index.cmp(&self.cumulative_weights.len()) matches Less is true\n",
+        "// constraint: index.cmp(&self.cumulative_weights.len()) matches Less is true\n",
+        "// may panic: self.cumulative_weights[index] may panic in certain situations\n",
+        "// constraint: index > 0 is true\n",
+        "// may panic: self.cumulative_weights[index - 1] may panic in certain situations\n",
+        "// expected return value/type: Some(weight)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::cmp::Ordering::*;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct WeightedIndex {",
+                  "        cumulative_weights: Vec<i32>,",
+                  "        total_weight: i32,",
+                  "    }",
+                  "",
+                  "    impl WeightedIndex {",
+                  "        pub fn new(weights: &[i32]) -> Option<Self> {",
+                  "            let cumulative_weights: Vec<i32> = weights.iter()",
+                  "                .scan(0, |state, &x| {",
+                  "                    *state += x;",
+                  "                    Some(*state)",
+                  "                }).collect();",
+                  "            let total_weight = cumulative_weights.last().cloned().unwrap_or(0);",
+                  "            Some(Self { cumulative_weights, total_weight })",
+                  "        }",
+                  "",
+                  "        pub fn weight(&self, index: usize) -> Option<i32> {",
+                  "            use core::cmp::Ordering::*;",
+                  "",
+                  "            let mut weight = match index.cmp(&self.cumulative_weights.len()) {",
+                  "                Less => self.cumulative_weights[index].clone(),",
+                  "                Equal => self.total_weight.clone(),",
+                  "                Greater => return None,",
+                  "            };",
+                  "",
+                  "            if index > 0 {",
+                  "                weight -= &self.cumulative_weights[index - 1];",
+                  "            }",
+                  "            Some(weight)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let weights = [0, 1, 2, 3];",
+                  "    let dist = WeightedIndex::new(&weights).unwrap();",
+                  "",
+                  "    assert_eq!(dist.weight(0), Some(0));",
+                  "    assert_eq!(dist.weight(1), Some(1));",
+                  "    assert_eq!(dist.weight(2), Some(2));",
+                  "    assert_eq!(dist.weight(3), Some(3));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct WeightedIndex {",
+                  "        cumulative_weights: Vec<i32>,",
+                  "        total_weight: i32,",
+                  "    }",
+                  "",
+                  "    impl WeightedIndex {",
+                  "        pub fn new(weights: &[i32]) -> Option<Self> {",
+                  "            let cumulative_weights: Vec<i32> = weights.iter()",
+                  "                .scan(0, |state, &x| {",
+                  "                    *state += x;",
+                  "                    Some(*state)",
+                  "                }).collect();",
+                  "            let total_weight = cumulative_weights.last().cloned().unwrap_or(0);",
+                  "            Some(Self { cumulative_weights, total_weight })",
+                  "        }",
+                  "",
+                  "        pub fn weight(&self, index: usize) -> Option<i32> {",
+                  "            use core::cmp::Ordering::*;",
+                  "",
+                  "            let mut weight = match index.cmp(&self.cumulative_weights.len()) {",
+                  "                Less => self.cumulative_weights[index].clone(),",
+                  "                Equal => self.total_weight.clone(),",
+                  "                Greater => return None,",
+                  "            };",
+                  "",
+                  "            if index > 0 {",
+                  "                weight -= &self.cumulative_weights[index - 1];",
+                  "            }",
+                  "            Some(weight)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let weights = [1, 2, 3];",
+                  "    let dist = WeightedIndex::new(&weights).unwrap();",
+                  "",
+                  "    assert_eq!(dist.weight(3), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct WeightedIndex {",
+                  "        cumulative_weights: Vec<i32>,",
+                  "        total_weight: i32,",
+                  "    }",
+                  "",
+                  "    impl WeightedIndex {",
+                  "        pub fn new(weights: &[i32]) -> Option<Self> {",
+                  "            let cumulative_weights: Vec<i32> = weights.iter()",
+                  "                .scan(0, |state, &x| {",
+                  "                    *state += x;",
+                  "                    Some(*state)",
+                  "                }).collect();",
+                  "            let total_weight = cumulative_weights.last().cloned().unwrap_or(0);",
+                  "            Some(Self { cumulative_weights, total_weight })",
+                  "        }",
+                  "",
+                  "        pub fn weight(&self, index: usize) -> Option<i32> {",
+                  "            use core::cmp::Ordering::*;",
+                  "",
+                  "            let mut weight = match index.cmp(&self.cumulative_weights.len()) {",
+                  "                Less => self.cumulative_weights[index].clone(),",
+                  "                Equal => self.total_weight.clone(),",
+                  "                Greater => return None,",
+                  "            };",
+                  "",
+                  "            if index > 0 {",
+                  "                weight -= &self.cumulative_weights[index - 1];",
+                  "            }",
+                  "            Some(weight)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let weights = [0, 1, 2, 3, 4];",
+                  "    let dist = WeightedIndex::new(&weights).unwrap();",
+                  "",
+                  "    assert_eq!(dist.weight(5), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

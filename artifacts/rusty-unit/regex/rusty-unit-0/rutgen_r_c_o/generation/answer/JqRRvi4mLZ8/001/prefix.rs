@@ -1,0 +1,24 @@
+// Answer 0
+
+fn test_check_size_over_limit() {
+    let inst_size = std::mem::size_of::<Inst>();
+    let size_limit = 10 * (1 << 20);
+    let excess_count = (size_limit / inst_size) + 1;
+
+    let mut compiler = Compiler::new();
+    compiler.insts = vec![MaybeInst::Compiled(Inst::default()); excess_count];
+
+    let _result = compiler.check_size();
+}
+
+fn test_check_size_maximum_limit() {
+    let inst_size = std::mem::size_of::<Inst>();
+    let size_limit = 10 * (1 << 20);
+    let maximum_count = (size_limit / inst_size) + 50;
+
+    let mut compiler = Compiler::new();
+    compiler.insts = vec![MaybeInst::Compiled(Inst::default()); maximum_count];
+
+    let _result = compiler.check_size();
+}
+

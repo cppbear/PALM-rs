@@ -1,0 +1,2026 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[should_panic]",
+      "fn test_ignore_escape_invalid() {",
+      "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+      "    let _ = ignore_escape(&mut reader);",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct MockReader {",
+          "        input: Vec<u8>,",
+          "        position: usize,",
+          "    }",
+          "",
+          "    impl MockReader {",
+          "        fn new(input: Vec<u8>) -> Self {",
+          "            MockReader { input, position: 0 }",
+          "        }",
+          "    }",
+          "",
+          "    impl core::ops::Deref for MockReader {",
+          "        type Target = [u8];",
+          "",
+          "        fn deref(&self) -> &Self::Target {",
+          "            &self.input[self.position..]",
+          "        }",
+          "    }",
+          "",
+          "    impl Read<'_> for MockReader {",
+          "        fn next(&mut self) -> Result<Option<u8>> {",
+          "            if self.position < self.input.len() {",
+          "                let byte = self.input[self.position];",
+          "                self.position += 1;",
+          "                Ok(Some(byte))",
+          "            } else {",
+          "                Ok(None)",
+          "            }",
+          "        }",
+          "",
+          "        fn decode_hex_escape(&mut self) -> Result<()> {",
+          "            // Simulating consuming a hex escape",
+          "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+          "            Ok(())",
+          "        }",
+          "    }",
+          "",
+          "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct MockReader {",
+            "        input: Vec<u8>,",
+            "        position: usize,",
+            "    }",
+            "",
+            "    impl MockReader {",
+            "        fn new(input: Vec<u8>) -> Self {",
+            "            MockReader { input, position: 0 }",
+            "        }",
+            "    }",
+            "",
+            "    impl core::ops::Deref for MockReader {",
+            "        type Target = [u8];",
+            "",
+            "        fn deref(&self) -> &Self::Target {",
+            "            &self.input[self.position..]",
+            "        }",
+            "    }",
+            "",
+            "    impl Read<'_> for MockReader {",
+            "        fn next(&mut self) -> Result<Option<u8>> {",
+            "            if self.position < self.input.len() {",
+            "                let byte = self.input[self.position];",
+            "                self.position += 1;",
+            "                Ok(Some(byte))",
+            "            } else {",
+            "                Ok(None)",
+            "            }",
+            "        }",
+            "",
+            "        fn decode_hex_escape(&mut self) -> Result<()> {",
+            "            // Simulating consuming a hex escape",
+            "            self.position += 4; // Assume we always consume 4 hex chars for simplicity",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    assert_eq!(ignore_escape(&mut reader), Err(ErrorCode::InvalidEscape));"
+          ],
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    let reader = MockReader::new(vec![92, 110]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    let reader = MockReader::new(vec![92, 110]);",
+            "    let reader = MockReader::new(vec![92, 114]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    let reader = MockReader::new(vec![92, 110]);",
+            "    let reader = MockReader::new(vec![92, 114]);",
+            "    let reader = MockReader::new(vec![92, 116]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    let reader = MockReader::new(vec![92, 110]);",
+            "    let reader = MockReader::new(vec![92, 114]);",
+            "    let reader = MockReader::new(vec![92, 116]);",
+            "    let reader = MockReader::new(vec![92, 117]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    assert_eq!(ignore_escape(&mut reader), Err(ErrorCode::InvalidEscape));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    let reader = MockReader::new(vec![92, 110]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    let reader = MockReader::new(vec![92, 110]);",
+            "    let reader = MockReader::new(vec![92, 114]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    let reader = MockReader::new(vec![92, 110]);",
+            "    let reader = MockReader::new(vec![92, 114]);",
+            "    let reader = MockReader::new(vec![92, 116]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let reader = MockReader::new(vec![92, 100]);",
+            "    let reader = MockReader::new(vec![92, 92]);",
+            "    let reader = MockReader::new(vec![92, 34]);",
+            "    let reader = MockReader::new(vec![92, 98]);",
+            "    let reader = MockReader::new(vec![92, 102]);",
+            "    let reader = MockReader::new(vec![92, 110]);",
+            "    let reader = MockReader::new(vec![92, 114]);",
+            "    let reader = MockReader::new(vec![92, 116]);",
+            "    let reader = MockReader::new(vec![92, 117]);",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(matches!(ignore_escape(&mut reader), Err(ErrorCode::InvalidEscape)));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \"\\\\\"",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \"\\\\\"",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \"\\\\\"",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 100]); // Input: \\u000d",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(matches!(ignore_escape(&mut reader), Err(ErrorCode::InvalidEscape)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \"\\\\\"",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \"\\\\\"",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \"\\\\\"",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 100]); // Input: \\u000d",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92]); // Input: \\ (isolated backslash)",
+            "    assert!(ignore_escape(&mut reader).is_err());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    assert_eq!(ignore_escape(&mut reader), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let mut reader = MockReader::new(vec![92, 34]); // Input: \\\"",
+            "    let mut reader = MockReader::new(vec![92, 47]); // Input: \\/",
+            "    let mut reader = MockReader::new(vec![92, 92]); // Input: \\\\",
+            "    let mut reader = MockReader::new(vec![92, 98]); // Input: \\b",
+            "    let mut reader = MockReader::new(vec![92, 102]); // Input: \\f",
+            "    let mut reader = MockReader::new(vec![92, 117, 48, 48, 48, 48]); // Input: \\u0000",
+            "    let mut reader = MockReader::new(vec![92]); // Input: \\ (isolated backslash)",
+            "    assert!(ignore_escape(&mut reader).is_err());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert_eq!(reader.current_position(), 1);"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert_eq!(reader.current_position(), 2);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert_eq!(reader.current_position(), 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 110]); // Input: \\n",
+            "    assert_eq!(reader.current_position(), 2);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 114]); // Input: \\r",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert_eq!(ignore_escape(&mut reader).unwrap_err().code(), ErrorCode::InvalidEscape);"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    assert!(ignore_escape(&mut reader).is_ok());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert!(ignore_escape(&mut reader).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    assert_eq!(ignore_escape(&mut reader).unwrap_err().code(), ErrorCode::InvalidEscape);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]); // Input: \\d (not valid)",
+            "    let mut reader = MockReader::new(vec![92, 116]); // Input: \\t",
+            "    assert!(ignore_escape(&mut reader).is_ok());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut reader = MockReader::new(vec![92, 117]); // Input: \\u (simulating a hex escape following)",
+          "    let _ = ignore_escape(&mut reader);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]);",
+            "    let result = ignore_escape(&mut reader);",
+            "    assert_eq!(result, Err(ErrorCode::InvalidEscape));"
+          ],
+          [
+            "    let mut reader = MockReader::new(vec![92, 100]);",
+            "    let result = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 117]);",
+            "    let result = ignore_escape(&mut reader);",
+            "    assert_eq!(result, Ok(()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 117]); // Input: \\u (simulating a hex escape following)",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]);",
+            "    let result = ignore_escape(&mut reader);",
+            "    assert_eq!(result, Err(ErrorCode::InvalidEscape));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut reader = MockReader::new(vec![92, 117]); // Input: \\u (simulating a hex escape following)",
+            "    let _ = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 100]);",
+            "    let result = ignore_escape(&mut reader);",
+            "    let mut reader = MockReader::new(vec![92, 117]);",
+            "    let result = ignore_escape(&mut reader);",
+            "    assert_eq!(result, Ok(()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

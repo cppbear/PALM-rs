@@ -1,0 +1,48 @@
+// Answer 0
+
+#[test]
+fn test_get_or_insert_with_non_existing_entry_panics() {
+    let mut set: HashSet<String> = HashSet::new();
+    set.get_or_insert_with("test_value", |&x| {
+        let new_value = String::from("different_value");
+        // This line makes it so that `value.equivalent(&new)` is false, triggering a panic.
+        assert!(x != new_value);
+        new_value
+    });
+}
+
+#[test]
+fn test_get_or_insert_with_non_existing_entry_does_not_panic() {
+    let mut set: HashSet<String> = HashSet::new();
+    set.get_or_insert_with("test_value", |&x| {
+        let new_value = String::from("test_value");
+        new_value
+    });
+    assert!(set.contains("test_value"));
+}
+
+#[test]
+fn test_get_or_insert_with_multiple_values_panics_on_equivalence_check() {
+    let mut set: HashSet<String> = HashSet::new();
+    let value_1 = "test_value1";
+    let value_2 = "test_value2";
+    
+    // First insert will work fine
+    set.get_or_insert_with(value_1, |&x| {
+        // This will correctly return a new value
+        String::from(x)
+    });
+    
+    // This second insert will cause a panic due to failure of equivalence check
+    let result = std::panic::catch_unwind(|| {
+        set.get_or_insert_with(value_2, |&x| {
+            let new_value = String::from("not_equivalent");
+            // This will fail the equivalence check
+            assert!(x != new_value);
+            new_value
+        });
+    });
+    
+    assert!(result.is_err());
+}
+

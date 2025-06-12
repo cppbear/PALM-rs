@@ -1,0 +1,1 @@
+pub fn new(_pats: &Literals) -> Option<Teddy> { None }

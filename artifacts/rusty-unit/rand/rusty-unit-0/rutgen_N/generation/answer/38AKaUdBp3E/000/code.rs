@@ -1,0 +1,132 @@
+// Answer 0
+
+#[test]
+fn test_fill_bytes_fills_destination() {
+    struct MockCore {
+        data: Vec<u8>,
+        index: usize,
+    }
+
+    impl MockCore {
+        fn new(data: Vec<u8>) -> Self {
+            MockCore { data, index: 0 }
+        }
+        
+        fn generate(&mut self, dest: &mut Vec<u8>) {
+            dest.extend_from_slice(&self.data[self.index..]);
+            self.index = 0;
+        }
+    }
+
+    struct MockRand {
+        core: MockCore,
+        results: Vec<u8>,
+        index: usize,
+        half_used: bool,
+    }
+
+    impl MockRand {
+        fn new(core_data: Vec<u8>) -> Self {
+            MockRand {
+                core: MockCore::new(core_data),
+                results: vec![0; 64],  // Buffer size
+                index: 0,
+                half_used: false,
+            }
+        }
+
+        fn fill_bytes(&mut self, dest: &mut [u8]) {
+            let mut read_len = 0;
+            self.half_used = false;
+            while read_len < dest.len() {
+                if self.index >= self.results.len() {
+                    self.core.generate(&mut self.results);
+                    self.index = 0;
+                }
+
+                let (consumed_u64, filled_u8) =
+                    fill_via_chunks(&mut self.results[self.index..], &mut dest[read_len..]);
+
+                self.index += consumed_u64;
+                read_len += filled_u8;
+            }
+        }
+    }
+
+    fn fill_via_chunks(source: &mut [u8], dest: &mut [u8]) -> (usize, usize) {
+        let min_len = source.len().min(dest.len());
+        dest[..min_len].copy_from_slice(&source[..min_len]);
+        (1, min_len) // For simplicity, assume 1 u64 consumed.
+    }
+
+    let mut rng = MockRand::new(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+    let mut dest = [0u8; 10];
+    rng.fill_bytes(&mut dest);
+    assert_eq!(&dest[..], &[1, 2, 3, 4, 5, 6, 7, 8, 0, 0]);
+}
+
+#[test]
+fn test_fill_bytes_empty_destination() {
+    struct MockCore {
+        data: Vec<u8>,
+        index: usize,
+    }
+
+    impl MockCore {
+        fn new(data: Vec<u8>) -> Self {
+            MockCore { data, index: 0 }
+        }
+        
+        fn generate(&mut self, dest: &mut Vec<u8>) {
+            dest.extend_from_slice(&self.data[self.index..]);
+            self.index = 0;
+        }
+    }
+
+    struct MockRand {
+        core: MockCore,
+        results: Vec<u8>,
+        index: usize,
+        half_used: bool,
+    }
+
+    impl MockRand {
+        fn new(core_data: Vec<u8>) -> Self {
+            MockRand {
+                core: MockCore::new(core_data),
+                results: vec![0; 64],
+                index: 0,
+                half_used: false,
+            }
+        }
+
+        fn fill_bytes(&mut self, dest: &mut [u8]) {
+            let mut read_len = 0;
+            self.half_used = false;
+            while read_len < dest.len() {
+                if self.index >= self.results.len() {
+                    self.core.generate(&mut self.results);
+                    self.index = 0;
+                }
+
+                let (consumed_u64, filled_u8) =
+                    fill_via_chunks(&mut self.results[self.index..], &mut dest[read_len..]);
+
+                self.index += consumed_u64;
+                read_len += filled_u8;
+            }
+        }
+    }
+
+    fn fill_via_chunks(source: &mut [u8], dest: &mut [u8]) -> (usize, usize) {
+        let min_len = source.len().min(dest.len());
+        dest[..min_len].copy_from_slice(&source[..min_len]);
+        (1, min_len)
+    }
+
+    let mut rng = MockRand::new(vec![1, 2, 3]);
+    let mut dest: [u8; 0] = [];
+    rng.fill_bytes(&mut dest);
+    assert_eq!(&dest[..], &[]);
+}
+

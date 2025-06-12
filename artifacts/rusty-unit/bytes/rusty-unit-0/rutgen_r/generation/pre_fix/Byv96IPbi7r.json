@@ -1,0 +1,482 @@
+{
+  "name": "bytes::bytes::owned_drop_impl",
+  "name_with_impl": "bytes::bytes::owned_drop_impl",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1159:1:1175:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: old_cnt > 0 is true\n",
+        "// constraint: old_cnt <= usize::MAX >> 1 is true, with bound old_cnt == usize::MAX >> 1\n",
+        "// constraint: old_cnt != 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct OwnedLifetime {",
+            "    ref_cnt: std::sync::atomic::AtomicUsize,",
+            "    drop: fn(*mut ()),",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Create a ref count that is initialized to the maximum allowed value that satisfies the conditions",
+                  "    let ref_cnt = std::sync::atomic::AtomicUsize::new(usize::MAX >> 1);",
+                  "    let drop_fn = |ptr: *mut ()| {",
+                  "        // Simulate drop function behavior",
+                  "        unsafe {",
+                  "            // Assuming ptr will be dropped here if needed",
+                  "        }",
+                  "    };",
+                  "",
+                  "    let lifetime = OwnedLifetime {",
+                  "        ref_cnt,",
+                  "        drop: drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned: *mut () = &lifetime as *const _ as *mut (); // Example pointer",
+                  "",
+                  "    unsafe {",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "",
+                  "    // If no panic occurred, we expect that the ref count is now decremented correctly",
+                  "    assert_eq!(lifetime.ref_cnt.load(std::sync::atomic::Ordering::Relaxed), usize::MAX >> 1 - 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ref_cnt = std::sync::atomic::AtomicUsize::new(0);",
+                  "    let drop_fn = |ptr: *mut ()| {};",
+                  "",
+                  "    let lifetime = OwnedLifetime {",
+                  "        ref_cnt,",
+                  "        drop: drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned: *mut () = &lifetime as *const _ as *mut (); // Example pointer",
+                  "",
+                  "    unsafe {",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ref_cnt = std::sync::atomic::AtomicUsize::new(3); // old_cnt != 1",
+                  "    let drop_fn = |ptr: *mut ()| {};",
+                  "",
+                  "    let lifetime = OwnedLifetime {",
+                  "        ref_cnt,",
+                  "        drop: drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned: *mut () = &lifetime as *const _ as *mut (); // Example pointer",
+                  "",
+                  "    unsafe {",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "",
+                  "    // Verify that the ref count is decremented",
+                  "    assert_eq!(lifetime.ref_cnt.load(std::sync::atomic::Ordering::Relaxed), 2);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ref_cnt = std::sync::atomic::AtomicUsize::new(1); // old_cnt should remain greater than zero",
+                  "    let drop_fn = |ptr: *mut ()| {};",
+                  "",
+                  "    let lifetime = OwnedLifetime {",
+                  "        ref_cnt,",
+                  "        drop: drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned: *mut () = &lifetime as *const _ as *mut (); // Example pointer",
+                  "",
+                  "    // Decrement the ref count before calling owned_drop_impl to induce panic",
+                  "    ref_cnt.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);",
+                  "",
+                  "    unsafe {",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused variable: `ptr`\n    --> src/bytes.rs:1696:20\n     |\n1696 |     let drop_fn = |ptr: *mut ()| {};\n     |                    ^^^ help: if this is intentional, prefix it with an underscore: `_ptr`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nerror[E0382]: borrow of moved value: `ref_cnt`\n    --> src/bytes.rs:1706:5\n     |\n1695 |     let ref_cnt = std::sync::atomic::AtomicUsize::new(1); // old_cnt should remain greater than zero\n     |         ------- move occurs because `ref_cnt` has type `AtomicUsize`, which does not implement the `Copy` trait\n...\n1699 |         ref_cnt,\n     |         ------- value moved here\n...\n1706 |     ref_cnt.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);\n     |     ^^^^^^^ value borrowed here after move\n\nFor more information about this error, try `rustc --explain E0382`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: old_cnt > 0 is true\n",
+        "// constraint: old_cnt <= usize::MAX >> 1 is true, with bound old_cnt == usize::MAX >> 1\n",
+        "// constraint: old_cnt != 1 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct OwnedLifetime {",
+            "    ref_cnt: std::sync::atomic::AtomicUsize,",
+            "    drop: fn(*mut ()),",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let drop_fn = |ptr: *mut ()| {",
+                  "            // Simulate the drop action.",
+                  "            println!(\"Dropped memory at pointer: {:?}\", ptr);",
+                  "        };",
+                  "",
+                  "        let lifetime = OwnedLifetime {",
+                  "            ref_cnt: std::sync::atomic::AtomicUsize::new(usize::MAX >> 1),",
+                  "            drop: drop_fn,",
+                  "        };",
+                  "",
+                  "        let owned: *mut () = &lifetime as *const _ as *mut _;",
+                  "",
+                  "        // This invocation should not panic; conditions are satisfied:",
+                  "        // old_cnt > 0, old_cnt <= usize::MAX >> 1, old_cnt != 1 is false",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let drop_fn = |ptr: *mut ()| {",
+                  "            // Simulate the drop action.",
+                  "            println!(\"Dropped memory at pointer: {:?}\", ptr);",
+                  "        };",
+                  "",
+                  "        let lifetime = OwnedLifetime {",
+                  "            ref_cnt: std::sync::atomic::AtomicUsize::new(0),",
+                  "            drop: drop_fn,",
+                  "        };",
+                  "",
+                  "        let owned: *mut () = &lifetime as *const _ as *mut _;",
+                  "",
+                  "        // This should panic as old_cnt > 0 is not satisfied.",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let drop_fn = |ptr: *mut ()| {",
+                  "            // Simulate the drop action.",
+                  "            println!(\"Dropped memory at pointer: {:?}\", ptr);",
+                  "        };",
+                  "",
+                  "        let lifetime = OwnedLifetime {",
+                  "            ref_cnt: std::sync::atomic::AtomicUsize::new(1),",
+                  "            drop: drop_fn,",
+                  "        };",
+                  "",
+                  "        let owned: *mut () = &lifetime as *const _ as *mut _;",
+                  "",
+                  "        // This should panic because we will cause a ref_cnt underflow.",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: old_cnt > 0 is true\n",
+        "// constraint: old_cnt <= usize::MAX >> 1 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[repr(C)]",
+            "struct OwnedLifetime {",
+            "    ref_cnt: std::sync::atomic::AtomicUsize,",
+            "    drop: fn(*mut ()),",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let drop_fn: fn(*mut ()) = |ptr| {",
+                  "            // Dummy drop function to simulate behavior",
+                  "            drop(Box::from_raw(ptr as *mut u8));",
+                  "        };",
+                  "        ",
+                  "        let owned_lifetime = OwnedLifetime {",
+                  "            ref_cnt: std::sync::atomic::AtomicUsize::new(1),",
+                  "            drop: drop_fn,",
+                  "        };",
+                  "",
+                  "        let owned_ptr = &owned_lifetime as *const _ as *mut ();",
+                  "",
+                  "        // Decrement ref count to 0, forcing the panic condition",
+                  "        owned_lifetime.ref_cnt.fetch_sub(1, std::sync::atomic::Ordering::Release);",
+                  "        ",
+                  "        owned_drop_impl(owned_ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let drop_fn: fn(*mut ()) = |ptr| {",
+                  "            // Dummy drop function to simulate behavior",
+                  "            drop(Box::from_raw(ptr as *mut u8));",
+                  "        };",
+                  "",
+                  "        let owned_lifetime = OwnedLifetime {",
+                  "            ref_cnt: std::sync::atomic::AtomicUsize::new(usize::MAX >> 1),",
+                  "            drop: drop_fn,",
+                  "        };",
+                  "",
+                  "        let owned_ptr = &owned_lifetime as *const _ as *mut ();",
+                  "",
+                  "        // Decrement ref count to exceed the upper limit, which is a boundary condition",
+                  "        owned_lifetime.ref_cnt.fetch_sub(usize::MAX >> 1, std::sync::atomic::Ordering::Release);",
+                  "        ",
+                  "        owned_drop_impl(owned_ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: old_cnt > 0 is false, with bound old_cnt == 0\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "unsafe fn test_owned_drop_impl_zero_ref_count() {",
+            "    struct OwnedLifetime {",
+            "        ref_cnt: std::sync::atomic::AtomicUsize,",
+            "        drop: fn(*mut ()),",
+            "    }",
+            "    ",
+            "    extern \"C\" fn test_drop_fn(_ptr: *mut ()) {",
+            "        // This function simulates the drop behavior; for test purposes, it does nothing.",
+            "    }",
+            "",
+            "    let mut lifetime = OwnedLifetime {",
+            "        ref_cnt: std::sync::atomic::AtomicUsize::new(0), // Sets ref count to 0",
+            "        drop: test_drop_fn,",
+            "    };",
+            "",
+            "    // Creating a pointer to the OwnedLifetime struct.",
+            "    let owned: *mut () = &mut lifetime as *mut _ as *mut ();",
+            "",
+            "    // The following call should panic due to the assertion `old_cnt > 0`.",
+            "    #[should_panic]",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "}",
+            "",
+            "unsafe fn test_owned_drop_impl_non_zero_ref_count() {",
+            "    struct OwnedLifetime {",
+            "        ref_cnt: std::sync::atomic::AtomicUsize,",
+            "        drop: fn(*mut ()),",
+            "    }",
+            "    ",
+            "    extern \"C\" fn test_drop_fn(_ptr: *mut ()) {",
+            "        // This function simulates the drop behavior; for test purposes, it does nothing.",
+            "    }",
+            "",
+            "    let mut lifetime = OwnedLifetime {",
+            "        ref_cnt: std::sync::atomic::AtomicUsize::new(2), // Sets ref count to 2",
+            "        drop: test_drop_fn,",
+            "    };",
+            "",
+            "    // Creating a pointer to the OwnedLifetime struct.",
+            "    let owned: *mut () = &mut lifetime as *mut _ as *mut ();",
+            "",
+            "    // This call should not panic as the assertion `old_cnt > 0` will be satisfied.",
+            "    unsafe {",
+            "        owned_drop_impl(owned);",
+            "    }",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    }
+  ]
+}

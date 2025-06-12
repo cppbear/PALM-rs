@@ -1,0 +1,404 @@
+{
+  "name": "once_cell::sync::<sync::Lazy<T, F> as std::ops::DerefMut>::deref_mut",
+  "name_with_impl": "once_cell::sync::{impl#13}::deref_mut",
+  "mod_info": {
+    "name": "sync",
+    "loc": "src/lib.rs:863:1:1409:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:1381:9:1383:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// expected return value/type: Lazy::force_mut(self)\n"
+      ],
+      "input_infer": "Test input ranges: F must be a non-null function pointer, T must implement DerefMut, self must not be poisoned, cell must be initialized as None, T must allow mutability; provide T as a simple type like u32 or a struct with DerefMut; ensure init is a valid function that returns T.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(u32);",
+                "    impl DerefMut for TestStruct {",
+                "        fn deref_mut(&mut self) -> &mut Self {",
+                "            self",
+                "        }",
+                "    }",
+                "",
+                "    let mut lazy_instance = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(|| TestStruct(42))),",
+                "    };",
+                "",
+                "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                "    result.0 = 100; ",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let mut lazy_instance = Lazy { cell: OnceCell::new(), init: Cell::new(Some(|| TestStruct(42))) };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert_eq!(result.0, 100);"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestStruct(u32);",
+                  "   impl Deref for TestStruct {",
+                  "       type Target = Self;",
+                  "       fn deref(&self) -> &Self {",
+                  "           self",
+                  "       }",
+                  "   }",
+                  "   impl DerefMut for TestStruct {",
+                  "       fn deref_mut(&mut self) -> &mut Self {",
+                  "           self",
+                  "       }",
+                  "   }",
+                  "",
+                  "  let mut lazy_instance = Lazy {  ",
+                  "      cell: OnceCell::<TestStruct>::new(),  ",
+                  "      init: Cell::new(Some(|| TestStruct(42))),  ",
+                  "  };  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [
+                "{",
+                "    struct TestStruct(u32);",
+                "    impl DerefMut for TestStruct {",
+                "        fn deref_mut(&mut self) -> &mut Self {",
+                "            self",
+                "        }",
+                "    }",
+                "",
+                "    let mut lazy_instance = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(None),",
+                "    };",
+                "",
+                "    let _result: &mut TestStruct = lazy_instance.deref_mut(); // should panic",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let mut lazy_instance = Lazy { cell: OnceCell::new(), init: Cell::new(None) };",
+                  "    lazy_instance.init.set(Some(|| TestStruct(10)));",
+                  "    let _result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert!(std::panic::catch_unwind(|| { let _ = lazy_instance.deref_mut(); }).is_err());"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestStruct(u32);",
+                  "   impl DerefMut for TestStruct {",
+                  "       fn deref_mut(&mut self) -> &mut Self {",
+                  "           self",
+                  "       }",
+                  "   }",
+                  "",
+                  "   let mut lazy_instance: Lazy<TestStruct, fn() -> TestStruct> = Lazy {",
+                  "       cell: OnceCell::new(),",
+                  "       init: Cell::new(None),",
+                  "   };",
+                  "",
+                  "   let _result: &mut TestStruct = lazy_instance.deref_mut(); // should panic",
+                  "   let mut lazy_instance: Lazy<TestStruct, fn() -> TestStruct> = Lazy { ",
+                  "       cell: OnceCell::new(), ",
+                  "       init: Cell::new(Some(|| TestStruct(10))), ",
+                  "   };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0277]: the trait bound `TestStruct: Deref` is not satisfied\n    --> src/lib.rs:1422:22\n     |\n1422 |    impl DerefMut for TestStruct {\n     |                      ^^^^^^^^^^ the trait `Deref` is not implemented for `TestStruct`\n     |\nnote: required by a bound in `std::ops::DerefMut`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/deref.rs:264:21\n     |\n264  | pub trait DerefMut: Deref {\n     |                     ^^^^^ required by this bound in `DerefMut`\n\nerror[E0277]: the trait bound `TestStruct: Deref` is not satisfied\n    --> src/lib.rs:1423:8\n     |\n1423 |        fn deref_mut(&mut self) -> &mut Self {\n     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Deref` is not implemented for `TestStruct`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `once_cell` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    #[derive(Debug)]",
+                "    struct TestStruct(u32);",
+                "    ",
+                "    impl DerefMut for TestStruct {",
+                "        fn deref_mut(&mut self) -> &mut Self {",
+                "            self",
+                "        }",
+                "    }",
+                "",
+                "    let mut lazy_instance = Lazy {",
+                "        cell: OnceCell::with_value(TestStruct(10)),",
+                "        init: Cell::new(Some(|| TestStruct(20))),",
+                "    };",
+                "",
+                "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                "    result.0 += 5;",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let mut lazy_instance = Lazy { cell: OnceCell::with_value(TestStruct(10)), init: Cell::new(Some(|| TestStruct(20))) };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert_eq!(result.0, 10);"
+                ],
+                [
+                  "    let mut lazy_instance = Lazy { cell: OnceCell::with_value(TestStruct(10)), init: Cell::new(Some(|| TestStruct(20))) };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    result.0 += 5;",
+                  "    assert_eq!(result.0, 15);"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Debug)]",
+                  "   struct TestStruct(u32);",
+                  "   ",
+                  "   impl std::ops::Deref for TestStruct {",
+                  "       type Target = u32;",
+                  "       fn deref(&self) -> &Self::Target {",
+                  "           &self.0",
+                  "       }",
+                  "   }",
+                  "    let mut lazy_instance = Lazy {",
+                  "        cell: OnceCell::with_value(TestStruct(10)),",
+                  "        init: Cell::new(Some(|| TestStruct(20))),",
+                  "    };",
+                  "",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    result.0 += 5;",
+                  "    let mut lazy_instance = Lazy { cell: OnceCell::with_value(TestStruct(10)), init: Cell::new(Some(|| TestStruct(20))) };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert_eq!(result.0, 10);",
+                  "}"
+                ],
+                [
+                  "{",
+                  "    #[derive(Debug)]",
+                  "    struct TestStruct(u32);",
+                  "    ",
+                  "    impl DerefMut for TestStruct {",
+                  "        fn deref_mut(&mut self) -> &mut Self {",
+                  "            self",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut lazy_instance = Lazy {",
+                  "        cell: OnceCell::with_value(TestStruct(10)),",
+                  "        init: Cell::new(Some(|| TestStruct(20))),",
+                  "    };",
+                  "",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    result.0 += 5;",
+                  "    let mut lazy_instance = Lazy { cell: OnceCell::with_value(TestStruct(10)), init: Cell::new(Some(|| TestStruct(20))) };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    result.0 += 5;",
+                  "    assert_eq!(result.0, 15);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                },
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0277]: the trait bound `TestStruct: Deref` is not satisfied\n    --> src/lib.rs:1423:23\n     |\n1423 |     impl DerefMut for TestStruct {\n     |                       ^^^^^^^^^^ the trait `Deref` is not implemented for `TestStruct`\n     |\nnote: required by a bound in `std::ops::DerefMut`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/deref.rs:264:21\n     |\n264  | pub trait DerefMut: Deref {\n     |                     ^^^^^ required by this bound in `DerefMut`\n\nerror[E0277]: the trait bound `TestStruct: Deref` is not satisfied\n    --> src/lib.rs:1424:9\n     |\n1424 |         fn deref_mut(&mut self) -> &mut Self {\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Deref` is not implemented for `TestStruct`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `once_cell` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true,
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct TestStruct(u32);",
+                "    ",
+                "    impl DerefMut for TestStruct {",
+                "        fn deref_mut(&mut self) -> &mut Self {",
+                "            self",
+                "        }",
+                "    }",
+                "",
+                "    let mut lazy_instance = Lazy {",
+                "        cell: OnceCell::new(),",
+                "        init: Cell::new(Some(|| TestStruct(1))),",
+                "    };",
+                "",
+                "    for _ in 0..3 {",
+                "        let result: &mut TestStruct = lazy_instance.deref_mut();",
+                "        result.0 += 1;",
+                "    }",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let mut lazy_instance = Lazy {",
+                  "    cell: OnceCell::new(),",
+                  "    init: Cell::new(Some(|| TestStruct(1))),",
+                  "    };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert_eq!(result.0, 2);"
+                ],
+                [
+                  "    let mut lazy_instance = Lazy {",
+                  "    cell: OnceCell::new(),",
+                  "    init: Cell::new(Some(|| TestStruct(1))),",
+                  "    };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert_eq!(result.0, 3);"
+                ],
+                [
+                  "    let mut lazy_instance = Lazy {",
+                  "    cell: OnceCell::new(),",
+                  "    init: Cell::new(Some(|| TestStruct(1))),",
+                  "    };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert_eq!(result.0, 4);"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestStruct(u32);",
+                  "   ",
+                  "   use std::ops::{Deref, DerefMut}; // Add Deref import",
+                  "   ",
+                  "   impl Deref for TestStruct { // Implement Deref",
+                  "       type Target = u32; // Specify Target type",
+                  "       fn deref(&self) -> &Self::Target { &self.0 }",
+                  "        fn deref_mut(&mut self) -> &mut Self {",
+                  "            self",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut lazy_instance = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(|| TestStruct(1))),",
+                  "    };",
+                  "",
+                  "    for _ in 0..3 {",
+                  "        let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "        result.0 += 1;",
+                  "    }",
+                  "    let mut lazy_instance = Lazy {",
+                  "    cell: OnceCell::new(),",
+                  "    init: Cell::new(Some(|| TestStruct(1))),",
+                  "    };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert_eq!(result.0, 2);",
+                  "}"
+                ],
+                [
+                  "{",
+                  "  struct TestStruct(u32);",
+                  "  ",
+                  "  impl Deref for TestStruct {",
+                  "      type Target = u32; // Change Target type to u32 to prevent recursion",
+                  "      fn deref(&self) -> &Self::Target { // Return reference to inner type",
+                  "          &self.0",
+                  "      }",
+                  "  }",
+                  "  ",
+                  "  impl DerefMut for TestStruct {",
+                  "      fn deref_mut(&mut self) -> &mut Self::Target { // Return mutable reference to inner type",
+                  "          &mut self.0",
+                  "      }",
+                  "  }",
+                  "  ",
+                  "  let mut lazy_instance = Lazy {",
+                  "      cell: OnceCell::new(),",
+                  "      init: Cell::new(Some(|| TestStruct(1))),",
+                  "  };",
+                  "  ",
+                  "  for _ in 0..3 {",
+                  "      let result: &mut u32 = lazy_instance.deref_mut(); // Fixed the type here to match deref_mut return type",
+                  "      *result += 1; // Dereference result to increment the value",
+                  "  }",
+                  "}"
+                ],
+                [
+                  "{",
+                  "    struct TestStruct(u32);",
+                  "    ",
+                  "    impl DerefMut for TestStruct {",
+                  "        fn deref_mut(&mut self) -> &mut Self {",
+                  "            self",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut lazy_instance = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(|| TestStruct(1))),",
+                  "    };",
+                  "",
+                  "    for _ in 0..3 {",
+                  "        let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "        result.0 += 1;",
+                  "    }",
+                  "    let mut lazy_instance = Lazy {",
+                  "    cell: OnceCell::new(),",
+                  "    init: Cell::new(Some(|| TestStruct(1))),",
+                  "    };",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    let result: &mut TestStruct = lazy_instance.deref_mut();",
+                  "    assert_eq!(result.0, 4);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0407]: method `deref_mut` is not a member of trait `Deref`\n    --> src/lib.rs:1427:9\n     |\n1427 | /         fn deref_mut(&mut self) -> &mut Self {\n1428 | |             self\n1429 | |         }\n     | |_________^ not a member of trait `Deref`\n\nFor more information about this error, try `rustc --explain E0407`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                },
+                {
+                  "Ok": null
+                },
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0277]: the trait bound `TestStruct: Deref` is not satisfied\n    --> src/lib.rs:1422:23\n     |\n1422 |     impl DerefMut for TestStruct {\n     |                       ^^^^^^^^^^ the trait `Deref` is not implemented for `TestStruct`\n     |\nnote: required by a bound in `std::ops::DerefMut`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/deref.rs:264:21\n     |\n264  | pub trait DerefMut: Deref {\n     |                     ^^^^^ required by this bound in `DerefMut`\n\nerror[E0277]: the trait bound `TestStruct: Deref` is not satisfied\n    --> src/lib.rs:1423:9\n     |\n1423 |         fn deref_mut(&mut self) -> &mut Self {\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Deref` is not implemented for `TestStruct`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `once_cell` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true,
+                true,
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

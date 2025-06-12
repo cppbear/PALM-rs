@@ -1,0 +1,975 @@
+{
+  "name": "regex::backtrack::backtrack::Bounded<'a, 'm, 'r, 's, I>::step",
+  "name_with_impl": "regex::backtrack::{impl#1}::step",
+  "mod_info": {
+    "name": "backtrack",
+    "loc": "src/lib.rs:647:1:647:15"
+  },
+  "visible": false,
+  "loc": "src/backtrack.rs:212:5:282:6",
+  "doc": "",
+  "code": [
+    "fn step(&mut self, mut ip: InstPtr, mut at: InputAt) -> bool {",
+    "    use prog::Inst::*;",
+    "    loop {",
+    "        // This loop is an optimization to avoid constantly pushing/popping",
+    "        // from the stack. Namely, if we're pushing a job only to run it",
+    "        // next, avoid the push and just mutate `ip` (and possibly `at`)",
+    "        // in place.",
+    "        if self.has_visited(ip, at) {",
+    "            return false;",
+    "        }",
+    "        match self.prog[ip] {",
+    "            Match(slot) => {",
+    "                if slot < self.matches.len() {",
+    "                    self.matches[slot] = true;",
+    "                }",
+    "                return true;",
+    "            }",
+    "            Save(ref inst) => {",
+    "                if let Some(&old_pos) = self.slots.get(inst.slot) {",
+    "                    // If this path doesn't work out, then we save the old",
+    "                    // capture index (if one exists) in an alternate",
+    "                    // job. If the next path fails, then the alternate",
+    "                    // job is popped and the old capture index is restored.",
+    "                    self.m.jobs.push(Job::SaveRestore {",
+    "                        slot: inst.slot,",
+    "                        old_pos: old_pos,",
+    "                    });",
+    "                    self.slots[inst.slot] = Some(at.pos());",
+    "                }",
+    "                ip = inst.goto;",
+    "            }",
+    "            Split(ref inst) => {",
+    "                self.m.jobs.push(Job::Inst { ip: inst.goto2, at: at });",
+    "                ip = inst.goto1;",
+    "            }",
+    "            EmptyLook(ref inst) => {",
+    "                if self.input.is_empty_match(at, inst) {",
+    "                    ip = inst.goto;",
+    "                } else {",
+    "                    return false;",
+    "                }",
+    "            }",
+    "            Char(ref inst) => {",
+    "                if inst.c == at.char() {",
+    "                    ip = inst.goto;",
+    "                    at = self.input.at(at.next_pos());",
+    "                } else {",
+    "                    return false;",
+    "                }",
+    "            }",
+    "            Ranges(ref inst) => {",
+    "                if inst.matches(at.char()) {",
+    "                    ip = inst.goto;",
+    "                    at = self.input.at(at.next_pos());",
+    "                } else {",
+    "                    return false;",
+    "                }",
+    "            }",
+    "            Bytes(ref inst) => {",
+    "                if let Some(b) = at.byte() {",
+    "                    if inst.matches(b) {",
+    "                        ip = inst.goto;",
+    "                        at = self.input.at(at.next_pos());",
+    "                        continue;",
+    "                    }",
+    "                }",
+    "                return false;",
+    "            }",
+    "        }",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 15,
+    "contra": 7,
+    "min_set": 13
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "true",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        63
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Bytes(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(b) = at.byte()",
+          "norm": null,
+          "value": "true",
+          "line": 271,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        15,
+        51,
+        59,
+        60,
+        62,
+        63
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Bytes(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(b) = at.byte()",
+          "norm": null,
+          "value": "true",
+          "line": 271,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "inst.matches(b)",
+          "norm": null,
+          "value": "true",
+          "line": 272,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "true",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        15,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        1,
+        2,
+        3,
+        4,
+        63
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Bytes(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(b) = at.byte()",
+          "norm": null,
+          "value": "true",
+          "line": 271,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "inst.matches(b)",
+          "norm": null,
+          "value": "false",
+          "line": 272,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        15,
+        51,
+        52,
+        53,
+        54,
+        58,
+        60,
+        62,
+        63
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Ranges(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Ranges(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "inst.matches(at.char())",
+          "norm": null,
+          "value": "true",
+          "line": 263,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "true",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        14,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        61,
+        1,
+        2,
+        3,
+        4,
+        63
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Ranges(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Ranges(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "inst.matches(at.char())",
+          "norm": null,
+          "value": "false",
+          "line": 263,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        14,
+        44,
+        45,
+        46,
+        50,
+        62,
+        63
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Char(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Char(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "inst.c == at.char()",
+          "norm": "at.char() == inst.c",
+          "value": "true",
+          "line": 255,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "true",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        13,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        61,
+        1,
+        2,
+        3,
+        4,
+        63
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Char(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Char(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "inst.c == at.char()",
+          "norm": "at.char() == inst.c",
+          "value": "false",
+          "line": 255,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        13,
+        37,
+        38,
+        39,
+        43,
+        62,
+        63
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches EmptyLook(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches EmptyLook(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.input.is_empty_match(at, inst)",
+          "norm": null,
+          "value": "true",
+          "line": 248,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "true",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        12,
+        33,
+        34,
+        35,
+        61,
+        1,
+        2,
+        3,
+        4,
+        63
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches EmptyLook(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches EmptyLook(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.input.is_empty_match(at, inst)",
+          "norm": null,
+          "value": "false",
+          "line": 248,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        12,
+        33,
+        34,
+        36,
+        62,
+        63
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Split(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Split(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "true",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        11,
+        31,
+        32,
+        61,
+        1,
+        2,
+        3,
+        4,
+        63
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Save(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Save(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(&old_pos) = self.slots.get(inst.slot)",
+          "norm": null,
+          "value": "true",
+          "line": 230,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "true",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        10,
+        22,
+        23,
+        29,
+        30,
+        61,
+        1,
+        2,
+        3,
+        4,
+        63
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Save(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Save(ref inst)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(&old_pos) = self.slots.get(inst.slot)",
+          "norm": null,
+          "value": "true",
+          "line": 230,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "true",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "false",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        10,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        61,
+        1,
+        2,
+        3,
+        4,
+        63
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Match(slot)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Match(slot)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "slot < self.matches.len()",
+          "norm": "self.matches.len() > slot",
+          "value": "true",
+          "line": 224,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "true",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        9,
+        16,
+        17,
+        18,
+        19,
+        21,
+        62,
+        63
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "self.has_visited(ip, at)",
+          "norm": null,
+          "value": "false",
+          "line": 219,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Match(slot)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.prog[ip] matches Match(slot)",
+          "norm": null,
+          "value": "true",
+          "line": 222,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "slot < self.matches.len()",
+          "norm": "self.matches.len() > slot",
+          "value": "false",
+          "line": 224,
+          "bound": "slot == self.matches.len()",
+          "may_panic": false
+        }
+      ],
+      "ret": "true",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        9,
+        16,
+        17,
+        20,
+        21,
+        62,
+        63
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,236 @@
+{
+  "name": "http::header::map::header::map::HeaderMap<T>::get2",
+  "name_with_impl": "http::header::map::{impl#1}::get2",
+  "mod_info": {
+    "name": "header::map",
+    "loc": "src/header/mod.rs:73:1:73:9"
+  },
+  "visible": false,
+  "loc": "src/header/map.rs:760:5:771:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: key.find(self) matches Some((_, found)) is true\n",
+        "// constraint: key.find(self) matches Some((_, found)) is true\n",
+        "// may panic: self.entries[found] may panic in certain situations\n",
+        "// expected return value/type: Some(&entry.value)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct HeaderMap {",
+            "    entries: Vec<HeaderEntry>,",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "struct HeaderEntry {",
+            "    value: String,",
+            "}",
+            "",
+            "trait AsHeaderName {",
+            "    fn find(&self, map: &HeaderMap) -> Option<(usize, usize)>;",
+            "}",
+            "",
+            "impl AsHeaderName for String {",
+            "    fn find(&self, map: &HeaderMap) -> Option<(usize, usize)> {",
+            "        for (index, entry) in map.entries.iter().enumerate() {",
+            "            if self == &entry.value {",
+            "                return Some((index, index));",
+            "            }",
+            "        }",
+            "        None",
+            "    }",
+            "}",
+            "",
+            "impl HeaderMap {",
+            "    fn new() -> Self {",
+            "        HeaderMap { entries: Vec::new() }",
+            "    }",
+            "    ",
+            "    fn insert(&mut self, value: String) {",
+            "        self.entries.push(HeaderEntry { value });",
+            "    }",
+            "",
+            "    fn get2<K>(&self, key: &K) -> Option<&String>",
+            "    where",
+            "        K: AsHeaderName,",
+            "    {",
+            "        match key.find(self) {",
+            "            Some((_, found)) => {",
+            "                let entry = &self.entries[found];",
+            "                Some(&entry.value)",
+            "            }",
+            "            None => None,",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.insert(\"Content-Type\".to_string());",
+                  "",
+                  "    let key = \"Content-Type\".to_string();",
+                  "    let result = map.get2(&key);",
+                  "    assert_eq!(result, Some(&\"Content-Type\".to_string()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.insert(\"Authorization\".to_string());",
+                  "",
+                  "    let key = \"Content-Length\".to_string();",
+                  "    let result = map.get2(&key);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let map = HeaderMap { entries: Vec::new() }; // Empty map",
+                  "    let key = \"Non-Existent-Key\".to_string();",
+                  "    let _ = map.get2(&key); // This should panic when trying to access entries[found].",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: key.find(self) matches None is true\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestHeader {",
+                  "        entries: Vec<TestEntry>,",
+                  "    }",
+                  "",
+                  "    struct TestEntry {",
+                  "        value: String,",
+                  "    }",
+                  "",
+                  "    impl TestHeader {",
+                  "        fn get2<K>(&self, key: &K) -> Option<&String>",
+                  "        where",
+                  "            K: AsHeaderName,",
+                  "        {",
+                  "            match key.find(self) {",
+                  "                Some((_, found)) => {",
+                  "                    let entry = &self.entries[found];",
+                  "                    Some(&entry.value)",
+                  "                }",
+                  "                None => None,",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    trait AsHeaderName {",
+                  "        fn find(&self, header: &TestHeader) -> Option<(usize, usize)>;",
+                  "    }",
+                  "",
+                  "    struct TestKey {",
+                  "        name: String,",
+                  "    }",
+                  "",
+                  "    impl AsHeaderName for TestKey {",
+                  "        fn find(&self, _: &TestHeader) -> Option<(usize, usize)> {",
+                  "            None // Simulating a key that is not found",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let header = TestHeader {",
+                  "        entries: vec![",
+                  "            TestEntry { value: \"value1\".to_string() },",
+                  "            TestEntry { value: \"value2\".to_string() },",
+                  "        ],",
+                  "    };",
+                  "",
+                  "    let key = TestKey { name: \"nonexistent_header\".to_string() };",
+                  "    ",
+                  "    assert_eq!(header.get2(&key), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

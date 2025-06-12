@@ -1,0 +1,100 @@
+{
+  "name": "bytes::loom::sync::atomic::<core::sync::atomic::AtomicPtr<T> as loom::sync::atomic::AtomicMut<T>>::with_mut",
+  "name_with_impl": "bytes::loom::sync::atomic::{impl#0}::with_mut",
+  "mod_info": {
+    "name": "loom::sync::atomic",
+    "loc": "src/loom.rs:3:5:23:6"
+  },
+  "visible": true,
+  "loc": "src/loom.rs:16:13:21:14",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::AtomicPtr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::sync::atomic::AtomicPtr;",
+                  "",
+                  "    // Define a simple struct to hold some data",
+                  "    struct Data {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    // Initialize an AtomicPtr with a mutable reference to a Data instance",
+                  "    let mut data = Data { value: 42 };",
+                  "    let ptr = AtomicPtr::new(&mut data);",
+                  "    ",
+                  "    // Use with_mut to mutate the value inside the Data struct",
+                  "    ptr.with_mut(|data_ref| {",
+                  "        unsafe {",
+                  "            **data_ref = &mut Data { value: 100 }; // Change the value to 100",
+                  "        }",
+                  "    });",
+                  "",
+                  "    // Verify the value was changed correctly",
+                  "    assert_eq!(unsafe { (*ptr.load(Ordering::SeqCst)).value }, 100);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n  --> src/loom.rs:27:8\n   |\n27 |    use ntest::timeout;\n   |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n  --> src/loom.rs:45:26\n   |\n45 |             **data_ref = &mut Data { value: 100 }; // Change the value to 100\n   |             ----------   ^^^^^^^^^^^^^^^^^^^^^^^^ expected `Data`, found `&mut Data`\n   |             |\n   |             expected due to the type of this binding\n   |\nhelp: consider removing the borrow\n   |\n45 -             **data_ref = &mut Data { value: 100 }; // Change the value to 100\n45 +             **data_ref = Data { value: 100 }; // Change the value to 100\n   |\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::sync::atomic::AtomicPtr;",
+                  "",
+                  "    // Initialize an AtomicPtr with a null pointer",
+                  "    let mut null_ptr: AtomicPtr<i32> = AtomicPtr::new(core::ptr::null_mut());",
+                  "",
+                  "    // Use with_mut on a null pointer should not panic but can handle safely",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        null_ptr.with_mut(|ptr| {",
+                  "            // This should not cause a panic, but will not change anything",
+                  "            assert!(ptr.is_null());",
+                  "        });",
+                  "    });",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n  --> src/loom.rs:27:8\n   |\n27 |    use ntest::timeout;\n   |        ^^^^^^^^^^^^^^\n\nerror[E0277]: the type `&mut AtomicPtr<i32>` may not be safely transferred across an unwind boundary\n   --> src/loom.rs:37:43\n    |\n37  |       let result = std::panic::catch_unwind(|| {\n    |                    ------------------------ ^-\n    |                    |                        |\n    |  __________________|________________________within this `{closure@src/loom.rs:37:43: 37:45}`\n    | |                  |\n    | |                  required by a bound introduced by this call\n38  | |         null_ptr.with_mut(|ptr| {\n39  | |             // This should not cause a panic, but will not change anything\n40  | |             assert!(ptr.is_null());\n41  | |         });\n42  | |     });\n    | |_____^ `&mut AtomicPtr<i32>` may not be safely transferred across an unwind boundary\n    |\n    = help: within `{closure@src/loom.rs:37:43: 37:45}`, the trait `UnwindSafe` is not implemented for `&mut AtomicPtr<i32>`, which is required by `{closure@src/loom.rs:37:43: 37:45}: UnwindSafe`\n    = note: `UnwindSafe` is implemented for `&AtomicPtr<i32>`, but not for `&mut AtomicPtr<i32>`\nnote: required because it's used within this closure\n   --> src/loom.rs:37:43\n    |\n37  |     let result = std::panic::catch_unwind(|| {\n    |                                           ^^\nnote: required by a bound in `std::panic::catch_unwind`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n    |\n349 | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n    |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

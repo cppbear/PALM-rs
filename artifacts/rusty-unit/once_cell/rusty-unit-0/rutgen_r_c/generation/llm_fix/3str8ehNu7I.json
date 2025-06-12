@@ -1,0 +1,216 @@
+{
+  "name": "once_cell::sync::sync::OnceCell<T>::get",
+  "name_with_impl": "once_cell::sync::{impl#6}::get",
+  "mod_info": {
+    "name": "sync",
+    "loc": "src/lib.rs:863:1:1409:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:963:9:970:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.0.is_initialized() is true\n",
+        "// may panic: self.get_unchecked() may panic in certain situations\n",
+        "// expected return value/type: Some(unsafe { self.get_unchecked() })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestOnceCell {",
+                  "        value: u32,",
+                  "    }",
+                  "",
+                  "    impl TestOnceCell {",
+                  "        fn new() -> Self {",
+                  "            TestOnceCell { value: 42 }",
+                  "        }",
+                  "",
+                  "        fn is_initialized(&self) -> bool {",
+                  "            true // simulate initialized state",
+                  "        }",
+                  "",
+                  "        unsafe fn get_unchecked(&self) -> &u32 {",
+                  "            &self.value // safely return reference to value",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct OnceCellWrapper {",
+                  "        cell: TestOnceCell,",
+                  "    }",
+                  "",
+                  "    impl OnceCellWrapper {",
+                  "        pub const fn new() -> Self {",
+                  "            OnceCellWrapper {",
+                  "                cell: TestOnceCell::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn get(&self) -> Option<&u32> {",
+                  "            if self.cell.is_initialized() {",
+                  "                Some(unsafe { self.cell.get_unchecked() })",
+                  "            } else {",
+                  "                None",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let once_cell = OnceCellWrapper::new();",
+                  "    assert_eq!(once_cell.get(), Some(&42));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0015]: cannot call non-const fn `TestOnceCell::new` in constant functions\n    --> src/lib.rs:1445:23\n     |\n1445 |                 cell: TestOnceCell::new(),\n     |                       ^^^^^^^^^^^^^^^^^^^\n     |\n     = note: calls in constant functions are limited to constant functions, tuple structs and tuple variants\n\nFor more information about this error, try `rustc --explain E0015`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestOnceCell {",
+                  "        initialized: bool,",
+                  "    }",
+                  "",
+                  "    impl TestOnceCell {",
+                  "        fn new() -> Self {",
+                  "            TestOnceCell { initialized: false }",
+                  "        }",
+                  "",
+                  "        fn is_initialized(&self) -> bool {",
+                  "            self.initialized",
+                  "        }",
+                  "",
+                  "        unsafe fn get_unchecked(&self) -> &u32 {",
+                  "            panic!(\"Attempted to get an uninitialized value!\");",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct OnceCellWrapper {",
+                  "        cell: TestOnceCell,",
+                  "    }",
+                  "",
+                  "    impl OnceCellWrapper {",
+                  "        pub const fn new() -> Self {",
+                  "            OnceCellWrapper {",
+                  "                cell: TestOnceCell::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn get(&self) -> Option<&u32> {",
+                  "            if self.cell.is_initialized() {",
+                  "                Some(unsafe { self.cell.get_unchecked() })",
+                  "            } else {",
+                  "                None",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let once_cell = OnceCellWrapper::new();",
+                  "    once_cell.get(); // This will trigger the panic in get_unchecked",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0015]: cannot call non-const fn `TestOnceCell::new` in constant functions\n    --> src/lib.rs:1446:23\n     |\n1446 |                 cell: TestOnceCell::new(),\n     |                       ^^^^^^^^^^^^^^^^^^^\n     |\n     = note: calls in constant functions are limited to constant functions, tuple structs and tuple variants\n\nFor more information about this error, try `rustc --explain E0015`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.0.is_initialized() is false\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestCell;",
+                  "   impl TestCell {",
+                  "       fn is_initialized(&self) -> bool {",
+                  "           false",
+                  "       }",
+                  "       unsafe fn get_unchecked(&self) -> &u32 {",
+                  "           &0 // This should never be called as is_initialized is false",
+                  "       }",
+                  "   }",
+                  "   ",
+                  "   use std::marker::PhantomData; // Added to use PhantomData",
+                  "   struct Imp<T>(TestCell);",
+                  "   ",
+                  "   struct OnceCell<T>(Imp<T>, PhantomData<T>); // Added PhantomData<T>",
+                  "   ",
+                  "   impl<T> OnceCell<T> {",
+                  "       pub const fn new() -> OnceCell<T> {",
+                  "           OnceCell(Imp(TestCell), PhantomData) // Instantiate PhantomData",
+                  "       }",
+                  "       ",
+                  "       pub fn get(&self) -> Option<&T> {",
+                  "           if self.0.0.is_initialized() {",
+                  "               Some(unsafe { self.0.0.get_unchecked() })",
+                  "           } else {",
+                  "               None",
+                  "           }",
+                  "       }",
+                  "   }",
+                  "",
+                  "   let cell: OnceCell<u32> = OnceCell::new();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0392]: type parameter `T` is never used\n    --> src/lib.rs:1431:15\n     |\n1431 |    struct Imp<T>(TestCell);\n     |               ^ unused type parameter\n     |\n     = help: consider removing `T`, referring to it in a field, or using a marker such as `PhantomData`\n     = help: if you intended `T` to be a const parameter, use `const T: /* Type */` instead\n\nerror[E0282]: type annotations needed\n    --> src/lib.rs:1437:21\n     |\n1437 |            OnceCell(Imp(TestCell), PhantomData) // Instantiate PhantomData\n     |                     ^^^ cannot infer type of the type parameter `T` declared on the struct `Imp`\n     |\nhelp: consider specifying the generic argument\n     |\n1437 |            OnceCell(Imp::<T>(TestCell), PhantomData) // Instantiate PhantomData\n     |                        +++++\n\nerror[E0308]: mismatched types\n    --> src/lib.rs:1442:30\n     |\n1435 |    impl<T> OnceCell<T> {\n     |         - expected this type parameter\n...\n1442 |                Some(unsafe { self.0.0.get_unchecked() })\n     |                              ^^^^^^^^^^^^^^^^^^^^^^^^ expected `&T`, found `&u32`\n     |\n     = note: expected reference `&T`\n                found reference `&u32`\n\nSome errors have detailed explanations: E0282, E0308, E0392.\nFor more information about an error, try `rustc --explain E0282`.\nerror: could not compile `once_cell` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

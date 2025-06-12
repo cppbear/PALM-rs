@@ -1,0 +1,1 @@
+fn from(c: char) -> Char { Char(c as u32) }

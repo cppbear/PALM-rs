@@ -1,0 +1,1030 @@
+{
+  "name": "indexmap::map::core::map::core::IndexMapCore<K, V>::erase_indices",
+  "name_with_impl": "indexmap::map::core::{impl#2}::erase_indices",
+  "mod_info": {
+    "name": "map::core",
+    "loc": "src/map.rs:4:1:4:10"
+  },
+  "visible": false,
+  "loc": "src/map/core.rs:451:5:495:6",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// may panic: self.entries.split_at(end) may panic in certain situations\n",
+        "// may panic: init.split_at(start) may panic in certain situations\n",
+        "// constraint: erased == 0 is false\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct IndexMap {",
+            "    indices: Vec<usize>,",
+            "    entries: Vec<usize>,",
+            "}",
+            "",
+            "impl IndexMap {",
+            "    fn new() -> Self {",
+            "        Self {",
+            "            indices: Vec::new(),",
+            "            entries: Vec::new(),",
+            "        }",
+            "    }",
+            "",
+            "    fn insert(&mut self, entry: usize) {",
+            "        self.entries.push(entry);",
+            "        self.indices.push(self.indices.len());",
+            "    }",
+            "",
+            "    fn erase_indices(&mut self, start: usize, end: usize) {",
+            "        let (init, shifted_entries) = self.entries.split_at(end);",
+            "        let (start_entries, erased_entries) = init.split_at(start);",
+            "",
+            "        let erased = erased_entries.len();",
+            "        let shifted = shifted_entries.len();",
+            "        let half_capacity = self.indices.capacity() / 2;",
+            "",
+            "        if erased == 0 {",
+            "            // Degenerate case, nothing to do",
+            "        } else if start + shifted < half_capacity && start < erased {",
+            "            self.indices.clear();",
+            "            self.indices.extend_from_slice(start_entries);",
+            "            self.indices.extend_from_slice(shifted_entries);",
+            "        } else if erased + shifted < half_capacity {",
+            "            for (i, entry) in (start..).zip(erased_entries) {",
+            "                self.indices.retain(|&x| x != entry);",
+            "            }",
+            "            for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {",
+            "                self.indices.retain(|&x| x != old);",
+            "                self.indices.push(new);",
+            "            }",
+            "        } else {",
+            "            let offset = end - start;",
+            "            self.indices.retain(move |i| {",
+            "                if *i >= end {",
+            "                    *i -= offset;",
+            "                    true",
+            "                } else {",
+            "                    *i < start",
+            "                }",
+            "            });",
+            "        }",
+            "",
+            "        debug_assert_eq!(self.indices.len(), start + shifted);",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"index out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = IndexMap::new();",
+                  "    map.insert(1);",
+                  "    map.insert(2);",
+                  "    map.insert(3);",
+                  "    ",
+                  "    map.erase_indices(4, 5); // start index out of bounds",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:778:47\n    |\n778 |                 self.indices.retain(|&x| x != entry);\n    |                                          -    ^^^^^ expected `usize`, found `&usize`\n    |                                          |\n    |                                          expected because this is `usize`\n    |\nhelp: consider dereferencing the borrow\n    |\n778 |                 self.indices.retain(|&x| x != *entry);\n    |                                               +\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"index out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = IndexMap::new();",
+                  "    map.insert(1);",
+                  "    map.insert(2);",
+                  "    ",
+                  "    map.erase_indices(1, 3); // end index out of bounds",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:778:47\n    |\n778 |                 self.indices.retain(|&x| x != entry);\n    |                                          -    ^^^^^ expected `usize`, found `&usize`\n    |                                          |\n    |                                          expected because this is `usize`\n    |\nhelp: consider dereferencing the borrow\n    |\n778 |                 self.indices.retain(|&x| x != *entry);\n    |                                               +\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = IndexMap::new();",
+                  "    map.insert(1);",
+                  "    map.insert(2);",
+                  "    map.insert(3);",
+                  "    map.insert(4);",
+                  "    map.insert(5);",
+                  "    map.insert(6);",
+                  "    ",
+                  "    map.erase_indices(2, 4); // erase indices 2 to 4, should leave 1, 2 and shift 4, 5, 6 down",
+                  "",
+                  "    assert_eq!(map.indices, vec![0, 1, 2, 3]); // After erase, remaining indices should be adjusted",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:778:47\n    |\n778 |                 self.indices.retain(|&x| x != entry);\n    |                                          -    ^^^^^ expected `usize`, found `&usize`\n    |                                          |\n    |                                          expected because this is `usize`\n    |\nhelp: consider dereferencing the borrow\n    |\n778 |                 self.indices.retain(|&x| x != *entry);\n    |                                               +\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = IndexMap::new();",
+                  "    map.insert(1);",
+                  "    map.insert(2);",
+                  "    map.insert(3);",
+                  "    ",
+                  "    map.erase_indices(2, 2); // No indices erased, should do nothing",
+                  "",
+                  "    assert_eq!(map.indices, vec![0, 1]); // Indices should remain the same",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:778:47\n    |\n778 |                 self.indices.retain(|&x| x != entry);\n    |                                          -    ^^^^^ expected `usize`, found `&usize`\n    |                                          |\n    |                                          expected because this is `usize`\n    |\nhelp: consider dereferencing the borrow\n    |\n778 |                 self.indices.retain(|&x| x != *entry);\n    |                                               +\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = IndexMap::new();",
+                  "    for i in 0..10 {",
+                  "        map.insert(i);",
+                  "    }",
+                  "    ",
+                  "    map.erase_indices(0, 5); // Erase indices 0 to 5",
+                  "",
+                  "    assert_eq!(map.indices.len(), 5); // Should only have the last 5 entries left",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:778:47\n    |\n778 |                 self.indices.retain(|&x| x != entry);\n    |                                          -    ^^^^^ expected `usize`, found `&usize`\n    |                                          |\n    |                                          expected because this is `usize`\n    |\nhelp: consider dereferencing the borrow\n    |\n778 |                 self.indices.retain(|&x| x != *entry);\n    |                                               +\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// may panic: self.entries.split_at(end) may panic in certain situations\n",
+        "// may panic: init.split_at(start) may panic in certain situations\n",
+        "// constraint: erased == 0 is true\n",
+        "// constraint: start + shifted < half_capacity is true\n",
+        "// constraint: start < erased is true\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    #[derive(Default)]",
+                  "    struct TestStruct {",
+                  "        entries: Vec<u32>,",
+                  "        indices: Vec<usize>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn erase_indices(&mut self, start: usize, end: usize) {",
+                  "            let (init, shifted_entries) = self.entries.split_at(end);",
+                  "            let (start_entries, erased_entries) = init.split_at(start);",
+                  "",
+                  "            let erased = erased_entries.len();",
+                  "            let shifted = shifted_entries.len();",
+                  "            let half_capacity = self.indices.capacity() / 2;",
+                  "",
+                  "            if erased == 0 {",
+                  "                // Degenerate case, nothing to do",
+                  "            } else if start + shifted < half_capacity && start < erased {",
+                  "                self.indices.clear();",
+                  "",
+                  "                insert_bulk_no_grow(&mut self.indices, start_entries);",
+                  "                insert_bulk_no_grow(&mut self.indices, shifted_entries);",
+                  "            } else if erased + shifted < half_capacity {",
+                  "                for (i, entry) in (start..).zip(erased_entries) {",
+                  "                    erase_index(&mut self.indices, entry, i);",
+                  "                }",
+                  "",
+                  "                for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {",
+                  "                    update_index(&mut self.indices, entry, old, new);",
+                  "                }",
+                  "            } else {",
+                  "                let offset = end - start;",
+                  "                self.indices.retain(move |i| {",
+                  "                    if *i >= end {",
+                  "                        *i -= offset;",
+                  "                        true",
+                  "                    } else {",
+                  "                        *i < start",
+                  "                    }",
+                  "                });",
+                  "            }",
+                  "",
+                  "            debug_assert_eq!(self.indices.len(), start + shifted);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn insert_bulk_no_grow(indices: &mut Vec<usize>, entries: &[u32]) {",
+                  "        for entry in entries {",
+                  "            indices.push(*entry as usize);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn erase_index(indices: &mut Vec<usize>, hash: u32, index: usize) {",
+                  "        // Simulate erasing an index",
+                  "        if let Some(pos) = indices.iter().position(|&i| i == hash as usize) {",
+                  "            indices.remove(pos);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn update_index(indices: &mut Vec<usize>, hash: u32, old: usize, new: usize) {",
+                  "        // Simulate updating an index",
+                  "        if let Some(pos) = indices.iter().position(|&i| i == old) {",
+                  "            indices[pos] = new;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::default();",
+                  "    test_struct.entries = vec![1, 2, 3, 4, 5];",
+                  "    test_struct.indices = vec![0, 1, 2, 3, 4];",
+                  "",
+                  "    // Set for conditions:",
+                  "    // erased == 0 is true means no indices are between start and end",
+                  "    // start + shifted < half_capacity is true (start=0, shifted remains below half capacity)",
+                  "    // start < erased is not applicable since erased is 0",
+                  "",
+                  "    test_struct.erase_indices(0, 0);",
+                  "    ",
+                  "    assert_eq!(test_struct.indices.len(), 5);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:770:52\n    |\n770 |                     erase_index(&mut self.indices, entry, i);\n    |                     -----------                    ^^^^^ expected `u32`, found `&u32`\n    |                     |\n    |                     arguments to this function are incorrect\n    |\nnote: function defined here\n   --> src/map/core.rs:798:8\n    |\n798 |     fn erase_index(indices: &mut Vec<usize>, hash: u32, index: usize) {\n    |        ^^^^^^^^^^^                           ---------\nhelp: consider dereferencing the borrow\n    |\n770 |                     erase_index(&mut self.indices, *entry, i);\n    |                                                    +\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:774:53\n    |\n774 |                     update_index(&mut self.indices, entry, old, new);\n    |                     ------------                    ^^^^^ expected `u32`, found `&u32`\n    |                     |\n    |                     arguments to this function are incorrect\n    |\nnote: function defined here\n   --> src/map/core.rs:805:8\n    |\n805 |     fn update_index(indices: &mut Vec<usize>, hash: u32, old: usize, new: usize) {\n    |        ^^^^^^^^^^^^                           ---------\nhelp: consider dereferencing the borrow\n    |\n774 |                     update_index(&mut self.indices, *entry, old, new);\n    |                                                     +\n\nwarning: unused variable: `index`\n   --> src/map/core.rs:798:57\n    |\n798 |     fn erase_index(indices: &mut Vec<usize>, hash: u32, index: usize) {\n    |                                                         ^^^^^ help: if this is intentional, prefix it with an underscore: `_index`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `hash`\n   --> src/map/core.rs:805:47\n    |\n805 |     fn update_index(indices: &mut Vec<usize>, hash: u32, old: usize, new: usize) {\n    |                                               ^^^^ help: if this is intentional, prefix it with an underscore: `_hash`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 10 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 10 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    #[derive(Default)]",
+                  "    struct TestStruct {",
+                  "        entries: Vec<u32>,",
+                  "        indices: Vec<usize>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn erase_indices(&mut self, start: usize, end: usize) {",
+                  "            let (init, shifted_entries) = self.entries.split_at(end);",
+                  "            let (start_entries, erased_entries) = init.split_at(start);",
+                  "",
+                  "            let erased = erased_entries.len();",
+                  "            let shifted = shifted_entries.len();",
+                  "            let half_capacity = self.indices.capacity() / 2;",
+                  "",
+                  "            if erased == 0 {",
+                  "                // Degenerate case, nothing to do",
+                  "            } else if start + shifted < half_capacity && start < erased {",
+                  "                self.indices.clear();",
+                  "",
+                  "                insert_bulk_no_grow(&mut self.indices, start_entries);",
+                  "                insert_bulk_no_grow(&mut self.indices, shifted_entries);",
+                  "            } else if erased + shifted < half_capacity {",
+                  "                for (i, entry) in (start..).zip(erased_entries) {",
+                  "                    erase_index(&mut self.indices, entry, i);",
+                  "                }",
+                  "",
+                  "                for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {",
+                  "                    update_index(&mut self.indices, entry, old, new);",
+                  "                }",
+                  "            } else {",
+                  "                let offset = end - start;",
+                  "                self.indices.retain(move |i| {",
+                  "                    if *i >= end {",
+                  "                        *i -= offset;",
+                  "                        true",
+                  "                    } else {",
+                  "                        *i < start",
+                  "                    }",
+                  "                });",
+                  "            }",
+                  "",
+                  "            debug_assert_eq!(self.indices.len(), start + shifted);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn insert_bulk_no_grow(indices: &mut Vec<usize>, entries: &[u32]) {",
+                  "        for entry in entries {",
+                  "            indices.push(*entry as usize);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn erase_index(indices: &mut Vec<usize>, hash: u32, index: usize) {",
+                  "        // Simulate erasing an index",
+                  "        if let Some(pos) = indices.iter().position(|&i| i == hash as usize) {",
+                  "            indices.remove(pos);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn update_index(indices: &mut Vec<usize>, hash: u32, old: usize, new: usize) {",
+                  "        // Simulate updating an index",
+                  "        if let Some(pos) = indices.iter().position(|&i| i == old) {",
+                  "            indices[pos] = new;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::default();",
+                  "    test_struct.entries = vec![1, 2, 3, 4, 5];",
+                  "",
+                  "    // Trigger panic due to end being out of bounds of entries",
+                  "    test_struct.erase_indices(0, 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:771:52\n    |\n771 |                     erase_index(&mut self.indices, entry, i);\n    |                     -----------                    ^^^^^ expected `u32`, found `&u32`\n    |                     |\n    |                     arguments to this function are incorrect\n    |\nnote: function defined here\n   --> src/map/core.rs:799:8\n    |\n799 |     fn erase_index(indices: &mut Vec<usize>, hash: u32, index: usize) {\n    |        ^^^^^^^^^^^                           ---------\nhelp: consider dereferencing the borrow\n    |\n771 |                     erase_index(&mut self.indices, *entry, i);\n    |                                                    +\n\nerror[E0308]: mismatched types\n   --> src/map/core.rs:775:53\n    |\n775 |                     update_index(&mut self.indices, entry, old, new);\n    |                     ------------                    ^^^^^ expected `u32`, found `&u32`\n    |                     |\n    |                     arguments to this function are incorrect\n    |\nnote: function defined here\n   --> src/map/core.rs:806:8\n    |\n806 |     fn update_index(indices: &mut Vec<usize>, hash: u32, old: usize, new: usize) {\n    |        ^^^^^^^^^^^^                           ---------\nhelp: consider dereferencing the borrow\n    |\n775 |                     update_index(&mut self.indices, *entry, old, new);\n    |                                                     +\n\nwarning: unused variable: `index`\n   --> src/map/core.rs:799:57\n    |\n799 |     fn erase_index(indices: &mut Vec<usize>, hash: u32, index: usize) {\n    |                                                         ^^^^^ help: if this is intentional, prefix it with an underscore: `_index`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `hash`\n   --> src/map/core.rs:806:47\n    |\n806 |     fn update_index(indices: &mut Vec<usize>, hash: u32, old: usize, new: usize) {\n    |                                               ^^^^ help: if this is intentional, prefix it with an underscore: `_hash`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 10 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 10 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 12,
+      "prompt_conds": [
+        "// may panic: self.entries.split_at(end) may panic in certain situations\n",
+        "// may panic: init.split_at(start) may panic in certain situations\n",
+        "// constraint: erased == 0 is true\n",
+        "// constraint: start + shifted < half_capacity is true\n",
+        "// constraint: start < erased is false, with bound start == erased\n",
+        "// constraint: erased + shifted < half_capacity is true\n",
+        "// constraint: (i, entry) in (start..).zip(erased_entries) is false\n",
+        "// constraint: ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) is false\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        entries: Vec<i32>,",
+                  "        indices: Vec<usize>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                entries: Vec::new(),",
+                  "                indices: Vec::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn erase_indices(&mut self, start: usize, end: usize) {",
+                  "            let (init, shifted_entries) = self.entries.split_at(end);",
+                  "            let (start_entries, erased_entries) = init.split_at(start);",
+                  "",
+                  "            let erased = erased_entries.len();",
+                  "            let shifted = shifted_entries.len();",
+                  "            let half_capacity = self.indices.capacity() / 2;",
+                  "",
+                  "            if erased == 0 {",
+                  "                // Degenerate case, nothing to do",
+                  "            } else if start + shifted < half_capacity && start < erased {",
+                  "                self.indices.clear();",
+                  "            } else if erased + shifted < half_capacity {",
+                  "                for (i, entry) in (start..).zip(erased_entries) {}",
+                  "                for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}",
+                  "            } else {",
+                  "                let offset = end - start;",
+                  "                self.indices.retain(move |i| {",
+                  "                    if *i >= end {",
+                  "                        *i -= offset;",
+                  "                        true",
+                  "                    } else {",
+                  "                        *i < start",
+                  "                    }",
+                  "                });",
+                  "            }",
+                  "",
+                  "            debug_assert_eq!(self.indices.len(), start + shifted);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::new();",
+                  "",
+                  "    test_struct.erase_indices(0, 0); // No entries to erase",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused variable: `start_entries`\n   --> src/map/core.rs:761:18\n    |\n761 |             let (start_entries, erased_entries) = init.split_at(start);\n    |                  ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_entries`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `i`\n   --> src/map/core.rs:772:22\n    |\n772 |                 for (i, entry) in (start..).zip(erased_entries) {}\n    |                      ^ help: if this is intentional, prefix it with an underscore: `_i`\n\nwarning: unused variable: `entry`\n   --> src/map/core.rs:772:25\n    |\n772 |                 for (i, entry) in (start..).zip(erased_entries) {}\n    |                         ^^^^^ help: if this is intentional, prefix it with an underscore: `_entry`\n\nwarning: unused variable: `new`\n   --> src/map/core.rs:773:23\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                       ^^^ help: if this is intentional, prefix it with an underscore: `_new`\n\nwarning: unused variable: `old`\n   --> src/map/core.rs:773:28\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                            ^^^ help: if this is intentional, prefix it with an underscore: `_old`\n\nwarning: unused variable: `entry`\n   --> src/map/core.rs:773:34\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                                  ^^^^^ help: if this is intentional, prefix it with an underscore: `_entry`\n\nerror[E0594]: cannot assign to `*i`, which is behind a `&` reference\n   --> src/map/core.rs:778:25\n    |\n776 |                 self.indices.retain(move |i| {\n    |                                           - consider changing this binding's type to be: `&mut usize`\n777 |                     if *i >= end {\n778 |                         *i -= offset;\n    |                         ^^^^^^^^^^^^ `i` is a `&` reference, so the data it refers to cannot be written\n\nFor more information about this error, try `rustc --explain E0594`.\nwarning: `indexmap` (lib test) generated 14 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        entries: Vec<i32>,",
+                  "        indices: Vec<usize>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn new(entries: Vec<i32>) -> Self {",
+                  "            Self {",
+                  "                entries,",
+                  "                indices: vec![0],",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn erase_indices(&mut self, start: usize, end: usize) {",
+                  "            let (init, shifted_entries) = self.entries.split_at(end);",
+                  "            let (start_entries, erased_entries) = init.split_at(start);",
+                  "",
+                  "            let erased = erased_entries.len();",
+                  "            let shifted = shifted_entries.len();",
+                  "            let half_capacity = self.indices.capacity() / 2;",
+                  "",
+                  "            if erased == 0 {",
+                  "                // Degenerate case, nothing to do",
+                  "            } else if start + shifted < half_capacity && start < erased {",
+                  "                self.indices.clear();",
+                  "            } else if erased + shifted < half_capacity {",
+                  "                for (i, entry) in (start..).zip(erased_entries) {}",
+                  "                for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}",
+                  "            } else {",
+                  "                let offset = end - start;",
+                  "                self.indices.retain(move |i| {",
+                  "                    if *i >= end {",
+                  "                        *i -= offset;",
+                  "                        true",
+                  "                    } else {",
+                  "                        *i < start",
+                  "                    }",
+                  "                });",
+                  "            }",
+                  "",
+                  "            debug_assert_eq!(self.indices.len(), start + shifted);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::new(vec![1]);",
+                  "",
+                  "    test_struct.erase_indices(0, 1); // Complete erase on single entry",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused variable: `start_entries`\n   --> src/map/core.rs:761:18\n    |\n761 |             let (start_entries, erased_entries) = init.split_at(start);\n    |                  ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_entries`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `i`\n   --> src/map/core.rs:772:22\n    |\n772 |                 for (i, entry) in (start..).zip(erased_entries) {}\n    |                      ^ help: if this is intentional, prefix it with an underscore: `_i`\n\nwarning: unused variable: `entry`\n   --> src/map/core.rs:772:25\n    |\n772 |                 for (i, entry) in (start..).zip(erased_entries) {}\n    |                         ^^^^^ help: if this is intentional, prefix it with an underscore: `_entry`\n\nwarning: unused variable: `new`\n   --> src/map/core.rs:773:23\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                       ^^^ help: if this is intentional, prefix it with an underscore: `_new`\n\nwarning: unused variable: `old`\n   --> src/map/core.rs:773:28\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                            ^^^ help: if this is intentional, prefix it with an underscore: `_old`\n\nwarning: unused variable: `entry`\n   --> src/map/core.rs:773:34\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                                  ^^^^^ help: if this is intentional, prefix it with an underscore: `_entry`\n\nerror[E0594]: cannot assign to `*i`, which is behind a `&` reference\n   --> src/map/core.rs:778:25\n    |\n776 |                 self.indices.retain(move |i| {\n    |                                           - consider changing this binding's type to be: `&mut usize`\n777 |                     if *i >= end {\n778 |                         *i -= offset;\n    |                         ^^^^^^^^^^^^ `i` is a `&` reference, so the data it refers to cannot be written\n\nFor more information about this error, try `rustc --explain E0594`.\nwarning: `indexmap` (lib test) generated 14 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        entries: Vec<i32>,",
+                  "        indices: Vec<usize>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn new(entries: Vec<i32>) -> Self {",
+                  "            Self {",
+                  "                entries,",
+                  "                indices: (0..entries.len()).collect(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn erase_indices(&mut self, start: usize, end: usize) {",
+                  "            let (init, shifted_entries) = self.entries.split_at(end);",
+                  "            let (start_entries, erased_entries) = init.split_at(start);",
+                  "",
+                  "            let erased = erased_entries.len();",
+                  "            let shifted = shifted_entries.len();",
+                  "            let half_capacity = self.indices.capacity() / 2;",
+                  "",
+                  "            if erased == 0 {",
+                  "                // Degenerate case, nothing to do",
+                  "            } else if start + shifted < half_capacity && start < erased {",
+                  "                self.indices.clear();",
+                  "            } else if erased + shifted < half_capacity {",
+                  "                for (i, entry) in (start..).zip(erased_entries) {}",
+                  "                for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}",
+                  "            } else {",
+                  "                let offset = end - start;",
+                  "                self.indices.retain(move |i| {",
+                  "                    if *i >= end {",
+                  "                        *i -= offset;",
+                  "                        true",
+                  "                    } else {",
+                  "                        *i < start",
+                  "                    }",
+                  "                });",
+                  "            }",
+                  "",
+                  "            debug_assert_eq!(self.indices.len(), start + shifted);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::new(vec![1, 2, 3, 4, 5]);",
+                  "",
+                  "    test_struct.erase_indices(2, 4); // Erase middle elements",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0382]: borrow of moved value: `entries`\n   --> src/map/core.rs:755:30\n    |\n752 |         fn new(entries: Vec<i32>) -> Self {\n    |                ------- move occurs because `entries` has type `std::vec::Vec<i32>`, which does not implement the `Copy` trait\n753 |             Self {\n754 |                 entries,\n    |                 ------- value moved here\n755 |                 indices: (0..entries.len()).collect(),\n    |                              ^^^^^^^ value borrowed here after move\n    |\nhelp: consider cloning the value if the performance cost is acceptable\n    |\n754 |                 entries: entries.clone(),\n    |                        +++++++++++++++++\n\nwarning: unused variable: `start_entries`\n   --> src/map/core.rs:761:18\n    |\n761 |             let (start_entries, erased_entries) = init.split_at(start);\n    |                  ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_start_entries`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `i`\n   --> src/map/core.rs:772:22\n    |\n772 |                 for (i, entry) in (start..).zip(erased_entries) {}\n    |                      ^ help: if this is intentional, prefix it with an underscore: `_i`\n\nwarning: unused variable: `entry`\n   --> src/map/core.rs:772:25\n    |\n772 |                 for (i, entry) in (start..).zip(erased_entries) {}\n    |                         ^^^^^ help: if this is intentional, prefix it with an underscore: `_entry`\n\nwarning: unused variable: `new`\n   --> src/map/core.rs:773:23\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                       ^^^ help: if this is intentional, prefix it with an underscore: `_new`\n\nwarning: unused variable: `old`\n   --> src/map/core.rs:773:28\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                            ^^^ help: if this is intentional, prefix it with an underscore: `_old`\n\nwarning: unused variable: `entry`\n   --> src/map/core.rs:773:34\n    |\n773 |                 for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {}\n    |                                  ^^^^^ help: if this is intentional, prefix it with an underscore: `_entry`\n\nerror[E0594]: cannot assign to `*i`, which is behind a `&` reference\n   --> src/map/core.rs:778:25\n    |\n776 |                 self.indices.retain(move |i| {\n    |                                           - consider changing this binding's type to be: `&mut usize`\n777 |                     if *i >= end {\n778 |                         *i -= offset;\n    |                         ^^^^^^^^^^^^ `i` is a `&` reference, so the data it refers to cannot be written\n\nSome errors have detailed explanations: E0382, E0594.\nFor more information about an error, try `rustc --explain E0382`.\nwarning: `indexmap` (lib test) generated 14 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 16,
+      "prompt_conds": [
+        "// may panic: self.entries.split_at(end) may panic in certain situations\n",
+        "// may panic: init.split_at(start) may panic in certain situations\n",
+        "// constraint: erased == 0 is true\n",
+        "// constraint: start + shifted < half_capacity is false, with bound start + shifted == half_capacity\n",
+        "// constraint: erased + shifted < half_capacity is true\n",
+        "// constraint: (i, entry) in (start..).zip(erased_entries) is true\n",
+        "// constraint: (i, entry) in (start..).zip(erased_entries) is false\n",
+        "// constraint: ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) is true\n",
+        "// constraint: ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) is false\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct TestStruct {",
+            "    entries: Vec<i32>,",
+            "    indices: Vec<usize>,",
+            "}",
+            "",
+            "impl TestStruct {",
+            "    fn new(entries: Vec<i32>, indices: Vec<usize>) -> Self {",
+            "        Self { entries, indices }",
+            "    }",
+            "",
+            "    fn erase_indices(&mut self, start: usize, end: usize) {",
+            "        let (init, shifted_entries) = self.entries.split_at(end);",
+            "        let (start_entries, erased_entries) = init.split_at(start);",
+            "",
+            "        let erased = erased_entries.len();",
+            "        let shifted = shifted_entries.len();",
+            "        let half_capacity = self.indices.capacity() / 2;",
+            "",
+            "        if erased == 0 {",
+            "        } else if start + shifted < half_capacity && start < erased {",
+            "            self.indices.clear();",
+            "            self.indices.extend_from_slice(start_entries);",
+            "            self.indices.extend_from_slice(shifted_entries);",
+            "        } else if erased + shifted < half_capacity {",
+            "            for (i, &entry) in (start..).zip(erased_entries.iter()) {",
+            "                self.indices.retain(|&x| x != entry as usize);",
+            "            }",
+            "            for ((new, old), &entry) in (start..).zip(end..).zip(shifted_entries.iter()) {",
+            "                self.indices.iter_mut().for_each(|x| {",
+            "                    if *x == old as usize {",
+            "                        *x = new;",
+            "                    }",
+            "                });",
+            "            }",
+            "        } else {",
+            "            let offset = end - start;",
+            "            self.indices.retain(move |i| {",
+            "                if *i >= end {",
+            "                    *i -= offset;",
+            "                    true",
+            "                } else {",
+            "                    *i < start",
+            "                }",
+            "            });",
+            "        }",
+            "        ",
+            "        debug_assert_eq!(self.indices.len(), start + shifted);",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut instance = TestStruct::new(vec![1, 2, 3, 4, 5, 6], vec![0, 1, 2, 3]);",
+                  "    instance.erase_indices(2, 2);",
+                  "    assert_eq!(instance.indices, vec![0, 1, 2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:765:44\n     |\n765  |             self.indices.extend_from_slice(start_entries);\n     |                          ----------------- ^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:766:44\n     |\n766  |             self.indices.extend_from_slice(shifted_entries);\n     |                          ----------------- ^^^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut instance = TestStruct::new(vec![1, 2, 3, 4, 5], vec![0, 1, 2, 3]);",
+                  "    instance.erase_indices(0, 2);",
+                  "    assert_eq!(instance.indices, vec![2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:765:44\n     |\n765  |             self.indices.extend_from_slice(start_entries);\n     |                          ----------------- ^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:766:44\n     |\n766  |             self.indices.extend_from_slice(shifted_entries);\n     |                          ----------------- ^^^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut instance = TestStruct::new(vec![1, 2, 3, 4, 5], vec![1, 2, 3]);",
+                  "    instance.erase_indices(0, 3);",
+                  "    assert_eq!(instance.indices, vec![2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:765:44\n     |\n765  |             self.indices.extend_from_slice(start_entries);\n     |                          ----------------- ^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:766:44\n     |\n766  |             self.indices.extend_from_slice(shifted_entries);\n     |                          ----------------- ^^^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut instance = TestStruct::new(vec![1, 2, 3, 4, 5, 6, 7, 8, 9], vec![0, 1, 2, 3, 4]);",
+                  "    instance.erase_indices(4, 7);",
+                  "    assert_eq!(instance.indices, vec![0, 1, 2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:765:44\n     |\n765  |             self.indices.extend_from_slice(start_entries);\n     |                          ----------------- ^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:766:44\n     |\n766  |             self.indices.extend_from_slice(shifted_entries);\n     |                          ----------------- ^^^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut instance = TestStruct::new(vec![1, 2, 3, 4], vec![0, 1, 2]);",
+                  "    instance.erase_indices(1, 3);",
+                  "    assert!(instance.indices.contains(&0));",
+                  "    assert!(!instance.indices.contains(&1));",
+                  "    assert!(!instance.indices.contains(&2));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:765:44\n     |\n765  |             self.indices.extend_from_slice(start_entries);\n     |                          ----------------- ^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/map/core.rs:766:44\n     |\n766  |             self.indices.extend_from_slice(shifted_entries);\n     |                          ----------------- ^^^^^^^^^^^^^^^ expected `&[usize]`, found `&[i32]`\n     |                          |\n     |                          arguments to this method are incorrect\n     |\n     = note: expected reference `&[usize]`\n                found reference `&[i32]`\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2597:12\n     |\n2597 |     pub fn extend_from_slice(&mut self, other: &[T]) {\n     |            ^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 2 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 23,
+      "prompt_conds": [
+        "// may panic: self.entries.split_at(end) may panic in certain situations\n",
+        "// may panic: init.split_at(start) may panic in certain situations\n",
+        "// constraint: erased == 0 is true\n",
+        "// constraint: start + shifted < half_capacity is false, with bound start + shifted == half_capacity\n",
+        "// constraint: erased + shifted < half_capacity is false, with bound erased + shifted == half_capacity\n",
+        "// constraint: (*left_val == *right_val) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "// Helper struct to encapsulate the state for tests",
+            "struct TestMap {",
+            "    indices: Vec<usize>,",
+            "    entries: Vec<usize>,",
+            "}",
+            "",
+            "impl TestMap {",
+            "    fn erase_indices(&mut self, start: usize, end: usize) {",
+            "        let (init, shifted_entries) = self.entries.split_at(end);",
+            "        let (start_entries, erased_entries) = init.split_at(start);",
+            "",
+            "        let erased = erased_entries.len();",
+            "        let shifted = shifted_entries.len();",
+            "        let half_capacity = self.indices.capacity() / 2;",
+            "",
+            "        if erased == 0 {",
+            "            // Degenerate case, nothing to do",
+            "        } else if start + shifted < half_capacity && start < erased {",
+            "            self.indices.clear();",
+            "            self.indices.extend_from_slice(start_entries);",
+            "            self.indices.extend_from_slice(shifted_entries);",
+            "        } else if erased + shifted < half_capacity {",
+            "            for (i, _entry) in (start..).zip(erased_entries.iter()) {",
+            "                self.indices.remove(i);",
+            "            }",
+            "            for ((new, old), _entry) in (start..).zip(end..).zip(shifted_entries.iter()) {",
+            "                self.indices[new] = old;",
+            "            }",
+            "        } else {",
+            "            let offset = end - start;",
+            "            self.indices.retain(move |i| {",
+            "                if *i >= end {",
+            "                    *i -= offset;",
+            "                    true",
+            "                } else {",
+            "                    *i < start",
+            "                }",
+            "            });",
+            "        }",
+            "",
+            "        debug_assert_eq!(self.indices.len(), start + shifted);",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut indices = vec![0, 1, 2, 3, 4, 5]; // Initial indices",
+                  "    let entries = vec![10, 20, 30, 40, 50, 60]; // Corresponding entries",
+                  "",
+                  "    let mut map = TestMap {",
+                  "        indices,",
+                  "        entries,",
+                  "    };",
+                  "",
+                  "    // Start and end such that erased == 0",
+                  "    let start = 3;",
+                  "    let end = 3;",
+                  "",
+                  "    // Before erase_indices",
+                  "    assert_eq!(map.indices.len(), 6);",
+                  "",
+                  "    // Call the function",
+                  "    map.erase_indices(start, end);",
+                  "",
+                  "    // After erase_indices",
+                  "    assert_eq!(map.indices.len(), 6);",
+                  "    assert_eq!(map.indices, vec![0, 1, 2, 3, 4, 5]); // Indices should remain unchanged",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0594]: cannot assign to `*i`, which is behind a `&` reference\n   --> src/map/core.rs:775:21\n    |\n773 |             self.indices.retain(move |i| {\n    |                                       - consider changing this binding's type to be: `&mut usize`\n774 |                 if *i >= end {\n775 |                     *i -= offset;\n    |                     ^^^^^^^^^^^^ `i` is a `&` reference, so the data it refers to cannot be written\n\nwarning: variable does not need to be mutable\n   --> src/map/core.rs:790:9\n    |\n790 |     let mut indices = vec![0, 1, 2, 3, 4, 5]; // Initial indices\n    |         ----^^^^^^^\n    |         |\n    |         help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0594`.\nwarning: `indexmap` (lib test) generated 9 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 9 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut indices = vec![0, 1, 2, 3, 4, 5]; // Initial indices",
+                  "    let entries = vec![10, 20, 30, 40, 50, 60]; // Corresponding entries",
+                  "",
+                  "    let mut map = TestMap {",
+                  "        indices,",
+                  "        entries,",
+                  "    };",
+                  "",
+                  "    // Start and end such that start + shifted == half_capacity",
+                  "    let start = 2;",
+                  "    let end = 4;",
+                  "",
+                  "    // Before erase_indices",
+                  "    assert_eq!(map.indices.len(), 6);",
+                  "",
+                  "    // Call the function",
+                  "    map.erase_indices(start, end);",
+                  "",
+                  "    // After erase_indices",
+                  "    assert_eq!(map.indices.len(), 5);",
+                  "    assert_eq!(map.indices, vec![0, 1, 4, 5]); // Adjusted indices",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0594]: cannot assign to `*i`, which is behind a `&` reference\n   --> src/map/core.rs:775:21\n    |\n773 |             self.indices.retain(move |i| {\n    |                                       - consider changing this binding's type to be: `&mut usize`\n774 |                 if *i >= end {\n775 |                     *i -= offset;\n    |                     ^^^^^^^^^^^^ `i` is a `&` reference, so the data it refers to cannot be written\n\nwarning: variable does not need to be mutable\n   --> src/map/core.rs:790:9\n    |\n790 |     let mut indices = vec![0, 1, 2, 3, 4, 5]; // Initial indices\n    |         ----^^^^^^^\n    |         |\n    |         help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0594`.\nwarning: `indexmap` (lib test) generated 9 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 9 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut indices = vec![0, 1, 2, 3, 4, 5, 6, 7]; // Initial indices",
+                  "    let entries = vec![10, 20, 30, 40, 50, 60, 70, 80]; // Corresponding entries",
+                  "",
+                  "    let mut map = TestMap {",
+                  "        indices,",
+                  "        entries,",
+                  "    };",
+                  "",
+                  "    // Start and end such that erased + shifted == half_capacity",
+                  "    let start = 0;",
+                  "    let end = 4;",
+                  "",
+                  "    // Before erase_indices",
+                  "    assert_eq!(map.indices.len(), 8);",
+                  "",
+                  "    // Call the function",
+                  "    map.erase_indices(start, end);",
+                  "",
+                  "    // After erase_indices",
+                  "    assert_eq!(map.indices.len(), 4);",
+                  "    assert_eq!(map.indices, vec![0, 4, 5, 6, 7]); // Indices should be adjusted",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0594]: cannot assign to `*i`, which is behind a `&` reference\n   --> src/map/core.rs:775:21\n    |\n773 |             self.indices.retain(move |i| {\n    |                                       - consider changing this binding's type to be: `&mut usize`\n774 |                 if *i >= end {\n775 |                     *i -= offset;\n    |                     ^^^^^^^^^^^^ `i` is a `&` reference, so the data it refers to cannot be written\n\nwarning: variable does not need to be mutable\n   --> src/map/core.rs:790:9\n    |\n790 |     let mut indices = vec![0, 1, 2, 3, 4, 5, 6, 7]; // Initial indices\n    |         ----^^^^^^^\n    |         |\n    |         help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0594`.\nwarning: `indexmap` (lib test) generated 9 warnings\nerror: could not compile `indexmap` (lib test) due to 1 previous error; 9 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

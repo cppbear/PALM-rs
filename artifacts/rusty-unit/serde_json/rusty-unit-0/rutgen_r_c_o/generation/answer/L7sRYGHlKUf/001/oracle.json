@@ -1,0 +1,1125 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "// Assume MyHexReader is an implementation of Read that can handle the test data",
+      "struct MyHexReader<'a> {",
+      "    data: &'a [u8],",
+      "    position: usize,",
+      "}",
+      "",
+      "impl<'a> MyHexReader<'a> {",
+      "    fn new(data: &'a [u8]) -> Self {",
+      "        MyHexReader { data, position: 0 }",
+      "    }",
+      "}",
+      "",
+      "impl<'de> Read<'de> for MyHexReader<'de> {",
+      "    const should_early_return_if_failed: bool = false;",
+      "",
+      "    fn next(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.data.len() {",
+      "            let byte = self.data[self.position];",
+      "            self.position += 1;",
+      "            Ok(Some(byte))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn peek(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.data.len() {",
+      "            Ok(Some(self.data[self.position]))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn discard(&mut self) {",
+      "        self.position += 1; // Just a simple discard",
+      "    }",
+      "",
+      "    fn position(&self) -> Position {",
+      "        Position::new(self.position)",
+      "    }",
+      "",
+      "    fn peek_position(&self) -> Position {",
+      "        Position::new(self.position)",
+      "    }",
+      "",
+      "    fn byte_offset(&self) -> usize {",
+      "        self.position",
+      "    }",
+      "",
+      "    fn parse_str<'s>(",
+      "        &'s mut self,",
+      "        _scratch: &'s mut Vec<u8>,",
+      "    ) -> Result<Reference<'de, 's, str>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn parse_str_raw<'s>(",
+      "        &'s mut self,",
+      "        _scratch: &'s mut Vec<u8>,",
+      "    ) -> Result<Reference<'de, 's, [u8]>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn ignore_str(&mut self) -> Result<()> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn decode_hex_escape(&mut self) -> Result<u16> {",
+      "        // This is just an example; actual decoding would be done here.",
+      "        let high = self.next()?.ok_or(Error::InvalidHex)?;",
+      "        let low = self.next()?.ok_or(Error::InvalidHex)?;",
+      "        // Logic to compute a `u16` from high and low.",
+      "        Ok((high << 4 | low) as u16)",
+      "    }",
+      "",
+      "    fn set_failed(&mut self, _failed: &mut bool) {",
+      "        // Handle failure state if required",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut input = [0x30, 0x31]; // Corresponds to \"01\"",
+          "    let mut reader = MyHexReader::new(&input);",
+          "    let _ = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let high = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    let low = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    assert_eq!((high << 4 | low) as u16, 1);"
+          ],
+          [
+            "    let high = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    let low = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    assert!(reader.position() == Position::new(2));"
+          ],
+          [
+            "    let high = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    let low = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    assert!(reader.byte_offset() == 2);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut input = [0x30, 0x31]; // Corresponds to \"01\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let high = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    let low = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    assert_eq!((high << 4 | low) as u16, 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x31]; // Corresponds to \"01\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let high = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    let low = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    assert!(reader.position() == Position::new(2));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x31]; // Corresponds to \"01\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let high = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    let low = reader.next()?.ok_or(Error::InvalidHex)?;",
+            "    assert!(reader.byte_offset() == 2);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut input = [0x39, 0x36]; // Corresponds to \"96\"",
+          "    let mut reader = MyHexReader::new(&input);",
+          "    let _ = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0x96);"
+          ],
+          [
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x39];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    assert!(result_invalid_length.is_err());"
+          ],
+          [
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x39];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    assert_eq!(result_invalid_length.err().unwrap().code(), ErrorCode::InvalidHex);"
+          ],
+          [
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x39];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_character = [0x39, 0x7A];",
+            "    let mut reader_invalid_char = MyHexReader::new(&input_invalid_character);",
+            "    let result_invalid_char = reader_invalid_char.decode_hex_escape();",
+            "    assert!(result_invalid_char.is_err());"
+          ],
+          [
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x39];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_character = [0x39, 0x7A];",
+            "    let mut reader_invalid_char = MyHexReader::new(&input_invalid_character);",
+            "    let result_invalid_char = reader_invalid_char.decode_hex_escape();",
+            "    assert_eq!(result_invalid_char.err().unwrap().code(), ErrorCode::InvalidHex);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut input = [0x39, 0x36]; // Corresponds to \"96\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x39, 0x36]; // Corresponds to \"96\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0x96);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x39, 0x36]; // Corresponds to \"96\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x39];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    assert!(result_invalid_length.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x39, 0x36]; // Corresponds to \"96\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x39];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    assert_eq!(result_invalid_length.err().unwrap().code(), ErrorCode::InvalidHex);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x39, 0x36]; // Corresponds to \"96\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x39];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_character = [0x39, 0x7A];",
+            "    let mut reader_invalid_char = MyHexReader::new(&input_invalid_character);",
+            "    let result_invalid_char = reader_invalid_char.decode_hex_escape();",
+            "    assert!(result_invalid_char.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x39, 0x36]; // Corresponds to \"96\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x39, 0x36];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x39];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_character = [0x39, 0x7A];",
+            "    let mut reader_invalid_char = MyHexReader::new(&input_invalid_character);",
+            "    let result_invalid_char = reader_invalid_char.decode_hex_escape();",
+            "    assert_eq!(result_invalid_char.err().unwrap().code(), ErrorCode::InvalidHex);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut input = [0x61, 0x62]; // Corresponds to \"ab\"",
+          "    let mut reader = MyHexReader::new(&input);",
+          "    let _ = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut input = [0x61, 0x62];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut input = [0x61, 0x62];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0x6162);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut input = [0x61, 0x62]; // Corresponds to \"ab\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x61, 0x62];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x61, 0x62]; // Corresponds to \"ab\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x61, 0x62];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0x6162);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut input = [0x66, 0x66]; // Corresponds to \"ff\"",
+          "    let mut reader = MyHexReader::new(&input);",
+          "    let _ = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut input = [0x66, 0x66];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result, Ok(0xFF));"
+          ],
+          [
+            "    let mut input = [0x66, 0x66];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x66];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid = reader_invalid.decode_hex_escape();",
+            "    assert!(result_invalid.is_err());"
+          ],
+          [
+            "    let mut input = [0x66, 0x66];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x66];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_hex = [0x66, 0x67];",
+            "    let mut reader_invalid_hex = MyHexReader::new(&input_invalid_hex);",
+            "    let result_invalid_hex = reader_invalid_hex.decode_hex_escape();",
+            "    assert!(result_invalid_hex.is_err());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut input = [0x66, 0x66]; // Corresponds to \"ff\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x66, 0x66];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result, Ok(0xFF));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x66, 0x66]; // Corresponds to \"ff\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x66, 0x66];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x66];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid = reader_invalid.decode_hex_escape();",
+            "    assert!(result_invalid.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x66, 0x66]; // Corresponds to \"ff\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x66, 0x66];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x66];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_hex = [0x66, 0x67];",
+            "    let mut reader_invalid_hex = MyHexReader::new(&input_invalid_hex);",
+            "    let result_invalid_hex = reader_invalid_hex.decode_hex_escape();",
+            "    assert!(result_invalid_hex.is_err());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+          "    let mut reader = MyHexReader::new(&input);",
+          "    let _ = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0x00);"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0x12);"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0xAB);"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0xFF, 0xFE];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0xFF, 0xFE];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0xFFFE);"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0xFF, 0xFE];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0xFF, 0xFE];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_err());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0x00);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0x12);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0xAB);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0xFF, 0xFE];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0xFF, 0xFE];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap(), 0xFFFE);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0xFF, 0xFE];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x30]; // Corresponds to \"00\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x32];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x41, 0x42];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0xFF, 0xFE];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [0x30];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input = [];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_err());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut input = [0x31, 0x39]; // Corresponds to \"19\"",
+          "    let mut reader = MyHexReader::new(&input);",
+          "    let _ = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut input = [0x31, 0x39];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result, Ok(25));"
+          ],
+          [
+            "    let mut input = [0x31, 0x39];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x31];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    assert_eq!(result_invalid_length, Err(Error::InvalidHex));"
+          ],
+          [
+            "    let mut input = [0x31, 0x39];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x31];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_character = [0x31, 0x3G];",
+            "    let mut reader_invalid_char = MyHexReader::new(&input_invalid_character);",
+            "    let result_invalid_char = reader_invalid_char.decode_hex_escape();",
+            "    assert_eq!(result_invalid_char, Err(Error::InvalidHex));"
+          ],
+          [
+            "    let mut input = [0x31, 0x39];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x31];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_character = [0x31, 0x3G];",
+            "    let mut reader_invalid_char = MyHexReader::new(&input_invalid_character);",
+            "    let result_invalid_char = reader_invalid_char.decode_hex_escape();",
+            "    let mut input_empty = [];",
+            "    let mut reader_empty = MyHexReader::new(&input_empty);",
+            "    let result_empty = reader_empty.decode_hex_escape();",
+            "    assert_eq!(result_empty, Err(Error::InvalidHex));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut input = [0x31, 0x39]; // Corresponds to \"19\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x39];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result, Ok(25));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x31, 0x39]; // Corresponds to \"19\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x39];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x31];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    assert_eq!(result_invalid_length, Err(Error::InvalidHex));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x31, 0x39]; // Corresponds to \"19\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x39];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x31];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_character = [0x31, 0x3G];",
+            "    let mut reader_invalid_char = MyHexReader::new(&input_invalid_character);",
+            "    let result_invalid_char = reader_invalid_char.decode_hex_escape();",
+            "    assert_eq!(result_invalid_char, Err(Error::InvalidHex));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x31, 0x39]; // Corresponds to \"19\"",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x31, 0x39];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_invalid_length = [0x31];",
+            "    let mut reader_invalid = MyHexReader::new(&input_invalid_length);",
+            "    let result_invalid_length = reader_invalid.decode_hex_escape();",
+            "    let mut input_invalid_character = [0x31, 0x3G];",
+            "    let mut reader_invalid_char = MyHexReader::new(&input_invalid_character);",
+            "    let result_invalid_char = reader_invalid_char.decode_hex_escape();",
+            "    let mut input_empty = [];",
+            "    let mut reader_empty = MyHexReader::new(&input_empty);",
+            "    let result_empty = reader_empty.decode_hex_escape();",
+            "    assert_eq!(result_empty, Err(Error::InvalidHex));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut input = [0x30, 0x7A]; // 'z' is invalid",
+          "    let mut reader = MyHexReader::new(&input);",
+          "    let _ = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut input = [0x30, 0x7A];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_err() && matches!(result.err(), Some(Error::InvalidHex)));"
+          ],
+          [
+            "    let mut input = [0x30, 0x7A];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_valid = [0x30, 0x31]; // '0' and '1' are valid",
+            "    let mut reader_valid = MyHexReader::new(&input_valid);",
+            "    let result_valid = reader_valid.decode_hex_escape();",
+            "    assert!(result_valid.is_ok() && result_valid.unwrap() == 49);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut input = [0x30, 0x7A]; // 'z' is invalid",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x7A];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_err() && matches!(result.err(), Some(Error::InvalidHex)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x7A]; // 'z' is invalid",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x7A];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    let mut input_valid = [0x30, 0x31]; // '0' and '1' are valid",
+            "    let mut reader_valid = MyHexReader::new(&input_valid);",
+            "    let result_valid = reader_valid.decode_hex_escape();",
+            "    assert!(result_valid.is_ok() && result_valid.unwrap() == 49);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut input = [0x30, 0x80]; // out of valid hex range",
+          "    let mut reader = MyHexReader::new(&input);",
+          "    let _ = reader.decode_hex_escape();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut input = [0x30, 0x80];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut input = [0x30, 0x80];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap_err().code(), ErrorCode::InvalidHex);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut input = [0x30, 0x80]; // out of valid hex range",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x80];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut input = [0x30, 0x80]; // out of valid hex range",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let _ = reader.decode_hex_escape();",
+            "    let mut input = [0x30, 0x80];",
+            "    let mut reader = MyHexReader::new(&input);",
+            "    let result = reader.decode_hex_escape();",
+            "    assert_eq!(result.unwrap_err().code(), ErrorCode::InvalidHex);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

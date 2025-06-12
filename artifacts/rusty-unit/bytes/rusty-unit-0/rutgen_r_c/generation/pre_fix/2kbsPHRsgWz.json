@@ -1,0 +1,247 @@
+{
+  "name": "bytes::bytes::promotable_is_unique",
+  "name_with_impl": "bytes::bytes::promotable_is_unique",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1338:1:1348:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is true\n",
+        "// expected return value/type: ref_cnt == 1\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use alloc::alloc::alloc;",
+            "use alloc::alloc::Layout;",
+            "use core::ptr::null_mut;",
+            "use alloc::alloc::dealloc;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use alloc::alloc::{alloc, dealloc, Layout};",
+                  "    ",
+                  "    // Create a layout for a Shared instance",
+                  "    let layout = Layout::new::<Shared>();",
+                  "    ",
+                  "    // Allocate memory for a Shared instance",
+                  "    unsafe {",
+                  "        let ptr = alloc(layout) as *mut Shared;",
+                  "        if ptr.is_null() {",
+                  "            panic!(\"Memory allocation failed\");",
+                  "        }",
+                  "",
+                  "        // Initialize the Shared instance",
+                  "        (*ptr).buf = null_mut();",
+                  "        (*ptr).cap = 0;",
+                  "        (*ptr).ref_cnt = AtomicUsize::new(1); // Set ref_cnt to 1",
+                  "",
+                  "        // Create an AtomicPtr pointing to the Shared instance",
+                  "        let atomic_ptr = AtomicPtr::new(ptr as *mut ());",
+                  "",
+                  "        // Call the function under test",
+                  "        let result = promotable_is_unique(&atomic_ptr);",
+                  "",
+                  "        // Assert the expected result",
+                  "        assert!(result);",
+                  "",
+                  "        // Clean up",
+                  "        dealloc(ptr as *mut u8, layout);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use alloc::alloc::{alloc, dealloc, Layout};",
+                  "    ",
+                  "    let layout = Layout::new::<Shared>();",
+                  "",
+                  "    unsafe {",
+                  "        let ptr = alloc(layout) as *mut Shared;",
+                  "        if ptr.is_null() {",
+                  "            panic!(\"Memory allocation failed\");",
+                  "        }",
+                  "",
+                  "        (*ptr).buf = null_mut();",
+                  "        (*ptr).cap = 0;",
+                  "        (*ptr).ref_cnt = AtomicUsize::new(2); // Set ref_cnt to 2",
+                  "",
+                  "        let atomic_ptr = AtomicPtr::new(ptr as *mut ());",
+                  "",
+                  "        let result = promotable_is_unique(&atomic_ptr);",
+                  "",
+                  "        assert!(!result); // should return false",
+                  "",
+                  "        dealloc(ptr as *mut u8, layout);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use alloc::alloc::{alloc, dealloc, Layout};",
+                  "    ",
+                  "    let layout = Layout::new::<Shared>();",
+                  "",
+                  "    unsafe {",
+                  "        let ptr = alloc(layout) as *mut Shared;",
+                  "        if ptr.is_null() {",
+                  "            panic!(\"Memory allocation failed\");",
+                  "        }",
+                  "",
+                  "        (*ptr).buf = null_mut();",
+                  "        (*ptr).cap = 0;",
+                  "",
+                  "        // Pack it as a kind that is not KIND_ARC",
+                  "        let atomic_ptr = AtomicPtr::new(ptr as *mut () | KIND_VEC);",
+                  "",
+                  "        let result = promotable_is_unique(&atomic_ptr);",
+                  "",
+                  "        assert!(result); // should return true, because kind is KIND_VEC",
+                  "",
+                  "        dealloc(ptr as *mut u8, layout);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "    Blocking waiting for file lock on package cache\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0369]: no implementation for `*mut () | usize`\n    --> src/bytes.rs:1703:56\n     |\n1703 |         let atomic_ptr = AtomicPtr::new(ptr as *mut () | KIND_VEC);\n     |                                         -------------- ^ -------- usize\n     |                                         |\n     |                                         *mut ()\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::alloc::Layout;",
+            "use core::ptr::null_mut;",
+            "use core::ptr::NonNull;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    ",
+                  "    let data: AtomicPtr<()> = AtomicPtr::new(null_mut());",
+                  "",
+                  "    // When the kind is not KIND_ARC, the function should return true.",
+                  "    assert_eq!(unsafe { promotable_is_unique(&data) }, true);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::alloc::Layout;",
+                  "    use core::ptr::NonNull;",
+                  "",
+                  "    // Set up a shared buffer with a kind that is not KIND_ARC",
+                  "    let layout = Layout::from_size_align(1, 1).unwrap();",
+                  "    let ptr = unsafe { alloc::alloc(layout) };",
+                  "    let non_null_ptr = NonNull::new(ptr).unwrap() as *mut ();",
+                  "",
+                  "    let data: AtomicPtr<()> = AtomicPtr::new(non_null_ptr);",
+                  "",
+                  "    // The function is expected to return true, since KIND_ARC is false.",
+                  "    assert_eq!(unsafe { promotable_is_unique(&data) }, true);",
+                  "",
+                  "    // Clean up allocated memory",
+                  "    unsafe { alloc::dealloc(ptr, layout) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0423]: expected function, found module `alloc::alloc`\n    --> src/bytes.rs:1693:24\n     |\n1693 |     let ptr = unsafe { alloc::alloc(layout) };\n     |                        ^^^^^^^^^^^^ not a function\n     |\nhelp: consider importing one of these functions instead\n     |\n1683 +    use std::alloc::alloc;\n     |\n1683 +    use alloc::alloc::alloc;\n     |\nhelp: if you import `alloc`, refer to it directly\n     |\n1693 -     let ptr = unsafe { alloc::alloc(layout) };\n1693 +     let ptr = unsafe { alloc(layout) };\n     |\n\nerror[E0425]: cannot find function `dealloc` in crate `alloc`\n    --> src/bytes.rs:1702:21\n     |\n1702 |     unsafe { alloc::dealloc(ptr, layout) };\n     |                     ^^^^^^^ not found in `alloc`\n     |\nhelp: consider importing one of these functions\n     |\n1683 +    use crate::bytes::dealloc;\n     |\n1683 +    use std::alloc::dealloc;\n     |\n1683 +    use alloc::alloc::dealloc;\n     |\nhelp: if you import `dealloc`, refer to it directly\n     |\n1702 -     unsafe { alloc::dealloc(ptr, layout) };\n1702 +     unsafe { dealloc(ptr, layout) };\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nSome errors have detailed explanations: E0423, E0425.\nFor more information about an error, try `rustc --explain E0423`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

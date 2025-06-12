@@ -1,0 +1,959 @@
+{
+  "name": "serde_json::de::<&mut de::Deserializer<R> as serde::Deserializer<'de>>::deserialize_bytes",
+  "name_with_impl": "serde_json::de::{impl#7}::deserialize_bytes",
+  "mod_info": {
+    "name": "de",
+    "loc": "src/lib.rs:418:1:418:12"
+  },
+  "visible": true,
+  "loc": "src/de.rs:1631:5:1659:6",
+  "doc": "/// Parses a JSON string as bytes. Note that this function does not check\n/// whether the bytes represent a valid UTF-8 string.\n///\n/// The relevant part of the JSON specification is Section 8.2 of [RFC\n/// 7159]:\n///\n/// > When all the strings represented in a JSON text are composed entirely\n/// > of Unicode characters (however escaped), then that JSON text is\n/// > interoperable in the sense that all software implementations that\n/// > parse it will agree on the contents of names and of string values in\n/// > objects and arrays.\n/// >\n/// > However, the ABNF in this specification allows member names and string\n/// > values to contain bit sequences that cannot encode Unicode characters;\n/// > for example, \"\\uDEAD\" (a single unpaired UTF-16 surrogate). Instances\n/// > of this have been observed, for example, when a library truncates a\n/// > UTF-16 string without checking whether the truncation split a\n/// > surrogate pair.  The behavior of software that receives JSON texts\n/// > containing such values is unpredictable; for example, implementations\n/// > might return different values for the length of a string value or even\n/// > suffer fatal runtime exceptions.\n///\n/// [RFC 7159]: https://tools.ietf.org/html/rfc7159\n///\n/// The behavior of serde_json is specified to fail on non-UTF-8 strings\n/// when deserializing into Rust UTF-8 string types such as String, and\n/// succeed with the bytes representing the [WTF-8] encoding of code points\n/// when deserializing using this method.\n///\n/// [WTF-8]: https://simonsapin.github.io/wtf-8\n///\n/// Escape sequences are processed as usual, and for `\\uXXXX` escapes it is\n/// still checked if the hex number represents a valid Unicode code point.\n///\n/// # Examples\n///\n/// You can use this to parse JSON strings containing invalid UTF-8 bytes,\n/// or unpaired surrogates.\n///\n/// ```\n/// use serde_bytes::ByteBuf;\n///\n/// fn look_at_bytes() -> Result<(), serde_json::Error> {\n///     let json_data = b\"\\\"some bytes: \\xe5\\x00\\xe5\\\"\";\n///     let bytes: ByteBuf = serde_json::from_slice(json_data)?;\n///\n///     assert_eq!(b'\\xe5', bytes[12]);\n///     assert_eq!(b'\\0', bytes[13]);\n///     assert_eq!(b'\\xe5', bytes[14]);\n///\n///     Ok(())\n/// }\n/// #\n/// # look_at_bytes().unwrap();\n/// ```\n///\n/// Backslash escape sequences like `\\n` are still interpreted and required\n/// to be valid. `\\u` escape sequences are required to represent a valid\n/// Unicode code point or lone surrogate.\n///\n/// ```\n/// use serde_bytes::ByteBuf;\n///\n/// fn look_at_bytes() -> Result<(), serde_json::Error> {\n///     let json_data = b\"\\\"lone surrogate: \\\\uD801\\\"\";\n///     let bytes: ByteBuf = serde_json::from_slice(json_data)?;\n///     let expected = b\"lone surrogate: \\xED\\xA0\\x81\";\n///     assert_eq!(expected, bytes.as_slice());\n///     Ok(())\n/// }\n/// #\n/// # look_at_bytes();\n/// ```\n",
+  "code": [
+    "fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value>",
+    "where",
+    "    V: de::Visitor<'de>,",
+    "{",
+    "    let peek = match tri!(self.parse_whitespace()) {",
+    "        Some(b) => b,",
+    "        None => {",
+    "            return Err(self.peek_error(ErrorCode::EofWhileParsingValue));",
+    "        }",
+    "    };",
+    "",
+    "    let value = match peek {",
+    "        b'\"' => {",
+    "            self.eat_char();",
+    "            self.scratch.clear();",
+    "            match tri!(self.read.parse_str_raw(&mut self.scratch)) {",
+    "                Reference::Borrowed(b) => visitor.visit_borrowed_bytes(b),",
+    "                Reference::Copied(b) => visitor.visit_bytes(b),",
+    "            }",
+    "        }",
+    "        b'[' => self.deserialize_seq(visitor),",
+    "        _ => Err(self.peek_invalid_type(&visitor)),",
+    "    };",
+    "",
+    "    match value {",
+    "        Ok(value) => Ok(value),",
+    "        Err(err) => Err(self.fix_position(err)),",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 11,
+    "contra": 0,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        4,
+        6,
+        52,
+        53,
+        54,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1643,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'['",
+          "norm": null,
+          "value": "true",
+          "line": 1651,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches _",
+          "norm": null,
+          "value": "true",
+          "line": 1652,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Err(self.fix_position(err))",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        14,
+        36,
+        37,
+        38,
+        41,
+        45,
+        46,
+        47,
+        48,
+        49,
+        56
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1643,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'['",
+          "norm": null,
+          "value": "true",
+          "line": 1651,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches _",
+          "norm": null,
+          "value": "true",
+          "line": 1652,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Ok(value)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Ok(value)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(value)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        14,
+        36,
+        37,
+        38,
+        40,
+        42,
+        43,
+        44,
+        48,
+        49,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'['",
+          "norm": null,
+          "value": "true",
+          "line": 1651,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'['",
+          "norm": null,
+          "value": "true",
+          "line": 1642,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Err(self.fix_position(err))",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        16,
+        34,
+        35,
+        38,
+        41,
+        45,
+        46,
+        47,
+        48,
+        49,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'['",
+          "norm": null,
+          "value": "true",
+          "line": 1651,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'['",
+          "norm": null,
+          "value": "true",
+          "line": 1642,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Ok(value)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Ok(value)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(value)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        16,
+        34,
+        35,
+        38,
+        40,
+        42,
+        43,
+        44,
+        48,
+        49,
+        56
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1643,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1642,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        23,
+        25,
+        50,
+        51,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1643,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1642,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Err(self.fix_position(err))",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        22,
+        24,
+        28,
+        31,
+        32,
+        33,
+        38,
+        41,
+        45,
+        46,
+        47,
+        48,
+        49,
+        56
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1643,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1642,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Ok(value)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Ok(value)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(value)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        22,
+        24,
+        28,
+        31,
+        32,
+        33,
+        38,
+        40,
+        42,
+        43,
+        44,
+        48,
+        49,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1643,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1642,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Reference::Borrowed(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Err(self.fix_position(err))",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        22,
+        24,
+        27,
+        29,
+        30,
+        32,
+        33,
+        38,
+        41,
+        45,
+        46,
+        47,
+        48,
+        49,
+        56
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1643,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek matches b'\"'",
+          "norm": null,
+          "value": "true",
+          "line": 1642,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.read.parse_str_raw(&mut self.scratch) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1646,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Reference::Borrowed(b)",
+          "norm": null,
+          "value": "true",
+          "line": 408,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Ok(value)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "value matches Ok(value)",
+          "norm": null,
+          "value": "true",
+          "line": 1655,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(value)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        8,
+        10,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        22,
+        24,
+        27,
+        29,
+        30,
+        32,
+        33,
+        38,
+        40,
+        42,
+        43,
+        44,
+        48,
+        49,
+        56
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.parse_whitespace() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 1635,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Err(self.peek_error(ErrorCode::EofWhileParsingValue))",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        9,
+        11,
+        12,
+        53,
+        54,
+        55,
+        56
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

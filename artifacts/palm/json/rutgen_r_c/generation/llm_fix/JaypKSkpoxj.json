@@ -1,0 +1,153 @@
+{
+  "name": "serde_json::value::de::<value::de::MapKeyDeserializer<'de> as serde::Deserializer<'de>>::deserialize_enum",
+  "name_with_impl": "serde_json::value::de::{impl#20}::deserialize_enum",
+  "mod_info": {
+    "name": "value::de",
+    "loc": "src/value/mod.rs:927:1:927:8"
+  },
+  "visible": true,
+  "loc": "src/value/de.rs:1302:5:1314:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestVisitor;",
+                  "",
+                  "       impl<'de> Visitor<'de> for TestVisitor {",
+                  "           type Value = String; // Changed from &'de str to String",
+                  "       ",
+                  "           fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+                  "               formatter.write_str(\"a valid enum variant\")",
+                  "           }",
+                  "       ",
+                  "           fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>",
+                  "           where",
+                  "               E: de::Error,",
+                  "           {",
+                  "               Ok(value.to_string()) // Convert &str to String",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let deserializer = MapKeyDeserializer {",
+                  "        key: Cow::Borrowed(\"variant1\"),",
+                  "    };",
+                  "   let result: Result<String, Error> = deserializer.deserialize_enum(\"MyEnum\", &[\"variant1\", \"variant2\"], TestVisitor); // Changed &str to String",
+                  "   assert_eq!(result.unwrap().as_str(), \"variant1\"); // Convert String to &str for comparison",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestVisitor;",
+                  "",
+                  "    impl<'de> Visitor<'de> for TestVisitor {",
+                  "        type Value = &'de str;",
+                  "",
+                  "        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {",
+                  "            formatter.write_str(\"a valid enum variant\")",
+                  "        }",
+                  "",
+                  "        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>",
+                  "        where",
+                  "            E: de::Error,",
+                  "        {",
+                  "            Err(de::Error::custom(\"invalid visitor\"))",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let deserializer = MapKeyDeserializer {",
+                  "        key: Cow::Borrowed(\"variant3\"),",
+                  "    };",
+                  "    let result: Result<&str, Error> = deserializer.deserialize_enum(\"MyEnum\", &[\"variant1\", \"variant2\"], TestVisitor);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Expected enum variant not found\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct PanicVisitor;",
+                  "",
+                  "   impl<'de> Visitor<'de> for PanicVisitor {  ",
+                  "       type Value = String;  ",
+                  " ",
+                  "       fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {  ",
+                  "           formatter.write_str(\"a valid enum variant\")  ",
+                  "       }  ",
+                  " ",
+                  "       fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>  ",
+                  "       where  ",
+                  "           E: de::Error,  ",
+                  "       {  ",
+                  "           if value == \"invalid\" {  ",
+                  "               panic!(\"Expected enum variant not found\");  ",
+                  "           }  ",
+                  "           Ok(value.to_string())  ",
+                  "       }  ",
+                  "   }  ",
+                  " ",
+                  "   let deserializer = MapKeyDeserializer {  ",
+                  "       key: Cow::Borrowed(\"invalid\"),  ",
+                  "   };  ",
+                  "   let _result: Result<String, Error> = deserializer.deserialize_enum(\"MyEnum\", &[\"variant1\", \"variant2\"], PanicVisitor);  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

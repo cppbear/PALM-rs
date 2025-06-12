@@ -1,0 +1,696 @@
+{
+  "name": "base64::engine::general_purpose::decode::complete_quads_len",
+  "name_with_impl": "base64::engine::general_purpose::decode::complete_quads_len",
+  "mod_info": {
+    "name": "engine::general_purpose::decode",
+    "loc": "src/engine/general_purpose/mod.rs:12:1:12:23"
+  },
+  "visible": true,
+  "loc": "src/engine/general_purpose/decode.rs:131:1:163:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: input.len() % 4 == input_len_rem is true\n",
+        "// constraint: input_len_rem == 1 is false\n",
+        "// constraint: last_byte != PAD_BYTE is true\n",
+        "// constraint: decode_table[usize::from(last_byte)] == INVALID_VALUE is true\n",
+        "// expected return value/type: Err(DecodeError::InvalidByte(input.len() - 1, last_byte).into())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = &[0x01, 0x02, 0x03, 0x04, 0x05]; // Length is 5 (input.len() % 4 == 1)",
+                  "    let input_len_rem: usize = 1;",
+                  "    let output_len: usize = 3; // Sufficient output length for complete quads",
+                  "    let mut decode_table: [u8; 256] = [0; 256];",
+                  "    decode_table[0x05] = INVALID_VALUE; // Set an invalid value for the last_byte",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                  "    assert_eq!(result, Err(DecodeSliceError::DecodeError(DecodeError::InvalidByte(4, 0x05))));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = &[0x01, 0x02, 0x03, 0x04, 0x05]; // Length is 5 (input.len() % 4 == 1)",
+                  "    let input_len_rem: usize = 1;",
+                  "    let output_len: usize = 2; // Insufficient output length for complete quads",
+                  "    let mut decode_table: [u8; 256] = [0; 256];",
+                  "    decode_table[0x04] = INVALID_VALUE; // Last byte is valid since it is not 0x05",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                  "    assert_eq!(result, Err(DecodeSliceError::OutputSliceTooSmall));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = &[0x01, 0x02, 0x03, 0x04]; // Length is 4 (input.len() % 4 == 0)",
+                  "    let input_len_rem: usize = 0;",
+                  "    let output_len: usize = 3; // Sufficient output length",
+                  "    let decode_table: [u8; 256] = [0; 256]; // All bytes valid",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                  "    assert_eq!(result, Ok(4)); // Valid case should return Ok(4)",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "// constraint: input.len() % 4 == input_len_rem is true\n",
+        "// constraint: input_len_rem == 1 is false\n",
+        "// constraint: last_byte != PAD_BYTE is true\n",
+        "// constraint: decode_table[usize::from(last_byte)] == INVALID_VALUE is false\n",
+        "// constraint: input.is_empty() is false\n",
+        "// constraint: (1..=4).contains(&(input.len() - input_complete_nonterminal_quads_len)) is true\n",
+        "// constraint: output_len < input_complete_nonterminal_quads_len / 4 * 3 is false, with bound output_len == input_complete_nonterminal_quads_len / 4 * 3\n",
+        "// expected return value/type: Ok(input_complete_nonterminal_quads_len)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: Vec<u8> = b\"YW55IGNhbm5vdCB0ZXN0IGlzIGdyZWF0\";",
+                  "    let input_len_rem = input.len() % 4; // This should be 0 for this input",
+                  "    let output_len = (input.len() / 4 * 3) as usize; // We can compute the expected output length",
+                  "  ",
+                  "    let decode_table: [u8; 256] = {",
+                  "        let mut table = [INVALID_VALUE; 256];",
+                  "        table[usize::from(b'A')] = 0;",
+                  "        table[usize::from(b'B')] = 1;",
+                  "        table[usize::from(b'C')] = 2;",
+                  "        table[usize::from(b'D')] = 3;",
+                  "        table[usize::from(b'E')] = 4;",
+                  "        table[usize::from(b'F')] = 5;",
+                  "        table[usize::from(b'G')] = 6;",
+                  "        table[usize::from(b'H')] = 7;",
+                  "        table[usize::from(b'I')] = 8;",
+                  "        table[usize::from(b'J')] = 9;",
+                  "        table[usize::from(b'K')] = 10;",
+                  "        table[usize::from(b'L')] = 11;",
+                  "        table[usize::from(b'M')] = 12;",
+                  "        table[usize::from(b'N')] = 13;",
+                  "        table[usize::from(b'O')] = 14;",
+                  "        table[usize::from(b'P')] = 15;",
+                  "        table[usize::from(b'Q')] = 16;",
+                  "        table[usize::from(b'R')] = 17;",
+                  "        table[usize::from(b'S')] = 18;",
+                  "        table[usize::from(b'T')] = 19;",
+                  "        table[usize::from(b'U')] = 20;",
+                  "        table[usize::from(b'V')] = 21;",
+                  "        table[usize::from(b'W')] = 22;",
+                  "        table[usize::from(b'X')] = 23;",
+                  "        table[usize::from(b'Y')] = 24;",
+                  "        table[usize::from(b'Z')] = 25;",
+                  "        table[usize::from(b'a')] = 26;",
+                  "        table[usize::from(b'b')] = 27;",
+                  "        table[usize::from(b'c')] = 28;",
+                  "        table[usize::from(b'd')] = 29;",
+                  "        table[usize::from(b'e')] = 30;",
+                  "        table[usize::from(b'f')] = 31;",
+                  "        table[usize::from(b'g')] = 32;",
+                  "        table[usize::from(b'h')] = 33;",
+                  "        table[usize::from(b'i')] = 34;",
+                  "        table[usize::from(b'j')] = 35;",
+                  "        table[usize::from(b'k')] = 36;",
+                  "        table[usize::from(b'l')] = 37;",
+                  "        table[usize::from(b'm')] = 38;",
+                  "        table[usize::from(b'n')] = 39;",
+                  "        table[usize::from(b'o')] = 40;",
+                  "        table[usize::from(b'p')] = 41;",
+                  "        table[usize::from(b'q')] = 42;",
+                  "        table[usize::from(b'r')] = 43;",
+                  "        table[usize::from(b's')] = 44;",
+                  "        table[usize::from(b't')] = 45;",
+                  "        table[usize::from(b'u')] = 46;",
+                  "        table[usize::from(b'v')] = 47;",
+                  "        table[usize::from(b'w')] = 48;",
+                  "        table[usize::from(b'x')] = 49;",
+                  "        table[usize::from(b'y')] = 50;",
+                  "        table[usize::from(b'z')] = 51;",
+                  "        table[usize::from(b'0')] = 52;",
+                  "        table[usize::from(b'1')] = 53;",
+                  "        table[usize::from(b'2')] = 54;",
+                  "        table[usize::from(b'3')] = 55;",
+                  "        table[usize::from(b'4')] = 56;",
+                  "        table[usize::from(b'5')] = 57;",
+                  "        table[usize::from(b'6')] = 58;",
+                  "        table[usize::from(b'7')] = 59;",
+                  "        table[usize::from(b'8')] = 60;",
+                  "        table[usize::from(b'9')] = 61;",
+                  "        table[usize::from(b'+')] = 62;",
+                  "        table[usize::from(b'/')] = 63;",
+                  "        table",
+                  "    };",
+                  "    ",
+                  "    let result = complete_quads_len(&input, input_len_rem, output_len, &decode_table);",
+                  "    assert_eq!(result, Ok(input.len() - 1)); // As input_complete_nonterminal_quads_len must resolve to input.len() - 1",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/engine/general_purpose/decode.rs:368:26\n    |\n368 |     let input: Vec<u8> = b\"YW55IGNhbm5vdCB0ZXN0IGlzIGdyZWF0\";\n    |                -------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^- help: try using a conversion method: `.to_vec()`\n    |                |         |\n    |                |         expected `Vec<u8>`, found `&[u8; 32]`\n    |                expected due to this\n    |\n    = note: expected struct `std::vec::Vec<u8>`\n            found reference `&'static [u8; 32]`\n\nerror: trivial numeric cast: `usize` as `usize`\n   --> src/engine/general_purpose/decode.rs:370:22\n    |\n370 |     let output_len = (input.len() / 4 * 3) as usize; // We can compute the expected output length\n    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |\n    = help: cast can be replaced by coercion; this might require a temporary variable\nnote: the lint level is defined here\n   --> src/lib.rs:255:5\n    |\n255 |     trivial_numeric_casts,\n    |     ^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `base64` (lib test) generated 24 warnings\nerror: could not compile `base64` (lib test) due to 2 previous errors; 24 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let input: Vec<u8> = b\"YW55IGNhbm5vdCB0ZXN0IGdyZWF0==\"; // Invalid last string",
+                  "   let input_len_rem = input.len() % 4; // This should be 0 for this input",
+                  "   let output_len = input.len() / 4 * 3; // We can compute the expected output length",
+                  "",
+                  "    let decode_table: [u8; 256] = {",
+                  "        let mut table = [INVALID_VALUE; 256];",
+                  "        table[usize::from(b'A')] = 0;",
+                  "        table",
+                  "    };",
+                  "",
+                  "    let _ = complete_quads_len(&input, input_len_rem, output_len, &decode_table); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/engine/general_purpose/decode.rs:369:25\n    |\n369 |    let input: Vec<u8> = b\"YW55IGNhbm5vdCB0ZXN0IGdyZWF0==\"; // Invalid last string\n    |               -------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^- help: try using a conversion method: `.to_vec()`\n    |               |         |\n    |               |         expected `Vec<u8>`, found `&[u8; 30]`\n    |               expected due to this\n    |\n    = note: expected struct `std::vec::Vec<u8>`\n            found reference `&'static [u8; 30]`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `base64` (lib test) generated 24 warnings\nerror: could not compile `base64` (lib test) due to 1 previous error; 24 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: Vec<u8> = b\"YW55IGNhbm5vdCB0ZXN0IGdyZWF0\"; // Valid input",
+                  "    let input_len_rem = input.len() % 4; // This should be 0 for this input",
+                  "   let output_len = input.len() / 4 * 2; // Intentionally set to a length too small  ",
+                  "",
+                  "    let decode_table: [u8; 256] = {",
+                  "        let mut table = [INVALID_VALUE; 256];",
+                  "        table[usize::from(b'A')] = 0;",
+                  "        table[usize::from(b'B')] = 1;",
+                  "        table[usize::from(b'C')] = 2;",
+                  "        // Further entries skipped for brevity...",
+                  "        table",
+                  "    };",
+                  "",
+                  "    let result = complete_quads_len(&input, input_len_rem, output_len, &decode_table);",
+                  "    assert_eq!(result, Err(DecodeSliceError::OutputSliceTooSmall));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/engine/general_purpose/decode.rs:368:26\n    |\n368 |     let input: Vec<u8> = b\"YW55IGNhbm5vdCB0ZXN0IGdyZWF0\"; // Valid input\n    |                -------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^- help: try using a conversion method: `.to_vec()`\n    |                |         |\n    |                |         expected `Vec<u8>`, found `&[u8; 28]`\n    |                expected due to this\n    |\n    = note: expected struct `std::vec::Vec<u8>`\n            found reference `&'static [u8; 28]`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `base64` (lib test) generated 24 warnings\nerror: could not compile `base64` (lib test) due to 1 previous error; 24 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 11,
+      "prompt_conds": [
+        "// constraint: input.len() % 4 == input_len_rem is true\n",
+        "// constraint: input_len_rem == 1 is false\n",
+        "// constraint: last_byte != PAD_BYTE is false\n",
+        "// constraint: input.is_empty() is false\n",
+        "// constraint: (1..=4).contains(&(input.len() - input_complete_nonterminal_quads_len)) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let decode_table: [u8; 256] = [INVALID_VALUE; 256]; // Set all values to INVALID_VALUE",
+                  "    let input = b\"QUJD\"; // valid base64 input",
+                  "    let input_len_rem = 0; // 4 % 4",
+                  "    let output_len = 3; // suitable output size",
+                  "",
+                  "    assert_eq!(complete_quads_len(input, input_len_rem, output_len, &decode_table), Ok(4));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let decode_table: [u8; 256] = {",
+                  "        let mut table = [INVALID_VALUE; 256];",
+                  "        table[b'Z' as usize] = 25; // valid for 'Z'",
+                  "        table[b'Y' as usize] = 24; // valid for 'Y'",
+                  "        table[b'!' as usize] = INVALID_VALUE; // invalid character",
+                  "        table",
+                  "    };",
+                  "    let input = b\"QUJ!\"; // includes an invalid character",
+                  "    let input_len_rem = 1; // (4 % 4) == 1",
+                  "    let output_len = 2; // any output length greater than 0 should be fine",
+                  "",
+                  "    assert_eq!(complete_quads_len(input, input_len_rem, output_len, &decode_table), Err(DecodeSliceError::DecodeError(DecodeError::InvalidByte(3, b'!'))));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let decode_table: [u8; 256] = [INVALID_VALUE; 256]; // Set all values to INVALID_VALUE",
+                  "    let input = b\"QUJD\"; // valid base64 input",
+                  "    let input_len_rem = 0; // 4 % 4",
+                  "    let output_len = 2; // too small for output",
+                  "",
+                  "    assert_eq!(complete_quads_len(input, input_len_rem, output_len, &decode_table), Err(DecodeSliceError::OutputSliceTooSmall));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let decode_table: [u8; 256] = [INVALID_VALUE; 256]; // All invalid values",
+                  "    let input = b\"QUJ\"; // input length is 3, so last byte 'J'",
+                  "    let input_len_rem = 1; // (3 % 4) == 1",
+                  "    let output_len = 2; // valid output length",
+                  "",
+                  "    // This should not panic, but will invoke logic for invalid last byte",
+                  "    complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let decode_table: [u8; 256] = {",
+                  "        let mut table = [INVALID_VALUE; 256];",
+                  "        table[b'A' as usize] = 0; // valid for 'A'",
+                  "        table[b'B' as usize] = 1; // valid for 'B'",
+                  "        table[b'C' as usize] = 2; // valid for 'C'",
+                  "        table",
+                  "    };",
+                  "    let input = b\"A==\"; // 3 length; 3 % 4 == 3",
+                  "    let input_len_rem = 3; // (3 % 4) == 3",
+                  "    let output_len = 3; // sufficient output length ",
+                  "",
+                  "    assert_eq!(complete_quads_len(input, input_len_rem, output_len, &decode_table), Ok(3));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 12,
+      "prompt_conds": [
+        "// constraint: input.len() % 4 == input_len_rem is true\n",
+        "// constraint: input_len_rem == 1 is true\n",
+        "// constraint: input.is_empty() is true\n",
+        "// constraint: output_len < input_complete_nonterminal_quads_len / 4 * 3 is true\n",
+        "// expected return value/type: Err(DecodeSliceError::OutputSliceTooSmall)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    const DECODE_TABLE: [u8; 256] = [INVALID_VALUE; 256];",
+                  "    let input: &[u8] = b\"YWF\"; // Length is 3, hence `len() % 4 == 1`",
+                  "    let input_len_rem = 1; // input.len() % 4 == 1",
+                  "    let output_len = 0; // output_len < input_complete_nonterminal_quads_len / 4 * 3 should trigger the error",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &DECODE_TABLE);",
+                  "    assert_eq!(result, Err(DecodeSliceError::OutputSliceTooSmall));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    const DECODE_TABLE: [u8; 256] = {",
+                  "        let mut arr = [INVALID_VALUE; 256];",
+                  "        arr[usize::from(b'A')] = 0;  // Valid character",
+                  "        arr[usize::from(b'Y')] = 1;  // Valid character",
+                  "        arr",
+                  "    };",
+                  "    let input: &[u8] = b\"YWFQ\"; // Length is 4, but input_len_rem will be 0",
+                  "    let input_len_rem = 0; // input.len() % 4 == 0",
+                  "",
+                  "    let output_len = 1; // This will pass as there's no condition for Err here",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &DECODE_TABLE);",
+                  "    assert_eq!(result, Ok(4)); // Should return the length of input",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0015]: cannot call non-const fn `<usize as From<u8>>::from` in constants\n   --> src/engine/general_purpose/decode.rs:370:13\n    |\n370 |         arr[usize::from(b'A')] = 0;  // Valid character\n    |             ^^^^^^^^^^^^^^^^^\n    |\n    = note: calls in constants are limited to constant functions, tuple structs and tuple variants\nhelp: add `#![feature(const_trait_impl)]` to the crate attributes to enable\n   --> src/lib.rs:267:1\n    |\n267 + #![feature(const_trait_impl)]\n    |\n\nerror[E0015]: cannot call non-const fn `<usize as From<u8>>::from` in constants\n   --> src/engine/general_purpose/decode.rs:371:13\n    |\n371 |         arr[usize::from(b'Y')] = 1;  // Valid character\n    |             ^^^^^^^^^^^^^^^^^\n    |\n    = note: calls in constants are limited to constant functions, tuple structs and tuple variants\nhelp: add `#![feature(const_trait_impl)]` to the crate attributes to enable\n   --> src/lib.rs:267:1\n    |\n267 + #![feature(const_trait_impl)]\n    |\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nFor more information about this error, try `rustc --explain E0015`.\nwarning: `base64` (lib test) generated 24 warnings\nerror: could not compile `base64` (lib test) due to 2 previous errors; 24 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    const DECODE_TABLE: [u8; 256] = {",
+                  "        let mut arr = [INVALID_VALUE; 256];",
+                  "        arr[usize::from(b'A')] = 0;  // Valid character",
+                  "        arr[usize::from(b'Y')] = 1;  // Valid character",
+                  "        arr",
+                  "    };",
+                  "    let input: &[u8] = b\"YWFd\"; // Last byte 'd' (invalid) will cause an error",
+                  "    let input_len_rem = 1; // input.len() % 4 == 1",
+                  "    let output_len = 2; // This will be too small as we have 4 bytes we need to handle",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &DECODE_TABLE);",
+                  "    assert_eq!(result, Err(DecodeError::InvalidByte(3, b'd').into())); // Invalid byte",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0015]: cannot call non-const fn `<usize as From<u8>>::from` in constants\n   --> src/engine/general_purpose/decode.rs:370:13\n    |\n370 |         arr[usize::from(b'A')] = 0;  // Valid character\n    |             ^^^^^^^^^^^^^^^^^\n    |\n    = note: calls in constants are limited to constant functions, tuple structs and tuple variants\nhelp: add `#![feature(const_trait_impl)]` to the crate attributes to enable\n   --> src/lib.rs:267:1\n    |\n267 + #![feature(const_trait_impl)]\n    |\n\nerror[E0015]: cannot call non-const fn `<usize as From<u8>>::from` in constants\n   --> src/engine/general_purpose/decode.rs:371:13\n    |\n371 |         arr[usize::from(b'Y')] = 1;  // Valid character\n    |             ^^^^^^^^^^^^^^^^^\n    |\n    = note: calls in constants are limited to constant functions, tuple structs and tuple variants\nhelp: add `#![feature(const_trait_impl)]` to the crate attributes to enable\n   --> src/lib.rs:267:1\n    |\n267 + #![feature(const_trait_impl)]\n    |\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nFor more information about this error, try `rustc --explain E0015`.\nwarning: `base64` (lib test) generated 24 warnings\nerror: could not compile `base64` (lib test) due to 2 previous errors; 24 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 17,
+      "prompt_conds": [
+        "// constraint: input.len() % 4 == input_len_rem is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"abcd\";",
+                  "    let input_len_rem = 1; // This doesn't match with input.len() % 4 which is 0.",
+                  "    let output_len = 6;",
+                  "    let decode_table: [u8; 256] = [INVALID_VALUE; 256];",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"abcd\\x80\"; // Invalid byte outside the Base64 alphabet.",
+                  "    let input_len_rem = 1; // input.len() % 4 == 1",
+                  "    let output_len = 6;",
+                  "    let mut decode_table: [u8; 256] = [INVALID_VALUE; 256];",
+                  "    decode_table[usize::from(b'a')] = 0; // Populate valid decode table values for valid Base64 chars",
+                  "    decode_table[usize::from(b'b')] = 1;",
+                  "    decode_table[usize::from(b'c')] = 2;",
+                  "    decode_table[usize::from(b'd')] = 3;",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                  "    assert!(matches!(result, Err(DecodeSliceError::DecodeError(DecodeError::InvalidByte(5, 0x80)))));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"abcde\"; // Valid Base64 input",
+                  "    let input_len_rem = 1; // input.len() % 4 == 1",
+                  "    let output_len = 1; // Output length is too small",
+                  "    let mut decode_table: [u8; 256] = [INVALID_VALUE; 256];",
+                  "    decode_table[usize::from(b'a')] = 0; // Populate valid decode table values",
+                  "    decode_table[usize::from(b'b')] = 1;",
+                  "    decode_table[usize::from(b'c')] = 2;",
+                  "    decode_table[usize::from(b'd')] = 3;",
+                  "    decode_table[usize::from(b'e')] = 4;",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                  "    assert!(matches!(result, Err(DecodeSliceError::OutputSliceTooSmall)));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let input: &[u8] = b\"abcd\"; // A complete quads input without any issues.",
+                  "    let input_len_rem = 0; // input.len() % 4 == 0",
+                  "    let output_len = 3; // Allocated output length",
+                  "    let mut decode_table: [u8; 256] = [INVALID_VALUE; 256];",
+                  "    decode_table[usize::from(b'a')] = 0;",
+                  "    decode_table[usize::from(b'b')] = 1;",
+                  "    decode_table[usize::from(b'c')] = 2;",
+                  "    decode_table[usize::from(b'd')] = 3;",
+                  "",
+                  "    let result = complete_quads_len(input, input_len_rem, output_len, &decode_table);",
+                  "    assert_eq!(result, Ok(4));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

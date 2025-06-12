@@ -1,0 +1,590 @@
+{
+  "name": "regex::utf8::next_utf8",
+  "name_with_impl": "regex::utf8::next_utf8",
+  "mod_info": {
+    "name": "utf8",
+    "loc": "src/lib.rs:648:1:648:10"
+  },
+  "visible": true,
+  "loc": "src/utf8.rs:24:1:39:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: text.get(i) matches Some(&b) is true\n",
+        "// constraint: b <= 0x7F is true, with bound b == 0x7F\n",
+        "// expected return value/type: i + inc\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = b\"Hello, world!\";",
+                  "    let start_index = 0;",
+                  "    let result = next_utf8(text, start_index);",
+                  "    assert_eq!(result, start_index + 1); // Expect moving to next byte",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = b\"\\xC2\\xA9\"; // © character",
+                  "    let start_index = 0;",
+                  "    let result = next_utf8(text, start_index);",
+                  "    assert_eq!(result, start_index + 2); // Expect moving past two bytes",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = b\"\\xE2\\x82\\xAC\"; // € character",
+                  "    let start_index = 0;",
+                  "    let result = next_utf8(text, start_index);",
+                  "    assert_eq!(result, start_index + 3); // Expect moving past three bytes",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = b\"\\xF0\\x9F\\x98\\x80\"; // 😀 character",
+                  "    let start_index = 0;",
+                  "    let result = next_utf8(text, start_index);",
+                  "    assert_eq!(result, start_index + 4); // Expect moving past four bytes",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = b\"\";",
+                  "    let start_index = 0;",
+                  "    let result = next_utf8(text, start_index);",
+                  "    assert_eq!(result, start_index + 1); // Out of bounds; expect moving to next index",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = b\"\\x7F\"; // Boundary value for single byte",
+                  "    let start_index = 0;",
+                  "    let result = next_utf8(text, start_index);",
+                  "    assert_eq!(result, start_index + 1); // Expect moving to next index",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: text.get(i) matches Some(&b) is true\n",
+        "// constraint: b <= 0x7F is false\n",
+        "// constraint: b <= 0b110_11111 is true, with bound b == 0b110_11111\n",
+        "// expected return value/type: i + inc\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = &[0b110_11111, 0b101_00000, 0b101_00001]; // 3-byte UTF-8 sequence starts with 0b110_11111",
+                  "    let index = 0; // Starting index",
+                  "    let result = next_utf8(text, index);",
+                  "    assert_eq!(result, index + 2); // Since 0b110_11111 is 2 bytes; expect index + 2",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = &[0b110_11111, 0b101_00000];",
+                  "    let index = 2; // Out of bounds index, should trigger the panic condition",
+                  "    let result = next_utf8(text, index);",
+                  "    assert_eq!(result, index + 1); // Expect going out of bounds returns index + 1",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = &[0b1110_1111, 0b101_00000, 0b101_00001, 0b101_00010]; // 4-byte UTF-8 sequence starts with 0b1110_1111",
+                  "    let index = 0; // Starting index",
+                  "    let result = next_utf8(text, index);",
+                  "    assert_eq!(result, index + 3); // Expect index + 3 since it is a 4-byte sequence",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = &[0b110_00010, 0b101_00000]; // 2-byte UTF-8 sequence starting with 0b110_00010",
+                  "    let index = 0; // Starting index",
+                  "    let result = next_utf8(text, index);",
+                  "    assert_eq!(result, index + 2); // Expect index + 2 since it's a 2-byte sequence",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: text.get(i) matches Some(&b) is true\n",
+        "// constraint: b <= 0x7F is false\n",
+        "// constraint: b <= 0b110_11111 is false\n",
+        "// constraint: b <= 0b1110_1111 is true, with bound b == 0b1110_1111\n",
+        "// expected return value/type: i + inc\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = &[0b1110_1111, 0b10_000000]; // Valid UTF-8 sequence starting with 0b1110_1111",
+                  "    let index = 0; // starting index",
+                  "    let result = next_utf8(text, index);",
+                  "    assert_eq!(result, 2); // Expecting index 0 + inc (3), which would point to the next byte",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = &[0b110_11111, 0b10_000000]; // Invalid UTF-8 sequence starting with 0b110_11111",
+                  "    let index = 0; // starting index",
+                  "    let result = next_utf8(text, index);",
+                  "    assert_eq!(result, 1); // Expecting index 0 + inc (2), which points to next byte",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = &[0u8]; // Single byte",
+                  "    let index = 1; // starting index out of bounds",
+                  "    let result = next_utf8(text, index);",
+                  "    assert_eq!(result, 2); // Expecting index 1 + 1",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = &[0b1110_1111]; // Single valid byte that forms a start of a sequence",
+                  "    let index = 0; // starting index",
+                  "    let result = next_utf8(text, index);",
+                  "    assert_eq!(result, 1); // Expecting index 0 + inc (1)",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: text.get(i) matches Some(&b) is true\n",
+        "// constraint: b <= 0x7F is false\n",
+        "// constraint: b <= 0b110_11111 is false\n",
+        "// constraint: b <= 0b1110_1111 is false\n",
+        "// expected return value/type: i + inc\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = &[0xF0, 0x90, 0x80, 0x80]; // UTF-8 sequence for U+10000",
+                  "    let i = 0;",
+                  "    let result = next_utf8(text, i);",
+                  "    assert_eq!(result, 4); // Next valid UTF-8 index after the four-byte sequence",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = &[0xE0, 0xA0, 0x80]; // UTF-8 sequence for U+0800",
+                  "    let i = 0;",
+                  "    let result = next_utf8(text, i);",
+                  "    assert_eq!(result, 3); // Next valid UTF-8 index after the three-byte sequence",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = &[0xC2, 0xA9]; // UTF-8 sequence for U+00A9",
+                  "    let i = 0;",
+                  "    let result = next_utf8(text, i);",
+                  "    assert_eq!(result, 2); // Next valid UTF-8 index after the two-byte sequence",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = &[0x80]; // Invalid single byte",
+                  "    let i = 0;",
+                  "    let result = next_utf8(text, i);",
+                  "    assert_eq!(result, 1); // Since b <= 0x7F is false, we should skip it and return i + 1",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: &[u8] = &[]; // Empty input",
+                  "    let i = 0;",
+                  "    let result = next_utf8(text, i);",
+                  "    assert_eq!(result, 1); // Since `text.get(i)` is None, return i + 1",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "// constraint: text.get(i) matches None is true\n",
+        "// constraint: text.get(i) matches None is true\n",
+        "// expected return value/type: i + 1\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text: Vec<u8> = Vec::new(); // An empty vector simulates the None case",
+                  "    let index = 0;",
+                  "    let result = next_utf8(&text, index);",
+                  "    assert_eq!(result, index + 1); // Expected to return 1",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let text = vec![b'a', b'b', b'c']; // Valid UTF-8 sequence",
+                  "    let index = text.len(); // Index is equal to the length of the array",
+                  "    let result = next_utf8(&text, index);",
+                  "    assert_eq!(result, index + 1); // Expected to return 4, since index is out of bounds",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

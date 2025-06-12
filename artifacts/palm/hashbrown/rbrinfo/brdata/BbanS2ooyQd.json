@@ -1,0 +1,402 @@
+{
+  "name": "hashbrown::raw::raw::RawTable<T, A>::shrink_to",
+  "name_with_impl": "hashbrown::raw::{impl#9}::shrink_to",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": true,
+  "loc": "src/raw/mod.rs:927:5:988:6",
+  "doc": "/// Shrinks the table to fit `max(self.len(), min_size)` elements.\n",
+  "code": [
+    "pub fn shrink_to(&mut self, min_size: usize, hasher: impl Fn(&T) -> u64) {",
+    "    // Calculate the minimal number of elements that we need to reserve",
+    "    // space for.",
+    "    let min_size = usize::max(self.table.items, min_size);",
+    "    if min_size == 0 {",
+    "        let mut old_inner = mem::replace(&mut self.table, RawTableInner::NEW);",
+    "        unsafe {",
+    "            // SAFETY:",
+    "            // 1. We call the function only once;",
+    "            // 2. We know for sure that `alloc` and `table_layout` matches the [`Allocator`]",
+    "            //    and [`TableLayout`] that were used to allocate this table.",
+    "            // 3. If any elements' drop function panics, then there will only be a memory leak,",
+    "            //    because we have replaced the inner table with a new one.",
+    "            old_inner.drop_inner_table::<T, _>(&self.alloc, Self::TABLE_LAYOUT);",
+    "        }",
+    "        return;",
+    "    }",
+    "",
+    "    // Calculate the number of buckets that we need for this number of",
+    "    // elements. If the calculation overflows then the requested bucket",
+    "    // count must be larger than what we have right and nothing needs to be",
+    "    // done.",
+    "    let min_buckets = match capacity_to_buckets(min_size) {",
+    "        Some(buckets) => buckets,",
+    "        None => return,",
+    "    };",
+    "",
+    "    // If we have more buckets than we need, shrink the table.",
+    "    if min_buckets < self.buckets() {",
+    "        // Fast path if the table is empty",
+    "        if self.table.items == 0 {",
+    "            let new_inner =",
+    "                RawTableInner::with_capacity(&self.alloc, Self::TABLE_LAYOUT, min_size);",
+    "            let mut old_inner = mem::replace(&mut self.table, new_inner);",
+    "            unsafe {",
+    "                // SAFETY:",
+    "                // 1. We call the function only once;",
+    "                // 2. We know for sure that `alloc` and `table_layout` matches the [`Allocator`]",
+    "                //    and [`TableLayout`] that were used to allocate this table.",
+    "                // 3. If any elements' drop function panics, then there will only be a memory leak,",
+    "                //    because we have replaced the inner table with a new one.",
+    "                old_inner.drop_inner_table::<T, _>(&self.alloc, Self::TABLE_LAYOUT);",
+    "            }",
+    "        } else {",
+    "            // Avoid `Result::unwrap_or_else` because it bloats LLVM IR.",
+    "            unsafe {",
+    "                // SAFETY:",
+    "                // 1. We know for sure that `min_size >= self.table.items`.",
+    "                // 2. The [`RawTableInner`] must already have properly initialized control bytes since",
+    "                //    we will never expose RawTable::new_uninitialized in a public API.",
+    "                if self",
+    "                    .resize(min_size, hasher, Fallibility::Infallible)",
+    "                    .is_err()",
+    "                {",
+    "                    // SAFETY: The result of calling the `resize` function cannot be an error",
+    "                    // because `fallibility == Fallibility::Infallible.",
+    "                    hint::unreachable_unchecked()",
+    "                }",
+    "            }",
+    "        }",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 6,
+    "contra": 0,
+    "min_set": 6
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "min_size == 0",
+          "norm": "0 == min_size",
+          "value": "false",
+          "line": 931,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        25,
+        26
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "min_size == 0",
+          "norm": "0 == min_size",
+          "value": "true",
+          "line": 931,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches Some(buckets)",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches Some(buckets)",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "min_buckets < self.buckets()",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.table.items == 0",
+          "norm": "0 == self.table.items",
+          "value": "false",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        22,
+        24,
+        26
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "min_size == 0",
+          "norm": "0 == min_size",
+          "value": "true",
+          "line": 931,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches Some(buckets)",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches Some(buckets)",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "min_buckets < self.buckets()",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.table.items == 0",
+          "norm": "0 == self.table.items",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self\n                        .resize(min_size, hasher, Fallibility::Infallible)\n                        .is_err()",
+          "norm": null,
+          "value": "true",
+          "line": 977,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        10,
+        11,
+        12,
+        17,
+        18,
+        19,
+        20,
+        28,
+        29
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "min_size == 0",
+          "norm": "0 == min_size",
+          "value": "true",
+          "line": 931,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches Some(buckets)",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches Some(buckets)",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "min_buckets < self.buckets()",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.table.items == 0",
+          "norm": "0 == self.table.items",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self\n                        .resize(min_size, hasher, Fallibility::Infallible)\n                        .is_err()",
+          "norm": null,
+          "value": "false",
+          "line": 977,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        10,
+        11,
+        12,
+        17,
+        18,
+        19,
+        21,
+        22,
+        24,
+        26
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "min_size == 0",
+          "norm": "0 == min_size",
+          "value": "true",
+          "line": 931,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches Some(buckets)",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches Some(buckets)",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "min_buckets < self.buckets()",
+          "norm": null,
+          "value": "false",
+          "line": 955,
+          "bound": "min_buckets == self.buckets()",
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        10,
+        11,
+        23,
+        24,
+        26
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "min_size == 0",
+          "norm": "0 == min_size",
+          "value": "true",
+          "line": 931,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "capacity_to_buckets(min_size) matches None",
+          "norm": null,
+          "value": "true",
+          "line": 949,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        9,
+        25,
+        26
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

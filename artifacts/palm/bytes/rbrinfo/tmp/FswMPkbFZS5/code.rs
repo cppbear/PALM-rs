@@ -1,0 +1,1 @@
+fn _assert_trait_object(_b: &dyn Buf) {}

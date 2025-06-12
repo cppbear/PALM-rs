@@ -1,0 +1,11 @@
+// Answer 0
+
+fn test_get_index_entry_out_of_bounds() {
+    let mut map = IndexMap::new();
+    let len = map.len();
+    let _entry_none = map.get_index_entry(len);
+    let _entry_none_overflow1 = map.get_index_entry(len + 1);
+    let _entry_none_overflow2 = map.get_index_entry(len + 5);
+    let _entry_none_overflow3 = map.get_index_entry(len + 10);
+}
+

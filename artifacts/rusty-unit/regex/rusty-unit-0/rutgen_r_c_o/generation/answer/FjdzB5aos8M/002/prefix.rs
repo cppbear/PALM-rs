@@ -1,0 +1,30 @@
+// Answer 0
+
+#[test]
+fn test_visit_class_set_item_pre_with_unicode_flag() {
+    struct MockTranslator {
+        flags: Cell<Flags>,
+        stack: RefCell<Vec<HirFrame>>,
+    }
+
+    impl MockTranslator {
+        fn new(flags: Flags) -> Self {
+            Self {
+                flags: Cell::new(flags),
+                stack: RefCell::new(vec![]),
+            }
+        }
+    }
+
+    let mut translator = MockTranslator::new(Flags {
+        unicode: Some(true),
+        ..Default::default()
+    });
+    
+    let bracketed_item = ast::ClassSetItem::Bracketed(ast::Bracketed::new());
+    
+    let mut translator_instance = TranslatorI::new(&translator, "test");
+    
+    translator_instance.visit_class_set_item_pre(&bracketed_item).unwrap();
+}
+

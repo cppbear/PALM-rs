@@ -1,0 +1,147 @@
+{
+  "name": "bytes::bytes::owned_clone",
+  "name_with_impl": "bytes::bytes::owned_clone",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1128:1:1142:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: old_cnt > usize::MAX >> 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null_mut;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "",
+                  "    struct TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let owned_lifetime = Box::new(TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+                  "    });",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(Box::into_raw(owned_lifetime) as _);",
+                  "    let data = &atomic_ptr;",
+                  "    let ptr: *const u8 = null_mut();",
+                  "    let len = 0;",
+                  "",
+                  "    unsafe {",
+                  "        // This should trigger the abort condition as old_cnt will exceed usize::MAX >> 1",
+                  "        let result = owned_clone(data, ptr, len);",
+                  "        assert_eq!(result.len, len);",
+                  "        assert_eq!(result.ptr, ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: old_cnt > usize::MAX >> 1 is false, with bound old_cnt == usize::MAX >> 1\n",
+        "// expected return value/type: Bytes {\n        ptr,\n        len,\n        data: AtomicPtr::new(owned as _),\n        vtable: &OWNED_VTABLE,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null;",
+            "use core::sync::atomic::AtomicPtr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null;",
+                  "    use core::sync::atomic::AtomicPtr;",
+                  "",
+                  "    // Set up a mock vtable to avoid undefined behavior",
+                  "    static MOCK_VTABLE: Vtable = Vtable {",
+                  "        clone: owned_clone,",
+                  "       into_vec: panic!(),",
+                  "       into_mut: panic!(),",
+                  "       is_unique: panic!(),",
+                  "       drop: panic!(),",
+                  "    };",
+                  "",
+                  "    // Create a mock OwnedLifetime with ref_cnt approaching half of usize::MAX",
+                  "    struct MockOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        // Drop function that does nothing",
+                  "        drop: unsafe fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    // Initialize the AtomicPtr with a valid reference for the OwnedLifetime instance",
+                  "    let owned_lifetime = MockOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new((usize::MAX >> 1)),",
+                  "        drop: unsafe { core::mem::transmute(0usize) },",
+                  "    };",
+                  "    ",
+                  "    let owned_ptr = AtomicPtr::new(&owned_lifetime as *const MockOwnedLifetime as *mut ());",
+                  "",
+                  "    // Invoke the owned_clone function",
+                  "    let result = unsafe { owned_clone(&owned_ptr, null(), 0) };",
+                  "",
+                  "    // Validate results",
+                  "    assert_eq!(result.len, 0);",
+                  "    assert_eq!(result.ptr, null());",
+                  "    assert_eq!(result.vtable, &MOCK_VTABLE);",
+                  "    ",
+                  "    // Check the reference count is incremented correctly",
+                  "    let ref_count = (&*owned_ptr.load(core::sync::atomic::Ordering::Relaxed).cast::<MockOwnedLifetime>()).ref_cnt.load(core::sync::atomic::Ordering::Relaxed);",
+                  "    assert_eq!(ref_count, (usize::MAX >> 1) + 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unnecessary parentheses around function argument\n    --> src/bytes.rs:1712:35\n     |\n1712 |         ref_cnt: AtomicUsize::new((usize::MAX >> 1)),\n     |                                   ^               ^\n     |\n     = note: `#[warn(unused_parens)]` on by default\nhelp: remove these parentheses\n     |\n1712 -         ref_cnt: AtomicUsize::new((usize::MAX >> 1)),\n1712 +         ref_cnt: AtomicUsize::new(usize::MAX >> 1),\n     |\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unreachable expression\n    --> src/bytes.rs:1698:18\n     |\n1697 |        into_vec: panic!(),\n     |                  -------- any code following this expression is unreachable\n1698 |        into_mut: panic!(),\n     |                  ^^^^^^^^ unreachable expression\n     |\n     = note: `#[warn(unreachable_code)]` on by default\n     = note: this warning originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nerror[E0080]: could not evaluate static initializer\n    --> src/bytes.rs:1697:18\n     |\n1697 |        into_vec: panic!(),\n     |                  ^^^^^^^^ the evaluated program panicked at 'explicit panic', src/bytes.rs:1697:18\n     |\n     = note: this error originates in the macro `$crate::panic::panic_2015` which comes from the expansion of the macro `panic` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nerror[E0369]: binary operation `==` cannot be applied to type `&bytes::Vtable`\n    --> src/bytes.rs:1724:5\n     |\n1724 |     assert_eq!(result.vtable, &MOCK_VTABLE);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     &bytes::Vtable\n     |     &bytes::Vtable\n     |\nnote: an implementation of `PartialEq` might be missing for `bytes::Vtable`\n    --> src/bytes.rs:110:1\n     |\n110  | pub(crate) struct Vtable {\n     | ^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `bytes::Vtable` with `#[derive(PartialEq)]`\n     |\n110  + #[derive(PartialEq)]\n111  | pub(crate) struct Vtable {\n     |\n\nSome errors have detailed explanations: E0080, E0369.\nFor more information about an error, try `rustc --explain E0080`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

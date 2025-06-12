@@ -1,0 +1,46 @@
+// Answer 0
+
+#[test]
+fn test_read_non_empty_buf_with_conditions_satisfied() {
+    struct TestEngine;
+
+    impl Engine for TestEngine {
+        type Config = ();
+        type DecodeEstimate = usize;
+        
+        fn internal_encode(&self, _: &[u8], _: &mut [u8]) -> usize {
+            0
+        }
+
+        fn internal_decoded_len_estimate(&self, _: usize) -> Self::DecodeEstimate {
+            0
+        }
+
+        fn internal_decode(
+            &self,
+            input: &[u8],
+            output: &mut [u8],
+            _: Self::DecodeEstimate,
+        ) -> Result<DecodeMetadata, DecodeSliceError> {
+            // Simulate a successful decode
+            output[..3].copy_from_slice(&input[0..3]);
+            Ok(DecodeMetadata { decoded_len: 3 })
+        }
+
+        fn config(&self) -> &Self::Config {
+            &()
+        }
+    }
+
+    let mut read_buf = [0u8; 3]; // buf with len 3
+    let engine = TestEngine;
+    let mut decoder_reader = DecoderReader::new(io::empty(), &engine);
+
+    decoder_reader.b64_offset = 1024; // Maximum offset
+    decoder_reader.b64_len = BUF_SIZE; // Maximum b64 length
+    decoder_reader.decoded_len = 0; // Decoded length is 0
+    decoder_reader.decoded_offset = 3; // Decoded offset 
+
+    let result = decoder_reader.read(&mut read_buf);
+}
+

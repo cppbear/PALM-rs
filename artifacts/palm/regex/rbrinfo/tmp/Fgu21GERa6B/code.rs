@@ -1,0 +1,1 @@
+fn slots_len(&self) -> usize { self.0.slots_len() }

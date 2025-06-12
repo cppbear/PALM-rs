@@ -1,0 +1,200 @@
+// Answer 0
+
+#[test]
+fn test_parse_long_integer_positive_without_exponent() {
+    struct TestParser {
+        input: Vec<u8>,
+        pos: usize,
+    }
+
+    impl TestParser {
+        fn new(input: Vec<u8>) -> Self {
+            TestParser { input, pos: 0 }
+        }
+
+        fn peek_or_null(&mut self) -> Result<u8> {
+            if self.pos < self.input.len() {
+                Ok(self.input[self.pos])
+            } else {
+                Ok(0)
+            }
+        }
+
+        fn eat_char(&mut self) {
+            if self.pos < self.input.len() {
+                self.pos += 1;
+            }
+        }
+
+        fn parse_decimal(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            Ok(if positive { significand as f64 } else { -(significand as f64) } * 10f64.powi(exponent as i32))
+        }
+
+        fn parse_exponent(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            // Simplified for testing purposes
+            Ok(significand as f64 * 10f64.powi(exponent as i32))
+        }
+
+        fn f64_from_parts(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            Ok(if positive { significand as f64 } else { -(significand as f64) } * 10f64.powi(exponent as i32))
+        }
+
+        fn parse_long_integer(&mut self, positive: bool, significand: u64) -> Result<f64> {
+            let mut exponent = 0;
+            loop {
+                match self.peek_or_null() {
+                    Ok(b'0') | Ok(b'1') | Ok(b'2') | Ok(b'3') | Ok(b'4') | Ok(b'5') | Ok(b'6') | Ok(b'7') | Ok(b'8') | Ok(b'9') => {
+                        self.eat_char();
+                        exponent += 1;
+                    }
+                    Ok(b'.') => {
+                        return self.parse_decimal(positive, significand, exponent);
+                    }
+                    Ok(b'e') | Ok(b'E') => {
+                        return self.parse_exponent(positive, significand, exponent);
+                    }
+                    _ => {
+                        return self.f64_from_parts(positive, significand, exponent);
+                    }
+                }
+            }
+        }
+    }
+
+    let mut parser = TestParser::new(b"12345".to_vec());
+    let result = parser.parse_long_integer(true, 12345);
+    assert_eq!(result.unwrap(), 12345.0);
+}
+
+#[test]
+fn test_parse_long_integer_negative() {
+    struct TestParser {
+        input: Vec<u8>,
+        pos: usize,
+    }
+
+    impl TestParser {
+        fn new(input: Vec<u8>) -> Self {
+            TestParser { input, pos: 0 }
+        }
+
+        fn peek_or_null(&mut self) -> Result<u8> {
+            if self.pos < self.input.len() {
+                Ok(self.input[self.pos])
+            } else {
+                Ok(0)
+            }
+        }
+
+        fn eat_char(&mut self) {
+            if self.pos < self.input.len() {
+                self.pos += 1;
+            }
+        }
+
+        fn parse_decimal(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            Ok(if positive { significand as f64 } else { -(significand as f64) } * 10f64.powi(exponent as i32))
+        }
+
+        fn parse_exponent(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            // Simplified for testing purposes
+            Ok(significand as f64 * 10f64.powi(exponent as i32))
+        }
+
+        fn f64_from_parts(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            Ok(if positive { significand as f64 } else { -(significand as f64) } * 10f64.powi(exponent as i32))
+        }
+
+        fn parse_long_integer(&mut self, positive: bool, significand: u64) -> Result<f64> {
+            let mut exponent = 0;
+            loop {
+                match self.peek_or_null() {
+                    Ok(b'0') | Ok(b'1') | Ok(b'2') | Ok(b'3') | Ok(b'4') | Ok(b'5') | Ok(b'6') | Ok(b'7') | Ok(b'8') | Ok(b'9') => {
+                        self.eat_char();
+                        exponent += 1;
+                    }
+                    Ok(b'.') => {
+                        return self.parse_decimal(positive, significand, exponent);
+                    }
+                    Ok(b'e') | Ok(b'E') => {
+                        return self.parse_exponent(positive, significand, exponent);
+                    }
+                    _ => {
+                        return self.f64_from_parts(positive, significand, exponent);
+                    }
+                }
+            }
+        }
+    }
+
+    let mut parser = TestParser::new(b"12345".to_vec());
+    let result = parser.parse_long_integer(false, 12345);
+    assert_eq!(result.unwrap(), -12345.0);
+}
+
+#[test]
+fn test_parse_long_integer_with_decimal() {
+    struct TestParser {
+        input: Vec<u8>,
+        pos: usize,
+    }
+
+    impl TestParser {
+        fn new(input: Vec<u8>) -> Self {
+            TestParser { input, pos: 0 }
+        }
+
+        fn peek_or_null(&mut self) -> Result<u8> {
+            if self.pos < self.input.len() {
+                Ok(self.input[self.pos])
+            } else {
+                Ok(0)
+            }
+        }
+
+        fn eat_char(&mut self) {
+            if self.pos < self.input.len() {
+                self.pos += 1;
+            }
+        }
+
+        fn parse_decimal(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            Ok(if positive { significand as f64 } else { -(significand as f64) } * 10f64.powi(exponent as i32))
+        }
+
+        fn parse_exponent(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            // Simplified for testing purposes
+            Ok(significand as f64 * 10f64.powi(exponent as i32))
+        }
+
+        fn f64_from_parts(&self, positive: bool, significand: u64, exponent: usize) -> Result<f64> {
+            Ok(if positive { significand as f64 } else { -(significand as f64) } * 10f64.powi(exponent as i32))
+        }
+
+        fn parse_long_integer(&mut self, positive: bool, significand: u64) -> Result<f64> {
+            let mut exponent = 0;
+            loop {
+                match self.peek_or_null() {
+                    Ok(b'0') | Ok(b'1') | Ok(b'2') | Ok(b'3') | Ok(b'4') | Ok(b'5') | Ok(b'6') | Ok(b'7') | Ok(b'8') | Ok(b'9') => {
+                        self.eat_char();
+                        exponent += 1;
+                    }
+                    Ok(b'.') => {
+                        return self.parse_decimal(positive, significand, exponent);
+                    }
+                    Ok(b'e') | Ok(b'E') => {
+                        return self.parse_exponent(positive, significand, exponent);
+                    }
+                    _ => {
+                        return self.f64_from_parts(positive, significand, exponent);
+                    }
+                }
+            }
+        }
+    }
+
+    let mut parser = TestParser::new(b"123.456".to_vec());
+    let result = parser.parse_long_integer(true, 123);
+    assert_eq!(result.unwrap(), 123.0); // Adjust according to expected behavior
+}
+

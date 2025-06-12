@@ -1,0 +1,210 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(1, DefaultHashBuilder::new(), Global);",
+          "    let allocator = hashmap.allocator();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(1, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    assert_eq!(allocator, &Global);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(1, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(1, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    assert_eq!(allocator, &Global);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct CustomAllocator;",
+          "",
+          "    unsafe impl Allocator for CustomAllocator {",
+          "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+          "            if layout.size() <= 4096 {",
+          "                Ok(NonNull::dangling())",
+          "            } else {",
+          "                Err(())",
+          "            }",
+          "        }",
+          "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
+          "    }",
+          "",
+          "    let hashmap: HashMap<i32, i32, DefaultHashBuilder, CustomAllocator> = HashMap::with_capacity_and_hasher_in(10, DefaultHashBuilder::new(), CustomAllocator);",
+          "    let allocator = hashmap.allocator();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let hashmap: HashMap<i32, i32, DefaultHashBuilder, CustomAllocator> = HashMap::with_capacity_and_hasher_in(10, DefaultHashBuilder::new(), CustomAllocator);",
+            "    let allocator = hashmap.allocator();",
+            "    assert_eq!(allocator as *const _, &hashmap.table.alloc as *const _);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, ()> {",
+            "            if layout.size() <= 4096 {",
+            "                Ok(NonNull::dangling())",
+            "            } else {",
+            "                Err(())",
+            "            }",
+            "        }",
+            "        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {}",
+            "    }",
+            "",
+            "    let hashmap: HashMap<i32, i32, DefaultHashBuilder, CustomAllocator> = HashMap::with_capacity_and_hasher_in(10, DefaultHashBuilder::new(), CustomAllocator);",
+            "    let allocator = hashmap.allocator();",
+            "    let hashmap: HashMap<i32, i32, DefaultHashBuilder, CustomAllocator> = HashMap::with_capacity_and_hasher_in(10, DefaultHashBuilder::new(), CustomAllocator);",
+            "    let allocator = hashmap.allocator();",
+            "    assert_eq!(allocator as *const _, &hashmap.table.alloc as *const _);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(1000000, DefaultHashBuilder::new(), Global);",
+          "    let allocator = hashmap.allocator();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(1000000, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    assert_eq!(allocator, &Global);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(1000000, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(1000000, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    assert_eq!(allocator, &Global);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(0, DefaultHashBuilder::new(), Global);",
+          "    let _allocator = hashmap.allocator();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(0, DefaultHashBuilder::new(), Global);",
+            "    assert_eq!(std::mem::size_of_val(hashmap.allocator()), std::mem::size_of::<Global>());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(0, DefaultHashBuilder::new(), Global);",
+            "    let _allocator = hashmap.allocator();",
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(0, DefaultHashBuilder::new(), Global);",
+            "    assert_eq!(std::mem::size_of_val(hashmap.allocator()), std::mem::size_of::<Global>());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(4096, DefaultHashBuilder::new(), Global);",
+          "    let allocator = hashmap.allocator();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(4096, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    assert_eq!(allocator, &hashmap.table.alloc);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(4096, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    let hashmap: HashMap<i32, i32> = HashMap::with_capacity_and_hasher_in(4096, DefaultHashBuilder::new(), Global);",
+            "    let allocator = hashmap.allocator();",
+            "    assert_eq!(allocator, &hashmap.table.alloc);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      }
+    ]
+  }
+]

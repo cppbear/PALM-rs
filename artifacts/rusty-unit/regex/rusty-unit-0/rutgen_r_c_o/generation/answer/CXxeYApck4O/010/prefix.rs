@@ -1,0 +1,42 @@
+// Answer 0
+
+fn test_prefixes_concat_anchor_start_text() {
+    let mut lits = Literals::empty();
+    let anchor = Hir::anchor(hir::Anchor::StartText);
+    let expr = Hir::concat(vec![anchor]);
+    
+    prefixes(&expr, &mut lits);
+}
+
+fn test_prefixes_concat_single_element() {
+    let mut lits = Literals::empty();
+    let literal = Hir::literal(Literal::Unicode('a'));
+    let expr = Hir::concat(vec![literal]);
+    
+    prefixes(&expr, &mut lits);
+}
+
+fn test_prefixes_concat_empty() {
+    let mut lits = Literals::empty();
+    let expr = Hir::concat(Vec::new());
+    
+    prefixes(&expr, &mut lits);
+}
+
+fn test_prefixes_concat_multiple_elements() {
+    let mut lits = Literals::empty();
+    let first_anchor = Hir::anchor(hir::Anchor::StartText);
+    let expr = Hir::concat(vec![first_anchor, Hir::literal(Literal::Unicode('b'))]);
+    
+    prefixes(&expr, &mut lits);
+} 
+
+fn test_prefixes_concat_mismatched_cross_product() {
+    let mut lits = Literals::empty();
+    lits.set_limit_size(1);
+    let anchor = Hir::anchor(hir::Anchor::StartText);
+    let expr = Hir::concat(vec![anchor]);
+    
+    prefixes(&expr, &mut lits);
+}
+

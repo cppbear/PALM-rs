@@ -1,0 +1,129 @@
+{
+  "name": "bytes::bytes_mut::increment_shared",
+  "name_with_impl": "bytes::bytes_mut::increment_shared",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1425:1:1431:2",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::Ordering;",
+            "use std::sync::atomic::AtomicUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "    ",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "        original_capacity_repr: usize,",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn increment_shared(ptr: *mut Shared) {",
+                  "        let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);",
+                  "",
+                  "        if old_size > isize::MAX as usize {",
+                  "            crate::abort();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let shared = Shared {",
+                  "        vec: Vec::new(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(0),",
+                  "    };",
+                  "",
+                  "    let shared_ptr = &shared as *const Shared as *mut Shared;",
+                  "",
+                  "    unsafe {",
+                  "        increment_shared(shared_ptr);",
+                  "        let count_after_increment = (*shared_ptr).ref_count.load(Ordering::Relaxed);",
+                  "        assert_eq!(count_after_increment, 1);",
+                  "",
+                  "        increment_shared(shared_ptr);",
+                  "        let count_after_second_increment = (*shared_ptr).ref_count.load(Ordering::Relaxed);",
+                  "        assert_eq!(count_after_second_increment, 2);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "        original_capacity_repr: usize,",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn increment_shared(ptr: *mut Shared) {",
+                  "        let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);",
+                  "",
+                  "        if old_size > isize::MAX as usize {",
+                  "            crate::abort();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let shared = Shared {",
+                  "        vec: Vec::new(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(isize::MAX as usize),",
+                  "    };",
+                  "",
+                  "    let shared_ptr = &shared as *const Shared as *mut Shared;",
+                  "",
+                  "    unsafe {",
+                  "        increment_shared(shared_ptr); // This should panic",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

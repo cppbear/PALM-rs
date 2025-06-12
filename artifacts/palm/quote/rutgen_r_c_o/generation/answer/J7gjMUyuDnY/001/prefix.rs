@@ -1,0 +1,54 @@
+// Answer 0
+
+fn test_append_separated_single_token() {
+    let mut token_stream = TokenStream::new();
+    let tokens = vec![TestToken];
+    let separator = TestToken;
+
+    token_stream.append_separated(tokens.iter(), separator);
+}
+
+fn test_append_separated_multiple_tokens() {
+    let mut token_stream = TokenStream::new();
+    let tokens = vec![TestToken, TestToken, TestToken];
+    let separator = TestToken;
+
+    token_stream.append_separated(tokens.iter(), separator);
+}
+
+fn test_append_separated_no_tokens() {
+    let mut token_stream = TokenStream::new();
+    let tokens: Vec<TestToken> = Vec::new();
+    let separator = TestToken;
+
+    token_stream.append_separated(tokens.iter(), separator);
+}
+
+fn test_append_separated_two_tokens() {
+    let mut token_stream = TokenStream::new();
+    let tokens = vec![TestToken, TestToken];
+    let separator = TestToken;
+
+    token_stream.append_separated(tokens.iter(), separator);
+}
+
+fn test_append_separated_edge_case() {
+    let mut token_stream = TokenStream::new();
+    let tokens = vec![TestToken, TestToken, TestToken];
+    let separator = TestToken;
+
+    token_stream.append_separated(tokens.iter().take(1), separator);
+}
+
+struct TestToken;
+
+impl ToTokens for TestToken {
+    fn to_tokens(&self, _tokens: &mut TokenStream) {}
+    fn to_token_stream(&self) -> TokenStream {
+        TokenStream::new()
+    }
+    fn into_token_stream(self) -> TokenStream {
+        TokenStream::new()
+    }
+}
+

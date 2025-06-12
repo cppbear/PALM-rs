@@ -1,0 +1,241 @@
+{
+  "name": "serde::__private::ser::<__private::ser::TaggedSerializer<S> as ser::Serializer>::serialize_struct",
+  "name_with_impl": "serde::__private::ser::{impl#2}::serialize_struct",
+  "mod_info": {
+    "name": "__private::ser",
+    "loc": "serde/src/private/mod.rs:4:1:4:13"
+  },
+  "visible": true,
+  "loc": "serde/src/private/ser.rs:286:5:294:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.delegate.serialize_struct(name, len + 1) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockDelegate;",
+                  "",
+                  "    impl MockDelegate {",
+                  "        fn serialize_struct(&self, _name: &'static str, _len: usize) -> Result<(), &'static str> {",
+                  "            Err(\"delegate error\")",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializer {",
+                  "        delegate: MockDelegate,",
+                  "        tag: &'static str,",
+                  "        variant_name: &'static str,",
+                  "    }",
+                  "",
+                  "    impl TestSerializer {",
+                  "        fn serialize_struct(",
+                  "            self,",
+                  "            name: &'static str,",
+                  "            len: usize,",
+                  "        ) -> Result<(), &'static str> {",
+                  "            let mut state = self.delegate.serialize_struct(name, len + 1)?;",
+                  "            // Simulate the serialization process that can fail",
+                  "            Err(\"some serialization error\") // Just for testing purpose",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let serializer = TestSerializer {",
+                  "        delegate: MockDelegate,",
+                  "        tag: \"tag\",",
+                  "        variant_name: \"variant\",",
+                  "    };",
+                  "    ",
+                  "    let result = serializer.serialize_struct(\"TestStruct\", 0);",
+                  "    assert_eq!(result, Err(\"delegate error\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.delegate.serialize_struct(name, len + 1) matches Ok(val) is true\n",
+        "// constraint: state.serialize_field(self.tag, self.variant_name) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestDelegate;",
+                  "",
+                  "    impl TestDelegate {",
+                  "        fn serialize_struct(&self, _name: &'static str, _len: usize) -> Result<TestSerializeStruct, &str> {",
+                  "            Ok(TestSerializeStruct)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializeStruct;",
+                  "",
+                  "    impl TestSerializeStruct {",
+                  "        fn serialize_field(&mut self, _tag: &str, _variant_name: &str) -> Result<(), &str> {",
+                  "            Err(\"serialization error\")",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializer {",
+                  "        delegate: TestDelegate,",
+                  "        tag: &'static str,",
+                  "        variant_name: &'static str,",
+                  "    }",
+                  "",
+                  "    impl TestSerializer {",
+                  "        fn serialize_struct(",
+                  "            self,",
+                  "            name: &'static str,",
+                  "            len: usize,",
+                  "        ) -> Result<TestSerializeStruct, &str> {",
+                  "            let mut state = self.delegate.serialize_struct(name, len + 1)?;",
+                  "            state.serialize_field(self.tag, self.variant_name)?;",
+                  "            Ok(state)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let serializer = TestSerializer {",
+                  "        delegate: TestDelegate,",
+                  "        tag: \"test_tag\",",
+                  "        variant_name: \"test_variant\",",
+                  "    };",
+                  "",
+                  "    let result = serializer.serialize_struct(\"test_struct\", 0);",
+                  "    assert!(result.is_err());",
+                  "    assert_eq!(result.unwrap_err(), \"serialization error\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1368:8\n     |\n1368 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: `TestSerializeStruct` doesn't implement `std::fmt::Debug`\n    --> serde/src/private/ser.rs:1414:23\n     |\n1414 |     assert_eq!(result.unwrap_err(), \"serialization error\");\n     |                       ^^^^^^^^^^ `TestSerializeStruct` cannot be formatted using `{:?}`\n     |\n     = help: the trait `std::fmt::Debug` is not implemented for `TestSerializeStruct`\n     = note: add `#[derive(Debug)]` to `TestSerializeStruct` or manually `impl std::fmt::Debug for TestSerializeStruct`\nnote: required by a bound in `Result::<T, E>::unwrap_err`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1193:12\n     |\n1191 |     pub fn unwrap_err(self) -> E\n     |            ---------- required by a bound in this associated function\n1192 |     where\n1193 |         T: fmt::Debug,\n     |            ^^^^^^^^^^ required by this bound in `Result::<T, E>::unwrap_err`\nhelp: consider annotating `TestSerializeStruct` with `#[derive(Debug)]`\n     |\n1380 +     #[derive(Debug)]\n1381 |     struct TestSerializeStruct;\n     |\n\nerror[E0515]: cannot return value referencing local data `self.delegate`\n    --> serde/src/private/ser.rs:1400:29\n     |\n1400 |             let mut state = self.delegate.serialize_struct(name, len + 1)?;\n     |                             -------------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |                             |\n     |                             returns a value referencing data owned by the current function\n     |                             `self.delegate` is borrowed here\n\nerror[E0515]: cannot return value referencing local variable `state`\n    --> serde/src/private/ser.rs:1401:13\n     |\n1401 |             state.serialize_field(self.tag, self.variant_name)?;\n     |             -----^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |             |\n     |             returns a value referencing data owned by the current function\n     |             `state` is borrowed here\n\nerror[E0505]: cannot move out of `state` because it is borrowed\n    --> serde/src/private/ser.rs:1402:16\n     |\n1400 |             let mut state = self.delegate.serialize_struct(name, len + 1)?;\n     |                 --------- binding `state` declared here\n1401 |             state.serialize_field(self.tag, self.variant_name)?;\n     |             ---------------------------------------------------\n     |             |\n     |             borrow of `state` occurs here\n     |             returning this value requires that `state` is borrowed for `'static`\n1402 |             Ok(state)\n     |                ^^^^^ move out of `state` occurs here\n     |\nnote: if `TestSerializeStruct` implemented `Clone`, you could clone the value\n    --> serde/src/private/ser.rs:1380:5\n     |\n1380 |     struct TestSerializeStruct;\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^ consider implementing `Clone` for this type\n...\n1401 |             state.serialize_field(self.tag, self.variant_name)?;\n     |             ----- you could clone this value\n\nSome errors have detailed explanations: E0277, E0505, E0515.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 4 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.delegate.serialize_struct(name, len + 1) matches Ok(val) is true\n",
+        "// constraint: state.serialize_field(self.tag, self.variant_name) matches Ok(val) is true\n",
+        "// expected return value/type: Ok(state)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestDelegate;",
+                  "",
+                  "    impl TestDelegate {",
+                  "        fn serialize_struct(&self, _name: &'static str, _len: usize) -> Result<TestSerializeStruct, &'static str> {",
+                  "            Ok(TestSerializeStruct)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializeStruct;",
+                  "",
+                  "    impl TestSerializeStruct {",
+                  "        fn serialize_field(&mut self, _tag: &'static str, _variant_name: &'static str) -> Result<(), &'static str> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializer {",
+                  "        delegate: TestDelegate,",
+                  "        tag: &'static str,",
+                  "        variant_name: &'static str,",
+                  "    }",
+                  "",
+                  "    impl TestSerializer {",
+                  "        fn serialize_struct(",
+                  "            self,",
+                  "            name: &'static str,",
+                  "            len: usize,",
+                  "        ) -> Result<TestSerializeStruct, &'static str> {",
+                  "            let mut state = self.delegate.serialize_struct(name, len + 1)?;",
+                  "            state.serialize_field(self.tag, self.variant_name)?;",
+                  "            Ok(state)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let serializer = TestSerializer {",
+                  "        delegate: TestDelegate,",
+                  "        tag: \"example_tag\",",
+                  "        variant_name: \"example_variant\",",
+                  "    };",
+                  "",
+                  "    let result = serializer.serialize_struct(\"test_struct\", 2);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

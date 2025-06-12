@@ -1,0 +1,3 @@
+fn default() -> ThreadRng {
+        rng()
+    }

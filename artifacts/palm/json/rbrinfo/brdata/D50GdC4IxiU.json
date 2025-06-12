@@ -1,0 +1,5931 @@
+{
+  "name": "serde_json::read::parse_unicode_escape",
+  "name_with_impl": "serde_json::read::parse_unicode_escape",
+  "mod_info": {
+    "name": "read",
+    "loc": "src/lib.rs:434:1:434:10"
+  },
+  "visible": false,
+  "loc": "src/read.rs:900:1:973:2",
+  "doc": "/// Parses a JSON \\u escape and appends it into the scratch space. Assumes `\\u`\n/// has just been read.\n",
+  "code": [
+    "fn parse_unicode_escape<'de, R: Read<'de>>(",
+    "    read: &mut R,",
+    "    validate: bool,",
+    "    scratch: &mut Vec<u8>,",
+    ") -> Result<()> {",
+    "    let mut n = tri!(read.decode_hex_escape());",
+    "",
+    "    // Non-BMP characters are encoded as a sequence of two hex escapes,",
+    "    // representing UTF-16 surrogates. If deserializing a utf-8 string the",
+    "    // surrogates are required to be paired, whereas deserializing a byte string",
+    "    // accepts lone surrogates.",
+    "    if validate && n >= 0xDC00 && n <= 0xDFFF {",
+    "        // XXX: This is actually a trailing surrogate.",
+    "        return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);",
+    "    }",
+    "",
+    "    loop {",
+    "        if n < 0xD800 || n > 0xDBFF {",
+    "            // Every u16 outside of the surrogate ranges is guaranteed to be a",
+    "            // legal char.",
+    "            push_wtf8_codepoint(n as u32, scratch);",
+    "            return Ok(());",
+    "        }",
+    "",
+    "        // n is a leading surrogate, we now expect a trailing surrogate.",
+    "        let n1 = n;",
+    "",
+    "        if tri!(peek_or_eof(read)) == b'\\\\' {",
+    "            read.discard();",
+    "        } else {",
+    "            return if validate {",
+    "                read.discard();",
+    "                error(read, ErrorCode::UnexpectedEndOfHexEscape)",
+    "            } else {",
+    "                push_wtf8_codepoint(n1 as u32, scratch);",
+    "                Ok(())",
+    "            };",
+    "        }",
+    "",
+    "        if tri!(peek_or_eof(read)) == b'u' {",
+    "            read.discard();",
+    "        } else {",
+    "            return if validate {",
+    "                read.discard();",
+    "                error(read, ErrorCode::UnexpectedEndOfHexEscape)",
+    "            } else {",
+    "                push_wtf8_codepoint(n1 as u32, scratch);",
+    "                // The \\ prior to this byte started an escape sequence, so we",
+    "                // need to parse that now. This recursive call does not blow the",
+    "                // stack on malicious input because the escape is not \\u, so it",
+    "                // will be handled by one of the easy nonrecursive cases.",
+    "                parse_escape(read, validate, scratch)",
+    "            };",
+    "        }",
+    "",
+    "        let n2 = tri!(read.decode_hex_escape());",
+    "",
+    "        if n2 < 0xDC00 || n2 > 0xDFFF {",
+    "            if validate {",
+    "                return error(read, ErrorCode::LoneLeadingSurrogateInHexEscape);",
+    "            }",
+    "            push_wtf8_codepoint(n1 as u32, scratch);",
+    "            // If n2 is a leading surrogate, we need to restart.",
+    "            n = n2;",
+    "            continue;",
+    "        }",
+    "",
+    "        // This value is in range U+10000..=U+10FFFF, which is always a valid",
+    "        // codepoint.",
+    "        let n = ((((n1 - 0xD800) as u32) << 10) | (n2 - 0xDC00) as u32) + 0x1_0000;",
+    "        push_wtf8_codepoint(n, scratch);",
+    "        return Ok(());",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 44,
+    "contra": 6,
+    "min_set": 15
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        4,
+        6,
+        90,
+        91,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDFFF",
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        19,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        26,
+        28,
+        85,
+        86,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        43,
+        45,
+        82,
+        83,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        61,
+        63,
+        79,
+        80,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        65,
+        68,
+        69,
+        70,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        65,
+        68,
+        71,
+        72,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        67,
+        68,
+        69,
+        70,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        67,
+        68,
+        71,
+        72,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDFFF",
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 942,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        47,
+        50,
+        51,
+        52,
+        53,
+        57,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 942,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        47,
+        50,
+        54,
+        55,
+        56,
+        57,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 930,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        30,
+        33,
+        34,
+        35,
+        36,
+        39,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "true",
+          "line": 911,
+          "bound": "n == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n <= 0xDFFF",
+          "norm": "0xDFFF >= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 930,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        30,
+        33,
+        37,
+        38,
+        39,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        19,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        26,
+        28,
+        85,
+        86,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        43,
+        45,
+        82,
+        83,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        61,
+        63,
+        79,
+        80,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        65,
+        68,
+        69,
+        70,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        65,
+        68,
+        71,
+        72,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        67,
+        68,
+        69,
+        70,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        67,
+        68,
+        71,
+        72,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDFFF",
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 942,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        47,
+        50,
+        51,
+        52,
+        53,
+        57,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 942,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        47,
+        50,
+        54,
+        55,
+        56,
+        57,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 930,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        30,
+        33,
+        34,
+        35,
+        36,
+        39,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n >= 0xDC00",
+          "norm": "0xDC00 <= n",
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 930,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        8,
+        13,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        30,
+        33,
+        37,
+        38,
+        39,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        19,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        26,
+        28,
+        85,
+        86,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        43,
+        45,
+        82,
+        83,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Err(err)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "core::result::Result::Err(err)",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        61,
+        63,
+        79,
+        80,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 36,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        65,
+        68,
+        69,
+        70,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 37,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        65,
+        68,
+        71,
+        72,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 38,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        67,
+        68,
+        69,
+        70,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 39,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "true",
+          "line": 957,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 958,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "true",
+          "line": 917,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        67,
+        68,
+        71,
+        72,
+        15,
+        16,
+        17,
+        20,
+        21,
+        89,
+        92
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 40,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 955,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n2 < 0xDC00",
+          "norm": "0xDC00 > n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDC00",
+          "may_panic": false
+        },
+        {
+          "cond": "n2 > 0xDFFF",
+          "norm": "0xDFFF < n2",
+          "value": "false",
+          "line": 957,
+          "bound": "n2 == 0xDFFF",
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        46,
+        48,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        81,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 41,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 942,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        47,
+        50,
+        51,
+        52,
+        53,
+        57,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 42,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "false",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'u'",
+          "norm": "b'u' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 939,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 942,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        29,
+        31,
+        32,
+        40,
+        42,
+        44,
+        47,
+        50,
+        54,
+        55,
+        56,
+        57,
+        84,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 43,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "true",
+          "line": 930,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        30,
+        33,
+        34,
+        35,
+        36,
+        39,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 44,
+      "conds": [
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 911,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "n < 0xD800",
+          "norm": "0xD800 > n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xD800",
+          "may_panic": false
+        },
+        {
+          "cond": "n > 0xDBFF",
+          "norm": "0xDBFF < n",
+          "value": "false",
+          "line": 917,
+          "bound": "n == 0xDBFF",
+          "may_panic": false
+        },
+        {
+          "cond": "peek_or_eof(read) matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "read.decode_hex_escape() matches core::result::Result::Ok(val)",
+          "norm": null,
+          "value": "true",
+          "line": 905,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "tri!(peek_or_eof(read)) == b'\\\\'",
+          "norm": "b'\\\\' == match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        }",
+          "value": "true",
+          "line": 927,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "validate",
+          "norm": null,
+          "value": "false",
+          "line": 930,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        3,
+        5,
+        7,
+        14,
+        15,
+        16,
+        18,
+        22,
+        23,
+        25,
+        27,
+        30,
+        33,
+        37,
+        38,
+        39,
+        87,
+        88,
+        89,
+        92
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

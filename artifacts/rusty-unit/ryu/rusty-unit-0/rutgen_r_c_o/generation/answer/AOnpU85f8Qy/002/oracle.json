@@ -1,0 +1,251 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let m: u32 = 1;",
+          "    let factor: u64 = 2;",
+          "    let shift: i32 = 32; // This should not trigger panic since shift must be > 32",
+          "    let _ = mul_shift_32(m, factor, shift);",
+          "}"
+        ],
+        "oracles": [],
+        "codes": [],
+        "can_compile": [],
+        "repaired": []
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let m: u32 = 4294967295; // Max value",
+          "    let factor: u64 = 18446744073709551615; // Max value",
+          "    let shift: i32 = 64; // Should trigger panic since the shifted_sum will exceed u32::max_value()",
+          "    let _ = mul_shift_32(m, factor, shift);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let m: u32 = 4294967295;",
+            "    let factor: u64 = 18446744073709551615;",
+            "    let shift: i32 = 64;",
+            "    assert!(std::panic::catch_unwind(|| {"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let m: u32 = 4294967295; // Max value",
+            "    let factor: u64 = 18446744073709551615; // Max value",
+            "    let shift: i32 = 64; // Should trigger panic since the shifted_sum will exceed u32::max_value()",
+            "    let _ = mul_shift_32(m, factor, shift);",
+            "    let m: u32 = 4294967295;",
+            "    let factor: u64 = 18446744073709551615;",
+            "    let shift: i32 = 64;",
+            "    assert!(std::panic::catch_unwind(|| {",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let m: u32 = 123456; // Arbitrary value",
+          "    let factor: u64 = 123456789; // Arbitrary value",
+          "    let shift: i32 = 40; // Valid shift",
+          "    let _ = mul_shift_32(m, factor, shift);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let m: u32 = 123456;",
+            "    let factor: u64 = 123456789;",
+            "    let shift: i32 = 40;",
+            "    debug_assert!(shift > 32);",
+            "    let factor_lo = factor as u32;",
+            "    let factor_hi = (factor >> 32) as u32;",
+            "    let bits0 = m as u64 * factor_lo as u64;",
+            "    let bits1 = m as u64 * factor_hi as u64;",
+            "    let sum = (bits0 >> 32) + bits1;",
+            "    let shifted_sum = sum >> (shift - 32);",
+            "    debug_assert!(shifted_sum <= u32::max_value() as u64);",
+            "    assert!(shifted_sum <= u32::max_value() as u64);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let m: u32 = 123456; // Arbitrary value",
+            "    let factor: u64 = 123456789; // Arbitrary value",
+            "    let shift: i32 = 40; // Valid shift",
+            "    let _ = mul_shift_32(m, factor, shift);",
+            "    let m: u32 = 123456;",
+            "    let factor: u64 = 123456789;",
+            "    let shift: i32 = 40;",
+            "    debug_assert!(shift > 32);",
+            "    let factor_lo = factor as u32;",
+            "    let factor_hi = (factor >> 32) as u32;",
+            "    let bits0 = m as u64 * factor_lo as u64;",
+            "    let bits1 = m as u64 * factor_hi as u64;",
+            "    let sum = (bits0 >> 32) + bits1;",
+            "    let shifted_sum = sum >> (shift - 32);",
+            "    debug_assert!(shifted_sum <= u32::max_value() as u64);",
+            "    assert!(shifted_sum <= u32::max_value() as u64);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let m: u32 = 4294967295; // Max value",
+          "    let factor: u64 = 1; // Small factor",
+          "    let shift: i32 = 33; // Just above the minimum boundary",
+          "    let _ = mul_shift_32(m, factor, shift);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let m: u32 = 4294967295;",
+            "    let factor: u64 = 1;",
+            "    let shift: i32 = 33;",
+            "    let result = mul_shift_32(m, factor, shift);",
+            "    debug_assert!(shift > 32);",
+            "    debug_assert!(result <= u32::max_value() as u64);",
+            "    assert_eq!(result, 1);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let m: u32 = 4294967295; // Max value",
+            "    let factor: u64 = 1; // Small factor",
+            "    let shift: i32 = 33; // Just above the minimum boundary",
+            "    let _ = mul_shift_32(m, factor, shift);",
+            "    let m: u32 = 4294967295;",
+            "    let factor: u64 = 1;",
+            "    let shift: i32 = 33;",
+            "    let result = mul_shift_32(m, factor, shift);",
+            "    debug_assert!(shift > 32);",
+            "    debug_assert!(result <= u32::max_value() as u64);",
+            "    assert_eq!(result, 1);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let m: u32 = 0; // Min value",
+          "    let factor: u64 = 1; // Small factor",
+          "    let shift: i32 = 34; // Valid shift",
+          "    let _ = mul_shift_32(m, factor, shift);",
+          "}"
+        ],
+        "oracles": [],
+        "codes": [],
+        "can_compile": [],
+        "repaired": []
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let m: u32 = 345678; // Arbitrary value",
+          "    let factor: u64 = 0; // Zero factor",
+          "    let shift: i32 = 35; // Valid shift",
+          "    let _ = mul_shift_32(m, factor, shift);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let m: u32 = 345678;",
+            "    let factor: u64 = 0;",
+            "    let shift: i32 = 35;",
+            "    assert!(shift > 32);"
+          ],
+          [
+            "    let m: u32 = 345678;",
+            "    let factor: u64 = 0;",
+            "    let shift: i32 = 35;",
+            "    assert_eq!(mul_shift_32(m, factor, shift), 0);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let m: u32 = 345678; // Arbitrary value",
+            "    let factor: u64 = 0; // Zero factor",
+            "    let shift: i32 = 35; // Valid shift",
+            "    let _ = mul_shift_32(m, factor, shift);",
+            "    let m: u32 = 345678;",
+            "    let factor: u64 = 0;",
+            "    let shift: i32 = 35;",
+            "    assert!(shift > 32);",
+            "}"
+          ],
+          [
+            "{",
+            "    let m: u32 = 345678; // Arbitrary value",
+            "    let factor: u64 = 0; // Zero factor",
+            "    let shift: i32 = 35; // Valid shift",
+            "    let _ = mul_shift_32(m, factor, shift);",
+            "    let m: u32 = 345678;",
+            "    let factor: u64 = 0;",
+            "    let shift: i32 = 35;",
+            "    assert_eq!(mul_shift_32(m, factor, shift), 0);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

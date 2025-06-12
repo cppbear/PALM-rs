@@ -1,0 +1,105 @@
+{
+  "name": "regex::literal::literal::BoyerMooreSearch::should_use",
+  "name_with_impl": "regex::literal::{impl#5}::should_use",
+  "mod_info": {
+    "name": "literal",
+    "loc": "src/lib.rs:656:1:656:13"
+  },
+  "visible": false,
+  "loc": "src/literal/mod.rs:714:5:742:6",
+  "doc": "/// The key heuristic behind which the BoyerMooreSearch lives.\n///\n/// See `rust-lang/regex/issues/408`.\n///\n/// Tuned Boyer-Moore is actually pretty slow! It turns out a handrolled\n/// platform-specific memchr routine with a bit of frequency\n/// analysis sprinkled on top actually wins most of the time.\n/// However, there are a few cases where Tuned Boyer-Moore still\n/// wins.\n///\n/// If the haystack is random, frequency analysis doesn't help us,\n/// so Boyer-Moore will win for sufficiently large needles.\n/// Unfortunately, there is no obvious way to determine this\n/// ahead of time.\n///\n/// If the pattern itself consists of very common characters,\n/// frequency analysis won't get us anywhere. The most extreme\n/// example of this is a pattern like `eeeeeeeeeeeeeeee`. Fortunately,\n/// this case is wholly determined by the pattern, so we can actually\n/// implement the heuristic.\n///\n/// A third case is if the pattern is sufficiently long. The idea\n/// here is that once the pattern gets long enough the Tuned\n/// Boyer-Moore skip loop will start making strides long enough\n/// to beat the asm deep magic that is memchr.\n",
+  "code": [
+    "fn should_use(pattern: &[u8]) -> bool {",
+    "    // The minimum pattern length required to use TBM.",
+    "    const MIN_LEN: usize = 9;",
+    "    // The minimum frequency rank (lower is rarer) that every byte in the",
+    "    // pattern must have in order to use TBM. That is, if the pattern",
+    "    // contains _any_ byte with a lower rank, then TBM won't be used.",
+    "    const MIN_CUTOFF: usize = 150;",
+    "    // The maximum frequency rank for any byte.",
+    "    const MAX_CUTOFF: usize = 255;",
+    "    // The scaling factor used to determine the actual cutoff frequency",
+    "    // to use (keeping in mind that the minimum frequency rank is bounded",
+    "    // by MIN_CUTOFF). This scaling factor is an attempt to make TBM more",
+    "    // likely to be used as the pattern grows longer. That is, longer",
+    "    // patterns permit somewhat less frequent bytes than shorter patterns,",
+    "    // under the assumption that TBM gets better as the pattern gets",
+    "    // longer.",
+    "    const LEN_CUTOFF_PROPORTION: usize = 4;",
+    "",
+    "    let scaled_rank = pattern.len().wrapping_mul(LEN_CUTOFF_PROPORTION);",
+    "    let cutoff = cmp::max(",
+    "        MIN_CUTOFF,",
+    "        MAX_CUTOFF - cmp::min(MAX_CUTOFF, scaled_rank),",
+    "    );",
+    "    // The pattern must be long enough to be worthwhile. e.g., memchr will",
+    "    // be faster on `e` because it is short even though e is quite common.",
+    "    pattern.len() > MIN_LEN",
+    "        // all the bytes must be more common than the cutoff.",
+    "        && pattern.iter().all(|c| freq_rank(*c) >= cutoff)",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 0,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "pattern.len() > MIN_LEN",
+          "norm": "MIN_LEN < pattern.len()",
+          "value": "true",
+          "line": 739,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "pattern.len() > MIN_LEN",
+          "norm": "MIN_LEN < pattern.len()",
+          "value": "false",
+          "line": 739,
+          "bound": "pattern.len() == MIN_LEN",
+          "may_panic": false
+        }
+      ],
+      "ret": "pattern.len() > MIN_LEN\n            // all the bytes must be more common than the cutoff.\n            && pattern.iter().all(|c| freq_rank(*c) >= cutoff)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        11
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

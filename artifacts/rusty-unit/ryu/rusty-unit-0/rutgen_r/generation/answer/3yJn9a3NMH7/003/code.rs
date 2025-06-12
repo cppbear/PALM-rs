@@ -1,0 +1,37 @@
+// Answer 0
+
+#[test]
+#[should_panic]
+fn test_log2_pow5_negative_input() {
+    let e: i32 = -1;
+    let _result = log2_pow5(e);
+}
+
+#[test]
+fn test_log2_pow5_zero_input() {
+    let e: i32 = 0;
+    let result = log2_pow5(e);
+    assert_eq!(result, 0);
+}
+
+#[test]
+fn test_log2_pow5_boundary_above() {
+    let e: i32 = 3528;
+    let result = log2_pow5(e);
+    assert_eq!(result, 531441);
+}
+
+#[test]
+#[should_panic]
+fn test_log2_pow5_boundary_overflow() {
+    let e: i32 = 3529;
+    let _result = log2_pow5(e);
+}
+
+#[test]
+fn test_log2_pow5_mid_range() {
+    let e: i32 = 1000;
+    let result = log2_pow5(e);
+    assert_eq!(result, 120126); // Adjust the expected value based on the function's logic
+}
+

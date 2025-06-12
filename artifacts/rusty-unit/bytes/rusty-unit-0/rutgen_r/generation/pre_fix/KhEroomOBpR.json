@@ -1,0 +1,182 @@
+{
+  "name": "bytes::bytes_mut::increment_shared",
+  "name_with_impl": "bytes::bytes_mut::increment_shared",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1425:1:1431:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: old_size > isize::MAX as usize is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let shared_instance = Shared {",
+                  "        ref_count: AtomicUsize::new(isize::MAX as usize),",
+                  "    };",
+                  "",
+                  "    let shared_ptr: *mut Shared = &shared_instance as *const _ as *mut _;",
+                  "",
+                  "    unsafe {",
+                  "        let result = std::panic::catch_unwind(|| {",
+                  "            increment_shared(shared_ptr);",
+                  "        });",
+                  "",
+                  "        assert!(result.is_err(), \"Function should panic when old_size is greater than isize::MAX\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes_mut.rs:1925:8\n     |\n1925 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `Ordering`\n    --> src/bytes_mut.rs:1929:42\n     |\n1929 |     use std::sync::atomic::{AtomicUsize, Ordering};\n     |                                          ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes_mut.rs:1943:30\n     |\n1943 |             increment_shared(shared_ptr);\n     |             ---------------- ^^^^^^^^^^ expected `bytes_mut::Shared`, found `Shared`\n     |             |\n     |             arguments to this function are incorrect\n     |\n     = note: `Shared` and `bytes_mut::Shared` have similar names, but are actually distinct types\nnote: `Shared` is defined in module `crate::bytes_mut::llmtests` of the current crate\n    --> src/bytes_mut.rs:1931:5\n     |\n1931 |     struct Shared {\n     |     ^^^^^^^^^^^^^\nnote: `bytes_mut::Shared` is defined in module `crate::bytes_mut` of the current crate\n    --> src/bytes_mut.rs:77:1\n     |\n77   | struct Shared {\n     | ^^^^^^^^^^^^^\nnote: function defined here\n    --> src/bytes_mut.rs:1425:11\n     |\n1425 | unsafe fn increment_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: old_size > isize::MAX as usize is false, with bound old_size == isize::MAX as usize\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn increment_shared(ptr: *mut Shared) {",
+                  "        let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);",
+                  "",
+                  "        if old_size > isize::MAX as usize {",
+                  "            crate::abort();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Initialize Shared with max size",
+                  "    let shared = Shared {",
+                  "        ref_count: AtomicUsize::new(isize::MAX as usize),",
+                  "    };",
+                  "",
+                  "    let shared_ptr: *mut Shared = &shared as *const _ as *mut _;",
+                  "",
+                  "    // Call the function, should not panic",
+                  "    unsafe {",
+                  "        increment_shared(shared_ptr);",
+                  "    }",
+                  "",
+                  "    // Verify the ref_count has incremented to isize::MAX as usize + 1",
+                  "    assert_eq!(shared.ref_count.load(Ordering::Relaxed), isize::MAX as usize + 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn increment_shared(ptr: *mut Shared) {",
+                  "        let old_size = (*ptr).ref_count.fetch_add(1, Ordering::Relaxed);",
+                  "",
+                  "        if old_size > isize::MAX as usize {",
+                  "            crate::abort();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Initialize Shared at max size, will panic on next increment",
+                  "    let shared = Shared {",
+                  "        ref_count: AtomicUsize::new(isize::MAX as usize),",
+                  "    };",
+                  "",
+                  "    let shared_ptr: *mut Shared = &shared as *const _ as *mut _;",
+                  "",
+                  "    // Calling this should trigger a panic",
+                  "    unsafe {",
+                  "        increment_shared(shared_ptr);",
+                  "        increment_shared(shared_ptr); // This should cause a panic",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

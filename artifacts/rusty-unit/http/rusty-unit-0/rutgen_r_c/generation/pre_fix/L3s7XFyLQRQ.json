@@ -1,0 +1,113 @@
+{
+  "name": "http::header::map::header::map::OccupiedEntry<'a, T>::remove_entry",
+  "name_with_impl": "http::header::map::{impl#52}::remove_entry",
+  "mod_info": {
+    "name": "header::map",
+    "loc": "src/header/mod.rs:73:1:73:9"
+  },
+  "visible": true,
+  "loc": "src/header/map.rs:3311:5:3319:6",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// may panic: self.map.entries[self.index] may panic in certain situations\n",
+        "// constraint: let Some(links) = self.map.entries[self.index].links is true\n",
+        "// expected return value/type: (entry.key, entry.value)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockHeaderMap {",
+                  "        entries: Vec<Bucket<u32>>,",
+                  "    }",
+                  "",
+                  "    impl MockHeaderMap {",
+                  "        fn new() -> Self {",
+                  "            let mut entries = Vec::new();",
+                  "            // Adding an entry with links",
+                  "            entries.push(Bucket {",
+                  "                hash: 0,",
+                  "                key: HeaderName { inner: Repr::Custom },",
+                  "                value: 42,",
+                  "                links: Some(Links { next: 1, tail: 1 }),",
+                  "            });",
+                  "            entries.push(Bucket {",
+                  "                hash: 1,",
+                  "                key: HeaderName { inner: Repr::Custom },",
+                  "                value: 100,",
+                  "                links: None, // This entry won't be affected",
+                  "            });",
+                  "",
+                  "            MockHeaderMap { entries }",
+                  "        }",
+                  "",
+                  "        fn remove_found(&mut self, probe: usize, found: usize) -> Bucket<u32> {",
+                  "            self.entries.swap_remove(found)",
+                  "        }",
+                  "",
+                  "        fn remove_all_extra_values(&mut self, _next: usize) {",
+                  "            // This is a mock; no extra values to remove",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct OccupiedEntry<'a> {",
+                  "        map: &'a mut MockHeaderMap,",
+                  "        index: usize,",
+                  "        probe: usize,",
+                  "    }",
+                  "",
+                  "    // Simulating the remove_entry method",
+                  "    impl<'a> OccupiedEntry<'a> {",
+                  "        fn remove_entry(self) -> (HeaderName, u32) {",
+                  "            if let Some(links) = self.map.entries[self.index].links {",
+                  "                self.map.remove_all_extra_values(links.next);",
+                  "            }",
+                  "",
+                  "            let entry = self.map.remove_found(self.probe, self.index);",
+                  "",
+                  "            (entry.key, entry.value)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut map = MockHeaderMap::new();",
+                  "    let entry = OccupiedEntry {",
+                  "        map: &mut map,",
+                  "        index: 0,",
+                  "        probe: 0,",
+                  "    };",
+                  "    ",
+                  "    let (key, value) = entry.remove_entry();",
+                  "",
+                  "    assert_eq!(value, 42);",
+                  "    // Note: In a real test, you would also check the state of the map afterwards,",
+                  "    // e.g., make sure entry 0 was removed, links handled correctly.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nerror[E0433]: failed to resolve: use of undeclared type `Repr`\n    --> src/header/map.rs:3921:42\n     |\n3921 |                 key: HeaderName { inner: Repr::Custom },\n     |                                          ^^^^ use of undeclared type `Repr`\n     |\nnote: enum `crate::header::name::Repr` exists but is inaccessible\n    --> src/header/name.rs:44:1\n     |\n44   | enum Repr<T> {\n     | ^^^^^^^^^^^^ not accessible\n\nerror[E0433]: failed to resolve: use of undeclared type `Repr`\n    --> src/header/map.rs:3927:42\n     |\n3927 |                 key: HeaderName { inner: Repr::Custom },\n     |                                          ^^^^ use of undeclared type `Repr`\n     |\nnote: enum `crate::header::name::Repr` exists but is inaccessible\n    --> src/header/name.rs:44:1\n     |\n44   | enum Repr<T> {\n     | ^^^^^^^^^^^^ not accessible\n\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/header/map.rs:3920:23\n     |\n3920 |                 hash: 0,\n     |                       ^ expected `HashValue`, found integer\n     |\nhelp: try wrapping the expression in `header::map::HashValue`\n     |\n3920 |                 hash: header::map::HashValue(0),\n     |                       +++++++++++++++++++++++ +\n\nerror[E0308]: mismatched types\n    --> src/header/map.rs:3926:23\n     |\n3926 |                 hash: 1,\n     |                       ^ expected `HashValue`, found integer\n     |\nhelp: try wrapping the expression in `header::map::HashValue`\n     |\n3926 |                 hash: header::map::HashValue(1),\n     |                       +++++++++++++++++++++++ +\n\nwarning: unused variable: `key`\n    --> src/header/map.rs:3970:10\n     |\n3970 |     let (key, value) = entry.remove_entry();\n     |          ^^^ help: if this is intentional, prefix it with an underscore: `_key`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `probe`\n    --> src/header/map.rs:3935:36\n     |\n3935 |         fn remove_found(&mut self, probe: usize, found: usize) -> Bucket<u32> {\n     |                                    ^^^^^ help: if this is intentional, prefix it with an underscore: `_probe`\n\nSome errors have detailed explanations: E0308, E0433.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `http` (lib test) generated 17 warnings\nerror: could not compile `http` (lib test) due to 4 previous errors; 17 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

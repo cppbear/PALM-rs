@@ -1,0 +1,1478 @@
+{
+  "name": "http::header::value::<header::value::HeaderValue as std::fmt::Debug>::fmt",
+  "name_with_impl": "http::header::value::{impl#2}::fmt",
+  "mod_info": {
+    "name": "header::value",
+    "loc": "src/header/mod.rs:75:1:75:11"
+  },
+  "visible": true,
+  "loc": "src/header/value.rs:386:5:410:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::fmt;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct HeaderValue {",
+                  "        is_sensitive: bool,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl HeaderValue {",
+                  "        fn new(is_sensitive: bool, data: Vec<u8>) -> Self {",
+                  "            HeaderValue { is_sensitive, data }",
+                  "        }",
+                  "",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.data",
+                  "        }",
+                  "    }",
+                  "",
+                  "    use std::fmt;",
+                  "",
+                  "    impl fmt::Display for HeaderValue {",
+                  "        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
+                  "            if self.is_sensitive {",
+                  "                f.write_str(\"Sensitive\")",
+                  "            } else {",
+                  "                f.write_str(\"\\\"\")?;",
+                  "                let mut from = 0;",
+                  "                let bytes = self.as_bytes();",
+                  "                for (i, &b) in bytes.iter().enumerate() {",
+                  "                    if !is_visible_ascii(b) || b == b'\"' {",
+                  "                        if from != i {",
+                  "                            f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..i]) })?;",
+                  "                        }",
+                  "                        if b == b'\"' {",
+                  "                            f.write_str(\"\\\\\\\"\")?;",
+                  "                        } else {",
+                  "                            write!(f, \"\\\\x{:x}\", b)?;",
+                  "                        }",
+                  "                        from = i + 1;",
+                  "                    }",
+                  "                }",
+                  "                f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..]) })?;",
+                  "                f.write_str(\"\\\"\")",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn is_visible_ascii(b: u8) -> bool {",
+                  "        b.is_ascii() && (b >= 32 && b <= 126)",
+                  "    }",
+                  "",
+                  "    let sensitive_value = HeaderValue::new(true, b\"Sensitive Information\".to_vec());",
+                  "    assert_eq!(format!(\"{}\", sensitive_value), \"Sensitive\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "struct FakeFormatter<'a> {",
+            "    buffer: &'a mut Vec<u8>,",
+            "    error_on_write: bool,",
+            "}",
+            "",
+            "impl<'a> std::fmt::Write for FakeFormatter<'a> {",
+            "    fn write_str(&mut self, s: &str) -> std::fmt::Result {",
+            "        if self.error_on_write {",
+            "            Err(std::fmt::Error)",
+            "        } else {",
+            "            self.buffer.extend_from_slice(s.as_bytes());",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        bytes: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.bytes",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let test_instance = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"hello, world!\".to_vec(),",
+                  "    };",
+                  "",
+                  "    let mut buffer = Vec::new();",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        let write_result = {",
+                  "            // Simulating error on f.write_str(\"\\\"\")",
+                  "            let mut fake_formatter = FakeFormatter { buffer: &mut buffer, error_on_write: true };",
+                  "            test_instance.fmt(&mut fake_formatter)",
+                  "        };",
+                  "        write_result",
+                  "    });",
+                  "",
+                  "    assert!(result.is_err(), \"Expected panic due to write_str error\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:843:27\n     |\n822  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n843  |             test_instance.fmt(&mut fake_formatter)\n     |                           ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n843  |             Box::new(test_instance).fmt(&mut fake_formatter)\n     |             +++++++++             +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n843  |             Arc::new(test_instance).fmt(&mut fake_formatter)\n     |             +++++++++             +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n843  |             Rc::new(test_instance).fmt(&mut fake_formatter)\n     |             ++++++++             +\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is true\n",
+        "// constraint: is_visible_ascii(b) is true\n",
+        "// constraint: b == b'\"' is false\n",
+        "// constraint: from != i is true\n",
+        "// may panic: bytes[from..i] may panic in certain situations\n",
+        "// constraint: f.write_str(unsafe { str::from_utf8_unchecked(&bytes[from..i]) })? is Ok/Some\n",
+        "// constraint: b == b'\"' is true\n",
+        "// constraint: write!(f, \"\\\\x{:x}\", b)? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "    ",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.data",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn is_visible_ascii(b: u8) -> bool {",
+                  "        b.is_ascii() && !b.is_ascii_control()",
+                  "    }",
+                  "",
+                  "    let instance = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        data: b\"HelloWorld\".to_vec(),",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    {",
+                  "        let mut formatter = std::fmt::Formatter::new();",
+                  "        let result = instance.fmt(&mut formatter);",
+                  "        assert!(result.is_ok());",
+                  "        output.push(formatter.buffer().to_string());",
+                  "    }",
+                  "    assert_eq!(output[0], \"\\\"HelloWorld\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0658]: use of unstable library feature 'fmt_internals': internal to standard library\n   --> src/header/value.rs:828:29\n    |\n828 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^\n    |\n    = help: add `#![feature(fmt_internals)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nerror[E0061]: this function takes 1 argument but 0 arguments were supplied\n   --> src/header/value.rs:828:29\n    |\n828 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^-- argument #1 of type `&mut dyn std::fmt::Write` is missing\n    |\nnote: associated function defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:286:12\n    |\n286 |     pub fn new(buf: &'a mut (dyn Write + 'a)) -> Formatter<'a> {\n    |            ^^^\nhelp: provide the argument\n    |\n828 |         let mut formatter = std::fmt::Formatter::new(/* &mut dyn std::fmt::Write */);\n    |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:829:31\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n829  |         let result = instance.fmt(&mut formatter);\n     |                               ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Box::new(instance).fmt(&mut formatter);\n     |                      +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Arc::new(instance).fmt(&mut formatter);\n     |                      +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Rc::new(instance).fmt(&mut formatter);\n     |                      ++++++++        +\n\nerror[E0599]: no method named `buffer` found for struct `Formatter` in the current scope\n   --> src/header/value.rs:831:31\n    |\n831 |         output.push(formatter.buffer().to_string());\n    |                               ^^^^^^ method not found in `Formatter<'_>`\n\nSome errors have detailed explanations: E0061, E0599, E0658.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 4 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "    ",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.data",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn is_visible_ascii(b: u8) -> bool {",
+                  "        b.is_ascii() && !b.is_ascii_control()",
+                  "    }",
+                  "",
+                  "    let instance = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        data: b\"Hello \\\"World\\\"\".to_vec(),",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    {",
+                  "        let mut formatter = std::fmt::Formatter::new();",
+                  "        let result = instance.fmt(&mut formatter);",
+                  "        assert!(result.is_ok());",
+                  "        output.push(formatter.buffer().to_string());",
+                  "    }",
+                  "    assert_eq!(output[0], \"\\\"Hello \\\\\\\"World\\\\\\\"\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0658]: use of unstable library feature 'fmt_internals': internal to standard library\n   --> src/header/value.rs:828:29\n    |\n828 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^\n    |\n    = help: add `#![feature(fmt_internals)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nerror[E0061]: this function takes 1 argument but 0 arguments were supplied\n   --> src/header/value.rs:828:29\n    |\n828 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^-- argument #1 of type `&mut dyn std::fmt::Write` is missing\n    |\nnote: associated function defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:286:12\n    |\n286 |     pub fn new(buf: &'a mut (dyn Write + 'a)) -> Formatter<'a> {\n    |            ^^^\nhelp: provide the argument\n    |\n828 |         let mut formatter = std::fmt::Formatter::new(/* &mut dyn std::fmt::Write */);\n    |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:829:31\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n829  |         let result = instance.fmt(&mut formatter);\n     |                               ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Box::new(instance).fmt(&mut formatter);\n     |                      +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Arc::new(instance).fmt(&mut formatter);\n     |                      +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Rc::new(instance).fmt(&mut formatter);\n     |                      ++++++++        +\n\nerror[E0599]: no method named `buffer` found for struct `Formatter` in the current scope\n   --> src/header/value.rs:831:31\n    |\n831 |         output.push(formatter.buffer().to_string());\n    |                               ^^^^^^ method not found in `Formatter<'_>`\n\nSome errors have detailed explanations: E0061, E0599, E0658.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 4 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "    ",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.data",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn is_visible_ascii(b: u8) -> bool {",
+                  "        b.is_ascii() && !b.is_ascii_control()",
+                  "    }",
+                  "",
+                  "    let instance = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        data: b\"Hello\\x01World\".to_vec(),",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    {",
+                  "        let mut formatter = std::fmt::Formatter::new();",
+                  "        let result = instance.fmt(&mut formatter);",
+                  "        assert!(result.is_ok());",
+                  "        output.push(formatter.buffer().to_string());",
+                  "    }",
+                  "    assert_eq!(output[0], \"\\\"Hello\\\\x1fWorld\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0658]: use of unstable library feature 'fmt_internals': internal to standard library\n   --> src/header/value.rs:828:29\n    |\n828 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^\n    |\n    = help: add `#![feature(fmt_internals)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nerror[E0061]: this function takes 1 argument but 0 arguments were supplied\n   --> src/header/value.rs:828:29\n    |\n828 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^-- argument #1 of type `&mut dyn std::fmt::Write` is missing\n    |\nnote: associated function defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:286:12\n    |\n286 |     pub fn new(buf: &'a mut (dyn Write + 'a)) -> Formatter<'a> {\n    |            ^^^\nhelp: provide the argument\n    |\n828 |         let mut formatter = std::fmt::Formatter::new(/* &mut dyn std::fmt::Write */);\n    |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:829:31\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n829  |         let result = instance.fmt(&mut formatter);\n     |                               ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Box::new(instance).fmt(&mut formatter);\n     |                      +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Arc::new(instance).fmt(&mut formatter);\n     |                      +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         let result = Rc::new(instance).fmt(&mut formatter);\n     |                      ++++++++        +\n\nerror[E0599]: no method named `buffer` found for struct `Formatter` in the current scope\n   --> src/header/value.rs:831:31\n    |\n831 |         output.push(formatter.buffer().to_string());\n    |                               ^^^^^^ method not found in `Formatter<'_>`\n\nSome errors have detailed explanations: E0061, E0599, E0658.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 4 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 17,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is true\n",
+        "// constraint: is_visible_ascii(b) is true\n",
+        "// constraint: b == b'\"' is true\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is false\n",
+        "// may panic: bytes[from..] may panic in certain situations\n",
+        "// constraint: f.write_str(unsafe { str::from_utf8_unchecked(&bytes[from..]) })? is Ok/Some\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::fmt;"
+          ],
+          "has_test_mod": false,
+          "common": [
+            "fn is_visible_ascii(b: u8) -> bool {",
+            "    (b >= 32 && b <= 126) // ASCII printable range",
+            "}",
+            "",
+            "struct HeaderValue {",
+            "    is_sensitive: bool,",
+            "    bytes: Vec<u8>,",
+            "}",
+            "",
+            "impl HeaderValue {",
+            "    fn as_bytes(&self) -> &[u8] {",
+            "        &self.bytes",
+            "    }",
+            "}",
+            "",
+            "",
+            "impl fmt::Display for HeaderValue {",
+            "    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
+            "        if self.is_sensitive {",
+            "            f.write_str(\"Sensitive\")",
+            "        } else {",
+            "            f.write_str(\"\\\"\")?;",
+            "            let mut from = 0;",
+            "            let bytes = self.as_bytes();",
+            "            for (i, &b) in bytes.iter().enumerate() {",
+            "                if !is_visible_ascii(b) || b == b'\"' {",
+            "                    if from != i {",
+            "                        f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..i]) })?;",
+            "                    }",
+            "                    if b == b'\"' {",
+            "                        f.write_str(\"\\\\\\\"\")?;",
+            "                    } else {",
+            "                        write!(f, \"\\\\x{:x}\", b)?;",
+            "                    }",
+            "                    from = i + 1;",
+            "                }",
+            "            }",
+            "",
+            "            f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..]) })?;",
+            "            f.write_str(\"\\\"\")",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "",
+            "",
+            "",
+            "#[should_panic]",
+            "fn test_fmt_panic_on_empty_bytes() {",
+            "    let header_value = HeaderValue {",
+            "        is_sensitive: false,",
+            "        bytes: Vec::new(),",
+            "    };",
+            "    let mut output = String::new();",
+            "    let _ = write!(&mut output, \"{}\", header_value);",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Hello World!\".to_vec(),",
+                  "    };",
+                  "    let mut output = String::new();",
+                  "    let result = write!(&mut output, \"{}\", header_value);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, \"\\\"Hello World!\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Hello \\\"World\\\"!\".to_vec(),",
+                  "    };",
+                  "    let mut output = String::new();",
+                  "    let result = write!(&mut output, \"{}\", header_value);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, \"\\\"Hello \\\\\\\"World\\\\\\\"!\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Hello\\x00World!\".to_vec(), // non-visible ASCII",
+                  "    };",
+                  "    let mut output = String::new();",
+                  "    let result = write!(&mut output, \"{}\", header_value);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, \"\\\"Hello\\\\x0World!\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"\\\"\".to_vec(),",
+                  "    };",
+                  "    let mut output = String::new();",
+                  "    let result = write!(&mut output, \"{}\", header_value);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, \"\\\"\\\\\\\"\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 18,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is true\n",
+        "// constraint: is_visible_ascii(b) is false\n",
+        "// constraint: from != i is true\n",
+        "// may panic: bytes[from..i] may panic in certain situations\n",
+        "// constraint: f.write_str(unsafe { str::from_utf8_unchecked(&bytes[from..i]) })? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::fmt::Write;",
+            "use std::fmt;"
+          ],
+          "has_test_mod": false,
+          "common": [
+            "fn is_visible_ascii(b: u8) -> bool {",
+            "    b.is_ascii_graphic()",
+            "}",
+            "",
+            "struct HeaderValue {",
+            "    is_sensitive: bool,",
+            "    value: Vec<u8>,",
+            "}",
+            "",
+            "impl HeaderValue {",
+            "    fn as_bytes(&self) -> &[u8] {",
+            "        &self.value",
+            "    }",
+            "}",
+            "",
+            "",
+            "fn fmt(value: &HeaderValue, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
+            "    if value.is_sensitive {",
+            "        f.write_str(\"Sensitive\")",
+            "    } else {",
+            "        f.write_str(\"\\\"\")?;",
+            "        let mut from = 0;",
+            "        let bytes = value.as_bytes();",
+            "        for (i, &b) in bytes.iter().enumerate() {",
+            "            if !is_visible_ascii(b) || b == b'\"' {",
+            "                if from != i {",
+            "                    f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..i]) })?;",
+            "                }",
+            "                if b == b'\"' {",
+            "                    f.write_str(\"\\\\\\\"\")?;",
+            "                } else {",
+            "                    write!(f, \"\\\\x{:x}\", b)?;",
+            "                }",
+            "                from = i + 1;",
+            "            }",
+            "        }",
+            "",
+            "        f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..]) })?;",
+            "        f.write_str(\"\\\"\")",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        value: b\"Hello\\x01World\".to_vec(), // Non-visible byte at 0x01",
+                  "    };",
+                  "    let mut output = String::new();",
+                  "    let result = fmt(&header_value, &mut output);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, \"\\\"Hello\\\\x1fWorld\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/header/value.rs:853:37\n    |\n853 |     let result = fmt(&header_value, &mut output);\n    |                  ---                ^^^^^^^^^^^ expected `&mut Formatter<'_>`, found `&mut String`\n    |                  |\n    |                  arguments to this function are incorrect\n    |\n    = note: expected mutable reference `&mut Formatter<'_>`\n               found mutable reference `&mut String`\nnote: function defined here\n   --> src/header/value.rs:819:4\n    |\n819 | fn fmt(value: &HeaderValue, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n    |    ^^^                      --------------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        value: b\"Test\\x0bString\\x0cHere\".to_vec(), // Non-visible bytes at 0x0b and 0x0c",
+                  "    };",
+                  "    let mut output = String::new();",
+                  "    let result = fmt(&header_value, &mut output);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, \"\\\"Test\\\\xbString\\\\xcHere\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/header/value.rs:853:37\n    |\n853 |     let result = fmt(&header_value, &mut output);\n    |                  ---                ^^^^^^^^^^^ expected `&mut Formatter<'_>`, found `&mut String`\n    |                  |\n    |                  arguments to this function are incorrect\n    |\n    = note: expected mutable reference `&mut Formatter<'_>`\n               found mutable reference `&mut String`\nnote: function defined here\n   --> src/header/value.rs:819:4\n    |\n819 | fn fmt(value: &HeaderValue, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n    |    ^^^                      --------------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        value: b\"Sample \\\"Quote\\\" and \\x07Bell\".to_vec(), // Includes visible bytes with quotes",
+                  "    };",
+                  "    let mut output = String::new();",
+                  "    let result = fmt(&header_value, &mut output);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, \"\\\"Sample \\\\\\\"Quote\\\\\\\" and \\\\x7Bell\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/header/value.rs:853:37\n    |\n853 |     let result = fmt(&header_value, &mut output);\n    |                  ---                ^^^^^^^^^^^ expected `&mut Formatter<'_>`, found `&mut String`\n    |                  |\n    |                  arguments to this function are incorrect\n    |\n    = note: expected mutable reference `&mut Formatter<'_>`\n               found mutable reference `&mut String`\nnote: function defined here\n   --> src/header/value.rs:819:4\n    |\n819 | fn fmt(value: &HeaderValue, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n    |    ^^^                      --------------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        value: vec![], // Empty value should trigger panics during slice",
+                  "    };",
+                  "    let mut output = String::new();",
+                  "    let result = fmt(&header_value, &mut output);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/header/value.rs:854:37\n    |\n854 |     let result = fmt(&header_value, &mut output);\n    |                  ---                ^^^^^^^^^^^ expected `&mut Formatter<'_>`, found `&mut String`\n    |                  |\n    |                  arguments to this function are incorrect\n    |\n    = note: expected mutable reference `&mut Formatter<'_>`\n               found mutable reference `&mut String`\nnote: function defined here\n   --> src/header/value.rs:819:4\n    |\n819 | fn fmt(value: &HeaderValue, f: &mut fmt::Formatter<'_>) -> fmt::Result {\n    |    ^^^                      --------------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 25,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is true\n",
+        "// constraint: is_visible_ascii(b) is false\n",
+        "// constraint: from != i is false\n",
+        "// constraint: b == b'\"' is false\n",
+        "// constraint: f.write_str(\"\\\\\\\"\")? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            b\"TestValue\"",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let test_instance = TestStruct { is_sensitive: true };",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::write(&mut output, |f| test_instance.fmt(f));",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, b\"Sensitive\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:818:34\n    |\n818 |     let result = std::fmt::write(&mut output, |f| test_instance.fmt(f));\n    |                                  ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:818:65\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n818  |     let result = std::fmt::write(&mut output, |f| test_instance.fmt(f));\n     |                                                                 ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n818  |     let result = std::fmt::write(&mut output, |f| Box::new(test_instance).fmt(f));\n     |                                                   +++++++++             +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n818  |     let result = std::fmt::write(&mut output, |f| Arc::new(test_instance).fmt(f));\n     |                                                   +++++++++             +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n818  |     let result = std::fmt::write(&mut output, |f| Rc::new(test_instance).fmt(f));\n     |                                                   ++++++++             +\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            b\"\\x00\\x01\\x02\" // Non-visible ASCII",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let test_instance = TestStruct { is_sensitive: false };",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::write(&mut output, |f| test_instance.fmt(f));",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(output, b\"\\\"\\x00\\x01\\x02\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:818:34\n    |\n818 |     let result = std::fmt::write(&mut output, |f| test_instance.fmt(f));\n    |                                  ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:818:65\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n818  |     let result = std::fmt::write(&mut output, |f| test_instance.fmt(f));\n     |                                                                 ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n818  |     let result = std::fmt::write(&mut output, |f| Box::new(test_instance).fmt(f));\n     |                                                   +++++++++             +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n818  |     let result = std::fmt::write(&mut output, |f| Arc::new(test_instance).fmt(f));\n     |                                                   +++++++++             +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n818  |     let result = std::fmt::write(&mut output, |f| Rc::new(test_instance).fmt(f));\n     |                                                   ++++++++             +\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            b\"TestValue\";",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let test_instance = TestStruct { is_sensitive: false };",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::write(&mut output, |f| {",
+                  "        // Simulating an error on write_str",
+                  "        let _ = f.write_str(\"\\\"\")?;",
+                  "        // The following statement will panic due to simulated error condition.",
+                  "        panic!();",
+                  "    });",
+                  "",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:819:34\n    |\n819 |     let result = std::fmt::write(&mut output, |f| {\n    |                                  ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0308]: mismatched types\n   --> src/header/value.rs:812:31\n    |\n812 |         fn as_bytes(&self) -> &[u8] {\n    |            --------           ^^^^^ expected `&[u8]`, found `()`\n    |            |\n    |            implicitly returns `()` as its body has no tail or `return` expression\n\nwarning: unused import: `super`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^\n\nSome errors have detailed explanations: E0277, E0308.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 27,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is true\n",
+        "// constraint: is_visible_ascii(b) is false\n",
+        "// constraint: from != i is false\n",
+        "// constraint: b == b'\"' is false\n",
+        "// constraint: f.write_str(\"\\\\\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is false\n",
+        "// may panic: bytes[from..] may panic in certain situations\n",
+        "// constraint: f.write_str(unsafe { str::from_utf8_unchecked(&bytes[from..]) })? is Ok/Some\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn is_visible_ascii(b: u8) -> bool {",
+            "    (0x20..=0x7E).contains(&b)",
+            "}",
+            "",
+            "struct HeaderValue {",
+            "    is_sensitive: bool,",
+            "    bytes: Vec<u8>,",
+            "}",
+            "",
+            "impl HeaderValue {",
+            "    fn as_bytes(&self) -> &[u8] {",
+            "        &self.bytes",
+            "    }",
+            "    ",
+            "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {",
+            "        if self.is_sensitive {",
+            "            f.write_str(\"Sensitive\")",
+            "        } else {",
+            "            f.write_str(\"\\\"\")?;",
+            "            let mut from = 0;",
+            "            let bytes = self.as_bytes();",
+            "            for (i, &b) in bytes.iter().enumerate() {",
+            "                if !is_visible_ascii(b) || b == b'\"' {",
+            "                    if from != i {",
+            "                        f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..i]) })?;",
+            "                    }",
+            "                    if b == b'\"' {",
+            "                        f.write_str(\"\\\\\\\"\")?;",
+            "                    } else {",
+            "                        write!(f, \"\\\\x{:x}\", b)?;",
+            "                    }",
+            "                    from = i + 1;",
+            "                }",
+            "            }",
+            "            f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..]) })?;",
+            "            f.write_str(\"\\\"\")",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: vec![0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, b'\"', 0x0A, 0x0B, 0x0C],",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    {",
+                  "        let result = std::fmt::write(&mut output, |f| header_value.fmt(f));",
+                  "        assert!(result.is_ok());",
+                  "    }",
+                  "    ",
+                  "    let expected_output = r#\"\"\\x0\\x1\\x2\\x3\\x4\\x5\\x6\\x7\\x8\\\"#;",
+                  "    assert_eq!(String::from_utf8(output).unwrap(), expected_output);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:853:38\n    |\n853 |         let result = std::fmt::write(&mut output, |f| header_value.fmt(f));\n    |                                      ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0308]: mismatched types\n    --> src/header/value.rs:853:51\n     |\n853  |         let result = std::fmt::write(&mut output, |f| header_value.fmt(f));\n     |                      ---------------              ^^^^^^^^^^^^^^^^^^^^^^^ expected `Arguments<'_>`, found closure\n     |                      |\n     |                      arguments to this function are incorrect\n     |\n     = note: expected struct `Arguments<'_>`\n               found closure `{closure@src/header/value.rs:853:51: 853:54}`\nnote: function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1164:8\n     |\n1164 | pub fn write(output: &mut dyn Write, args: Arguments<'_>) -> Result {\n     |        ^^^^^\n\nwarning: unused import: `super`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^\n\nSome errors have detailed explanations: E0277, E0308.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"VisibleText\".to_vec(),",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    {",
+                  "        let result = std::fmt::write(&mut output, |f| header_value.fmt(f));",
+                  "        assert!(result.is_ok());",
+                  "    }",
+                  "    ",
+                  "    let expected_output = r#\"\"VisibleText\"\"#;",
+                  "    assert_eq!(String::from_utf8(output).unwrap(), expected_output);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:853:38\n    |\n853 |         let result = std::fmt::write(&mut output, |f| header_value.fmt(f));\n    |                                      ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0308]: mismatched types\n    --> src/header/value.rs:853:51\n     |\n853  |         let result = std::fmt::write(&mut output, |f| header_value.fmt(f));\n     |                      ---------------              ^^^^^^^^^^^^^^^^^^^^^^^ expected `Arguments<'_>`, found closure\n     |                      |\n     |                      arguments to this function are incorrect\n     |\n     = note: expected struct `Arguments<'_>`\n               found closure `{closure@src/header/value.rs:853:51: 853:54}`\nnote: function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1164:8\n     |\n1164 | pub fn write(output: &mut dyn Write, args: Arguments<'_>) -> Result {\n     |        ^^^^^\n\nwarning: unused import: `super`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^\n\nSome errors have detailed explanations: E0277, E0308.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: Vec::new(),",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    {",
+                  "        let result = std::fmt::write(&mut output, |f| header_value.fmt(f));",
+                  "        assert!(result.is_ok());",
+                  "    }",
+                  "    ",
+                  "    let expected_output = \"\\\"\\\"\";",
+                  "    assert_eq!(String::from_utf8(output).unwrap(), expected_output);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:853:38\n    |\n853 |         let result = std::fmt::write(&mut output, |f| header_value.fmt(f));\n    |                                      ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0308]: mismatched types\n    --> src/header/value.rs:853:51\n     |\n853  |         let result = std::fmt::write(&mut output, |f| header_value.fmt(f));\n     |                      ---------------              ^^^^^^^^^^^^^^^^^^^^^^^ expected `Arguments<'_>`, found closure\n     |                      |\n     |                      arguments to this function are incorrect\n     |\n     = note: expected struct `Arguments<'_>`\n               found closure `{closure@src/header/value.rs:853:51: 853:54}`\nnote: function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1164:8\n     |\n1164 | pub fn write(output: &mut dyn Write, args: Arguments<'_>) -> Result {\n     |        ^^^^^\n\nwarning: unused import: `super`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^\n\nSome errors have detailed explanations: E0277, E0308.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 30,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is true\n",
+        "// constraint: is_visible_ascii(b) is false\n",
+        "// constraint: from != i is false\n",
+        "// constraint: b == b'\"' is true\n",
+        "// constraint: write!(f, \"\\\\x{:x}\", b)? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is false\n",
+        "// may panic: bytes[from..] may panic in certain situations\n",
+        "// constraint: f.write_str(unsafe { str::from_utf8_unchecked(&bytes[from..]) })? is Ok/Some\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::fmt;"
+          ],
+          "has_test_mod": false,
+          "common": [
+            "fn is_visible_ascii(b: u8) -> bool {",
+            "    (0x20..=0x7E).contains(&b)",
+            "}",
+            "",
+            "struct HeaderValue {",
+            "    is_sensitive: bool,",
+            "    bytes: Vec<u8>,",
+            "}",
+            "",
+            "impl HeaderValue {",
+            "    fn as_bytes(&self) -> &[u8] {",
+            "        &self.bytes",
+            "    }",
+            "}",
+            "",
+            "",
+            "impl fmt::Debug for HeaderValue {",
+            "    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {",
+            "        if self.is_sensitive {",
+            "            f.write_str(\"Sensitive\")",
+            "        } else {",
+            "            f.write_str(\"\\\"\")?;",
+            "            let mut from = 0;",
+            "            let bytes = self.as_bytes();",
+            "            for (i, &b) in bytes.iter().enumerate() {",
+            "                if !is_visible_ascii(b) || b == b'\"' {",
+            "                    if from != i {",
+            "                        f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..i]) })?;",
+            "                    }",
+            "                    if b == b'\"' {",
+            "                        f.write_str(\"\\\\\\\"\")?;",
+            "                    } else {",
+            "                        write!(f, \"\\\\x{:x}\", b)?;",
+            "                    }",
+            "                    from = i + 1;",
+            "                }",
+            "            }",
+            "            f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..]) })?;",
+            "            f.write_str(\"\\\"\")",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: vec![b'\\\\', b'\\x00', b'\"', b'\\xFF'], // Contains non-visible ASCII and a quote",
+                  "    };",
+                  "    let result = format!(\"{:?}\", header_value);",
+                  "    assert_eq!(result, \"\\\"\\\\x5c\\\\x0\\\\\\\"\\\\xff\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"visible\".to_vec(),",
+                  "    };",
+                  "    let result = format!(\"{:?}\", header_value);",
+                  "    assert_eq!(result, \"\\\"visible\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: true,",
+                  "        bytes: b\"some_value\".to_vec(),",
+                  "    };",
+                  "    let result = format!(\"{:?}\", header_value);",
+                  "    assert_eq!(result, \"Sensitive\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let header_value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: vec![],",
+                  "    };",
+                  "    let result = format!(\"{:?}\", header_value);",
+                  "    assert_eq!(result, \"\\\"\\\"\"); // This line may panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 31,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is false\n",
+        "// may panic: bytes[from..] may panic in certain situations\n",
+        "// constraint: f.write_str(unsafe { str::from_utf8_unchecked(&bytes[from..]) })? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.data",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn is_visible_ascii(b: u8) -> bool {",
+                  "        (b >= 32 && b <= 126) // Printable ASCII range",
+                  "    }",
+                  "",
+                  "    let instance = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        data: b\"Hello, world!\".to_vec(),",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::Write::write_str(&mut output, \"\\\"\").is_ok();",
+                  "    ",
+                  "    assert!(result);",
+                  "",
+                  "    let fmt_result = {",
+                  "        let mut formatter = std::fmt::Formatter::new();",
+                  "        instance.fmt(&mut formatter)",
+                  "    };",
+                  "    ",
+                  "    assert!(fmt_result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unnecessary parentheses around block return value\n   --> src/header/value.rs:818:9\n    |\n818 |         (b >= 32 && b <= 126) // Printable ASCII range\n    |         ^                   ^\n    |\n    = note: `#[warn(unused_parens)]` on by default\nhelp: remove these parentheses\n    |\n818 -         (b >= 32 && b <= 126) // Printable ASCII range\n818 +         b >= 32 && b <= 126 // Printable ASCII range\n    |\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:827:45\n    |\n827 |     let result = std::fmt::Write::write_str(&mut output, \"\\\"\").is_ok();\n    |                  -------------------------- ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |                  |\n    |                  required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n\nerror[E0658]: use of unstable library feature 'fmt_internals': internal to standard library\n   --> src/header/value.rs:832:29\n    |\n832 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^\n    |\n    = help: add `#![feature(fmt_internals)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nerror[E0061]: this function takes 1 argument but 0 arguments were supplied\n   --> src/header/value.rs:832:29\n    |\n832 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^-- argument #1 of type `&mut dyn std::fmt::Write` is missing\n    |\nnote: associated function defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:286:12\n    |\n286 |     pub fn new(buf: &'a mut (dyn Write + 'a)) -> Formatter<'a> {\n    |            ^^^\nhelp: provide the argument\n    |\n832 |         let mut formatter = std::fmt::Formatter::new(/* &mut dyn std::fmt::Write */);\n    |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:833:18\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n833  |         instance.fmt(&mut formatter)\n     |                  ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n833  |         Box::new(instance).fmt(&mut formatter)\n     |         +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n833  |         Arc::new(instance).fmt(&mut formatter)\n     |         +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n833  |         Rc::new(instance).fmt(&mut formatter)\n     |         ++++++++        +\n\nSome errors have detailed explanations: E0061, E0277, E0599, E0658.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `http` (lib test) generated 17 warnings\nerror: could not compile `http` (lib test) due to 4 previous errors; 17 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.data",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let instance = TestStruct {",
+                  "        is_sensitive: true,",
+                  "        data: b\"Sensitive content\".to_vec(),",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::Write::write_str(&mut output, \"\\\"\").is_ok();",
+                  "    ",
+                  "    assert!(result);",
+                  "",
+                  "    let fmt_result = {",
+                  "        let mut formatter = std::fmt::Formatter::new();",
+                  "        instance.fmt(&mut formatter)",
+                  "    };",
+                  "",
+                  "    assert!(fmt_result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:824:45\n    |\n824 |     let result = std::fmt::Write::write_str(&mut output, \"\\\"\").is_ok();\n    |                  -------------------------- ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |                  |\n    |                  required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n\nerror[E0658]: use of unstable library feature 'fmt_internals': internal to standard library\n   --> src/header/value.rs:829:29\n    |\n829 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^\n    |\n    = help: add `#![feature(fmt_internals)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nerror[E0061]: this function takes 1 argument but 0 arguments were supplied\n   --> src/header/value.rs:829:29\n    |\n829 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^-- argument #1 of type `&mut dyn std::fmt::Write` is missing\n    |\nnote: associated function defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:286:12\n    |\n286 |     pub fn new(buf: &'a mut (dyn Write + 'a)) -> Formatter<'a> {\n    |            ^^^\nhelp: provide the argument\n    |\n829 |         let mut formatter = std::fmt::Formatter::new(/* &mut dyn std::fmt::Write */);\n    |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:830:18\n     |\n807  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n830  |         instance.fmt(&mut formatter)\n     |                  ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n830  |         Box::new(instance).fmt(&mut formatter)\n     |         +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n830  |         Arc::new(instance).fmt(&mut formatter)\n     |         +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n830  |         Rc::new(instance).fmt(&mut formatter)\n     |         ++++++++        +\n\nSome errors have detailed explanations: E0061, E0277, E0599, E0658.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 4 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.data",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let instance = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        data: b\"Hello\\x00World\\x07!\".to_vec(),",
+                  "    };",
+                  "",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::Write::write_str(&mut output, \"\\\"\").is_ok();",
+                  "    ",
+                  "    assert!(result);",
+                  "",
+                  "    let fmt_result = {",
+                  "        let mut formatter = std::fmt::Formatter::new();",
+                  "        instance.fmt(&mut formatter)",
+                  "    };",
+                  "",
+                  "    assert!(fmt_result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:823:45\n    |\n823 |     let result = std::fmt::Write::write_str(&mut output, \"\\\"\").is_ok();\n    |                  -------------------------- ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |                  |\n    |                  required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n\nerror[E0658]: use of unstable library feature 'fmt_internals': internal to standard library\n   --> src/header/value.rs:828:29\n    |\n828 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^\n    |\n    = help: add `#![feature(fmt_internals)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nerror[E0061]: this function takes 1 argument but 0 arguments were supplied\n   --> src/header/value.rs:828:29\n    |\n828 |         let mut formatter = std::fmt::Formatter::new();\n    |                             ^^^^^^^^^^^^^^^^^^^^^^^^-- argument #1 of type `&mut dyn std::fmt::Write` is missing\n    |\nnote: associated function defined here\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:286:12\n    |\n286 |     pub fn new(buf: &'a mut (dyn Write + 'a)) -> Formatter<'a> {\n    |            ^^^\nhelp: provide the argument\n    |\n828 |         let mut formatter = std::fmt::Formatter::new(/* &mut dyn std::fmt::Write */);\n    |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:829:18\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n829  |         instance.fmt(&mut formatter)\n     |                  ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         Box::new(instance).fmt(&mut formatter)\n     |         +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         Arc::new(instance).fmt(&mut formatter)\n     |         +++++++++        +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n829  |         Rc::new(instance).fmt(&mut formatter)\n     |         ++++++++        +\n\nSome errors have detailed explanations: E0061, E0277, E0599, E0658.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 4 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 32,
+      "prompt_conds": [
+        "// constraint: self.is_sensitive is false\n",
+        "// constraint: f.write_str(\"\\\"\")? is Ok/Some\n",
+        "// constraint: (i, &b) in bytes.iter().enumerate() is false\n",
+        "// may panic: bytes[from..] may panic in certain situations\n",
+        "// constraint: f.write_str(unsafe { str::from_utf8_unchecked(&bytes[from..]) })? is Ok/Some\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        bytes: Vec<u8>,",
+                  "    }",
+                  "    ",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.bytes",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let value = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Hello, World!\".to_vec(),",
+                  "    };",
+                  "    ",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::write(&mut output, |f| value.fmt(f));",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(String::from_utf8(output).unwrap(), \"\\\"Hello, World!\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:823:34\n    |\n823 |     let result = std::fmt::write(&mut output, |f| value.fmt(f));\n    |                                  ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:823:57\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n823  |     let result = std::fmt::write(&mut output, |f| value.fmt(f));\n     |                                                         ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Box::new(value).fmt(f));\n     |                                                   +++++++++     +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Arc::new(value).fmt(f));\n     |                                                   +++++++++     +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Rc::new(value).fmt(f));\n     |                                                   ++++++++     +\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        bytes: Vec<u8>,",
+                  "    }",
+                  "    ",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.bytes",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let value = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Hello\\x00World\\x7F\".to_vec(),",
+                  "    };",
+                  "    ",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::write(&mut output, |f| value.fmt(f));",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(String::from_utf8(output).unwrap(), \"\\\"Hello\\\\x0\\\\x7fWorld\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:823:34\n    |\n823 |     let result = std::fmt::write(&mut output, |f| value.fmt(f));\n    |                                  ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:823:57\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n823  |     let result = std::fmt::write(&mut output, |f| value.fmt(f));\n     |                                                         ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Box::new(value).fmt(f));\n     |                                                   +++++++++     +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Arc::new(value).fmt(f));\n     |                                                   +++++++++     +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Rc::new(value).fmt(f));\n     |                                                   ++++++++     +\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        is_sensitive: bool,",
+                  "        bytes: Vec<u8>,",
+                  "    }",
+                  "    ",
+                  "    impl TestStruct {",
+                  "        fn as_bytes(&self) -> &[u8] {",
+                  "            &self.bytes",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let value = TestStruct {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Hello \\\"World\\\"\".to_vec(),",
+                  "    };",
+                  "    ",
+                  "    let mut output = Vec::new();",
+                  "    let result = std::fmt::write(&mut output, |f| value.fmt(f));",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(String::from_utf8(output).unwrap(), \"\\\"Hello \\\\\\\"World\\\\\\\"\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:801:8\n    |\n801 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the trait bound `Vec<_>: std::fmt::Write` is not satisfied\n   --> src/header/value.rs:823:34\n    |\n823 |     let result = std::fmt::write(&mut output, |f| value.fmt(f));\n    |                                  ^^^^^^^^^^^ the trait `std::fmt::Write` is not implemented for `Vec<_>`\n    |\n    = help: the following other types implement trait `std::fmt::Write`:\n              &mut W\n              BytesMut\n              Formatter<'_>\n              OsString\n              String\n              core::net::display_buffer::DisplayBuffer<SIZE>\n    = note: required for the cast from `&mut Vec<_>` to `&mut dyn std::fmt::Write`\n\nerror[E0599]: no method named `fmt` found for struct `TestStruct` in the current scope\n    --> src/header/value.rs:823:57\n     |\n806  |     struct TestStruct {\n     |     ----------------- method `fmt` not found for this struct\n...\n823  |     let result = std::fmt::write(&mut output, |f| value.fmt(f));\n     |                                                         ^^^ method not found in `TestStruct`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/fmt/mod.rs:1027:8\n     |\n1027 |     fn fmt(&self, f: &mut Formatter<'_>) -> Result;\n     |        ---\n     |        |\n     |        the method is available for `Box<TestStruct>` here\n     |        the method is available for `Arc<TestStruct>` here\n     |        the method is available for `Rc<TestStruct>` here\n     |        the method is available for `&mut TestStruct` here\n     |\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Box::new(value).fmt(f));\n     |                                                   +++++++++     +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Arc::new(value).fmt(f));\n     |                                                   +++++++++     +\nhelp: consider wrapping the receiver expression with the appropriate type\n     |\n823  |     let result = std::fmt::write(&mut output, |f| Rc::new(value).fmt(f));\n     |                                                   ++++++++     +\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 16 warnings\nerror: could not compile `http` (lib test) due to 2 previous errors; 16 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

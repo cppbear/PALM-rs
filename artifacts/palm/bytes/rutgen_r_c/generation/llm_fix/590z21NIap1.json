@@ -1,0 +1,558 @@
+{
+  "name": "bytes::bytes_mut::bytes_mut::BytesMut::advance_unchecked",
+  "name_with_impl": "bytes::bytes_mut::{impl#0}::advance_unchecked",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": true,
+  "loc": "src/bytes_mut.rs:956:5:991:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: count == 0 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    let initial_ptr = bytes_mut.ptr;",
+                  "    bytes_mut.len = 10;",
+                  "    bytes_mut.cap = 10;",
+                  "    let count = 5;",
+                  "    unsafe { bytes_mut.advance_unchecked(count) };",
+                  "",
+                  "    assert_eq!(bytes_mut.len, 5);",
+                  "    assert_eq!(bytes_mut.cap, 5);",
+                  "    assert_ne!(bytes_mut.ptr, initial_ptr); ",
+                  "    assert!(bytes_mut.ptr.as_ptr() > initial_ptr.as_ptr());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    bytes_mut.len = 10;",
+                  "    bytes_mut.cap = 10;",
+                  "    let initial_len = bytes_mut.len;",
+                  "    let initial_cap = bytes_mut.cap;",
+                  "",
+                  "    unsafe { bytes_mut.advance_unchecked(0) };",
+                  "",
+                  "    assert_eq!(bytes_mut.len, initial_len);",
+                  "    assert_eq!(bytes_mut.cap, initial_cap);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    bytes_mut.len = 10;",
+                  "    bytes_mut.cap = 10;",
+                  "    let large_count = 10; // Should trigger promotion",
+                  "    unsafe { bytes_mut.advance_unchecked(large_count) };",
+                  "",
+                  "    // Ensure that the internal state indicates promotion to shared",
+                  "    assert!(bytes_mut.kind() == KIND_ARC); // Assuming how kind is checked for ARC",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"internal: set_start out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    bytes_mut.len = 10;",
+                  "    bytes_mut.cap = 10;",
+                  "    let count = 15; // Out of bounds",
+                  "    unsafe { bytes_mut.advance_unchecked(count) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: count == 0 is true\n",
+        "// constraint: count <= self.cap is true, with bound count == self.cap\n",
+        "// constraint: kind == KIND_VEC is true\n",
+        "// constraint: pos <= MAX_VEC_POS is true, with bound pos == MAX_VEC_POS\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe {",
+                  "        bytes_mut.advance_unchecked(0);",
+                  "    }",
+                  "    assert_eq!(bytes_mut.len(), 10);",
+                  "    assert_eq!(bytes_mut.capacity(), 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe {",
+                  "        bytes_mut.advance_unchecked(10);",
+                  "    }",
+                  "    assert_eq!(bytes_mut.len(), 0);",
+                  "    assert_eq!(bytes_mut.capacity(), 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct VecWrapper {",
+                  "        bytes_mut: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl VecWrapper {",
+                  "        fn new() -> VecWrapper {",
+                  "            let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "            unsafe { bytes_mut.set_vec_pos(2) }; // Set initial position",
+                  "",
+                  "            VecWrapper { bytes_mut }",
+                  "        }",
+                  "",
+                  "        fn set_cap_and_advance(&mut self, count: usize) {",
+                  "            // Assuming the capacity is at least 10 for this example",
+                  "            unsafe {",
+                  "                self.bytes_mut.advance_unchecked(count);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut wrapper = VecWrapper::new();",
+                  "    let original_capacity = wrapper.bytes_mut.capacity();",
+                  "    let max_vec_pos = usize::MAX >> 5; // Assuming the original provided shift",
+                  "    wrapper.set_cap_and_advance(max_vec_pos - 2); // Advancing to exactly MAX_VEC_POS",
+                  "",
+                  "    assert_eq!(wrapper.bytes_mut.len(), 0);",
+                  "    assert_eq!(wrapper.bytes_mut.capacity(), original_capacity - (max_vec_pos - 2));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: count == 0 is true\n",
+        "// constraint: count <= self.cap is true, with bound count == self.cap\n",
+        "// constraint: kind == KIND_VEC is true\n",
+        "// constraint: pos <= MAX_VEC_POS is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe {",
+                  "        bytes_mut.advance_unchecked(0);",
+                  "    }",
+                  "    assert_eq!(bytes_mut.len(), 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe {",
+                  "        bytes_mut.advance_unchecked(10);",
+                  "    }",
+                  "    assert_eq!(bytes_mut.len(), 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"internal: set_start out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(5) };",
+                  "    unsafe {",
+                  "        // Simulating a condition where position exceeds MAX_VEC_POS",
+                  "        bytes_mut.set_vec_pos(MAX_VEC_POS); // This must happen before advance_unchecked",
+                  "        bytes_mut.advance_unchecked(10); // This should trigger panic",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(20) };",
+                  "    unsafe {",
+                  "        bytes_mut.advance_unchecked(5);",
+                  "    }",
+                  "    assert_eq!(bytes_mut.len(), 15);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: count == 0 is true\n",
+        "// constraint: count <= self.cap is true, with bound count == self.cap\n",
+        "// constraint: kind == KIND_VEC is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = unsafe { BytesMut::with_capacity(10) }; // Initialize with some capacity",
+                  "    unsafe {",
+                  "        buffer.advance_unchecked(0); // Should return early",
+                  "    }",
+                  "    assert_eq!(buffer.len(), 0); // Ensure length remains unchanged",
+                  "    assert_eq!(buffer.capacity(), 10); // Ensure capacity remains unchanged",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = unsafe { BytesMut::with_capacity(5) }; // Initialize with capacity 5",
+                  "    unsafe {",
+                  "        buffer.resize(5, 0); // Resize to use full capacity",
+                  "        buffer.advance_unchecked(5); // Advance by full capacity",
+                  "    }",
+                  "    assert_eq!(buffer.len(), 0); // All length should be consumed",
+                  "    assert_eq!(buffer.capacity(), 5); // Capacity should remain unchanged",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Since we can't directly set the kind, we will create a `BytesMut` in a non-vec state and ensure the call does not panic.",
+                  "    // Assuming BytesMut::new() creates a state where kind is not KIND_VEC.",
+                  "    let mut buffer = BytesMut::new();",
+                  "    buffer.reserve(10); // Reserve some capacity",
+                  "    // Advance with count < cap, ensuring we are in a non-kind vec state.",
+                  "    unsafe {",
+                  "        buffer.advance_unchecked(1); // This should succeed as `kind` is not KIND_VEC",
+                  "    }",
+                  "    assert_eq!(buffer.len(), 0); // Length should remain unchanged",
+                  "    assert_eq!(buffer.capacity(), 10); // Capacity should remain unchanged",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "// constraint: count == 0 is true\n",
+        "// constraint: count <= self.cap is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe { buffer.advance_unchecked(0) };",
+                  "    assert_eq!(buffer.len(), 0);",
+                  "    assert_eq!(buffer.cap, 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"internal: set_start out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = unsafe { BytesMut::with_capacity(5) };",
+                  "    unsafe { buffer.advance_unchecked(6) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe { buffer.set_len(10) }; // Set length to match capacity",
+                  "    unsafe { buffer.advance_unchecked(5) };",
+                  "    assert_eq!(buffer.len(), 5);",
+                  "    assert_eq!(buffer.cap, 5);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+// Answer 0
+
+#[test]
+fn test_raw_table_iter() {
+    struct RawTable<T> {
+        elements: Vec<Option<T>>,
+    }
+
+    impl<T> RawTable<T> {
+        fn new() -> Self {
+            RawTable {
+                elements: Vec::new(),
+            }
+        }
+
+        unsafe fn iter(&self) -> RawIter<T> {
+            // Assuming RawIter is a type that allows iteration over RawTable
+            RawIter {
+                table: self,
+                index: 0,
+            }
+        }
+    }
+
+    struct RawIter<'a, T> {
+        table: &'a RawTable<T>,
+        index: usize,
+    }
+
+    impl<'a, T> Iterator for RawIter<'a, T> {
+        type Item = &'a T;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            while self.index < self.table.elements.len() {
+                if let Some(ref elem) = self.table.elements[self.index] {
+                    self.index += 1;
+                    return Some(elem);
+                }
+                self.index += 1;
+            }
+            None
+        }
+    }
+
+    // Test case: Iterating over an empty table
+    let table: RawTable<i32> = RawTable::new();
+    let iter = unsafe { table.iter() };
+    let collected: Vec<_> = iter.collect();
+    assert!(collected.is_empty());
+
+    // Test case: Iterating over a single element
+    let mut table_single = RawTable::new();
+    table_single.elements.push(Some(42));
+    let iter_single = unsafe { table_single.iter() };
+    let collected_single: Vec<_> = iter_single.collect();
+    assert_eq!(collected_single, vec![&42]);
+
+    // Test case: Iterating over multiple elements
+    let mut table_multi = RawTable::new();
+    table_multi.elements.push(Some(1));
+    table_multi.elements.push(Some(2));
+    table_multi.elements.push(Some(3));
+    let iter_multi = unsafe { table_multi.iter() };
+    let collected_multi: Vec<_> = iter_multi.collect();
+    assert_eq!(collected_multi, vec![&1, &2, &3]);
+
+    // Test case: Iterating over mixed Some and None
+    let mut table_mixed = RawTable::new();
+    table_mixed.elements.push(Some(10));
+    table_mixed.elements.push(None);
+    table_mixed.elements.push(Some(20));
+    let iter_mixed = unsafe { table_mixed.iter() };
+    let collected_mixed: Vec<_> = iter_mixed.collect();
+    assert_eq!(collected_mixed, vec![&10, &20]);
+}
+

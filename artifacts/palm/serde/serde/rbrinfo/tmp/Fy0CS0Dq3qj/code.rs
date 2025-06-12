@@ -1,0 +1,1 @@
+fn nop_reserve<T>(_seq: T, _n: usize) {}

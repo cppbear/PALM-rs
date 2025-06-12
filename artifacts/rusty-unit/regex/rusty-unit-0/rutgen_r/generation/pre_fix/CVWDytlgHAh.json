@@ -1,0 +1,632 @@
+{
+  "name": "regex_syntax::hir::print::hir::print::Writer<'p, W>::write_literal_byte",
+  "name_with_impl": "regex_syntax::hir::print::{impl#4}::write_literal_byte",
+  "mod_info": {
+    "name": "hir::print",
+    "loc": "regex-syntax/src/hir/mod.rs:28:1:28:15"
+  },
+  "visible": false,
+  "loc": "regex-syntax/src/hir/print.rs:228:5:235:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: c <= 0x7F as char is true, with bound c == 0x7F as char\n",
+        "// constraint: c.is_control() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::fmt;",
+            "use std::fmt::Write;"
+          ],
+          "has_test_mod": false,
+          "common": [
+            "fn test_write_literal_byte() {",
+            "",
+            "    struct TestWriter {",
+            "        output: String,",
+            "    }",
+            "",
+            "    impl TestWriter {",
+            "        fn new() -> Self {",
+            "            TestWriter {",
+            "                output: String::new(),",
+            "            }",
+            "        }",
+            "    }",
+            "",
+            "    impl Write for TestWriter {",
+            "        fn write_str(&mut self, s: &str) -> fmt::Result {",
+            "            self.output.push_str(s);",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    struct TestStruct<W: Write> {",
+            "        wtr: W,",
+            "    }",
+            "",
+            "    impl<W: Write> TestStruct<W> {",
+            "        fn write_literal_byte(&mut self, b: u8) -> fmt::Result {",
+            "            let c = b as char;",
+            "            if c <= 0x7F as char && !c.is_control() && !c.is_whitespace() {",
+            "                self.wtr.write_char(c)",
+            "            } else {",
+            "                write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)",
+            "            }",
+            "        }",
+            "    }",
+            "",
+            "    // Test case for boundary condition: c == 0x7F as char (which is a control character)",
+            "    let mut writer = TestWriter::new();",
+            "    {",
+            "        let mut test_struct = TestStruct { wtr: &mut writer };",
+            "        let result = test_struct.write_literal_byte(0x7F);",
+            "        assert!(result.is_ok());",
+            "        assert_eq!(writer.output, \"(?-u:\\\\x7F)\");",
+            "    }",
+            "",
+            "    // Test case for a control character: c is control (0x00)",
+            "    writer.output.clear();",
+            "    {",
+            "        let mut test_struct = TestStruct { wtr: &mut writer };",
+            "        let result = test_struct.write_literal_byte(0x00);",
+            "        assert!(result.is_ok());",
+            "        assert_eq!(writer.output, \"(?-u:\\\\x00)\");",
+            "    }",
+            "",
+            "    // Test case for a valid printable ASCII character (0x41 for 'A')",
+            "    writer.output.clear();",
+            "    {",
+            "        let mut test_struct = TestStruct { wtr: &mut writer };",
+            "        let result = test_struct.write_literal_byte(0x41);",
+            "        assert!(result.is_ok());",
+            "        assert_eq!(writer.output, \"A\");",
+            "    }",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: c <= 0x7F as char is true, with bound c == 0x7F as char\n",
+        "// constraint: c.is_control() is false\n",
+        "// constraint: c.is_whitespace() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct DummyWriter {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl DummyWriter {",
+                  "        fn new() -> Self {",
+                  "            DummyWriter {",
+                  "                output: String::new(),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl std::fmt::Write for DummyWriter {",
+                  "        fn write_str(&mut self, s: &str) -> std::fmt::Result {",
+                  "            self.output.push_str(s);",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestStruct<'a> {",
+                  "        wtr: &'a mut DummyWriter,",
+                  "    }",
+                  "",
+                  "    impl TestStruct<'_> {",
+                  "        fn write_literal_byte(&mut self, b: u8) -> std::fmt::Result {",
+                  "            let c = b as char;",
+                  "            if c <= 0x7F as char && !c.is_control() && !c.is_whitespace() {",
+                  "                self.wtr.write_str(&c.to_string())",
+                  "            } else {",
+                  "                write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = DummyWriter::new();",
+                  "    let mut test_struct = TestStruct { wtr: &mut writer };",
+                  "",
+                  "    // Testing boundary case for c == 0x7F",
+                  "    let result = test_struct.write_literal_byte(0x7F);",
+                  "",
+                  "    assert_eq!(result.is_err(), true);",
+                  "    assert_eq!(writer.output, \"(?-u:\\\\x7F)\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/hir/print.rs:362:8\n    |\n362 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `write_str` found for mutable reference `&mut DummyWriter` in the current scope\n   --> regex-syntax/src/hir/print.rs:394:26\n    |\n394 |                 self.wtr.write_str(&c.to_string())\n    |                          ^^^^^^^^^\n    |\n    = help: items from traits can only be used if the trait is in scope\nhelp: trait `Write` which provides `write_str` is implemented but not in scope; perhaps you want to import it\n    |\n362 +    use std::fmt::Write;\n    |\nhelp: there is a method `write_char` with a similar name\n    |\n394 |                 self.wtr.write_char(&c.to_string())\n    |                          ~~~~~~~~~~\n\nerror[E0599]: cannot write into `&mut DummyWriter`\n   --> regex-syntax/src/hir/print.rs:396:24\n    |\n396 |                 write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)\n    |                        ^^^^^^^^\n    |\nnote: must implement `io::Write`, `fmt::Write`, or have a `write_fmt` method\n   --> regex-syntax/src/hir/print.rs:396:24\n    |\n396 |                 write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)\n    |                        ^^^^^^^^\n    = help: items from traits can only be used if the trait is in scope\nhelp: trait `Write` which provides `write_fmt` is implemented but not in scope; perhaps you want to import it\n    |\n362 +    use std::fmt::Write;\n    |\nhelp: there is a method `write_str` with a similar name\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:632:14\n    |\n632 |         $dst.write_str($crate::format_args!($($arg)*))\n    |              ~~~~~~~~~\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 19 warnings\nerror: could not compile `regex-syntax` (lib test) due to 2 previous errors; 19 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct DummyWriter {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl DummyWriter {",
+                  "        fn new() -> Self {",
+                  "            DummyWriter {",
+                  "                output: String::new(),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl std::fmt::Write for DummyWriter {",
+                  "        fn write_str(&mut self, s: &str) -> std::fmt::Result {",
+                  "            self.output.push_str(s);",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestStruct<'a> {",
+                  "        wtr: &'a mut DummyWriter,",
+                  "    }",
+                  "",
+                  "    impl TestStruct<'_> {",
+                  "        fn write_literal_byte(&mut self, b: u8) -> std::fmt::Result {",
+                  "            let c = b as char;",
+                  "            if c <= 0x7F as char && !c.is_control() && !c.is_whitespace() {",
+                  "                self.wtr.write_str(&c.to_string())",
+                  "            } else {",
+                  "                write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = DummyWriter::new();",
+                  "    let mut test_struct = TestStruct { wtr: &mut writer };",
+                  "",
+                  "    // Testing whitespace character (space)",
+                  "    let result = test_struct.write_literal_byte(b' ');",
+                  "",
+                  "    assert_eq!(result.is_err(), true);",
+                  "    assert_eq!(writer.output, \"(?-u:\\\\x20)\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/hir/print.rs:362:8\n    |\n362 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `write_str` found for mutable reference `&mut DummyWriter` in the current scope\n   --> regex-syntax/src/hir/print.rs:394:26\n    |\n394 |                 self.wtr.write_str(&c.to_string())\n    |                          ^^^^^^^^^\n    |\n    = help: items from traits can only be used if the trait is in scope\nhelp: trait `Write` which provides `write_str` is implemented but not in scope; perhaps you want to import it\n    |\n362 +    use std::fmt::Write;\n    |\nhelp: there is a method `write_char` with a similar name\n    |\n394 |                 self.wtr.write_char(&c.to_string())\n    |                          ~~~~~~~~~~\n\nerror[E0599]: cannot write into `&mut DummyWriter`\n   --> regex-syntax/src/hir/print.rs:396:24\n    |\n396 |                 write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)\n    |                        ^^^^^^^^\n    |\nnote: must implement `io::Write`, `fmt::Write`, or have a `write_fmt` method\n   --> regex-syntax/src/hir/print.rs:396:24\n    |\n396 |                 write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)\n    |                        ^^^^^^^^\n    = help: items from traits can only be used if the trait is in scope\nhelp: trait `Write` which provides `write_fmt` is implemented but not in scope; perhaps you want to import it\n    |\n362 +    use std::fmt::Write;\n    |\nhelp: there is a method `write_str` with a similar name\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:632:14\n    |\n632 |         $dst.write_str($crate::format_args!($($arg)*))\n    |              ~~~~~~~~~\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 19 warnings\nerror: could not compile `regex-syntax` (lib test) due to 2 previous errors; 19 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: c <= 0x7F as char is true, with bound c == 0x7F as char\n",
+        "// constraint: c.is_control() is false\n",
+        "// constraint: c.is_whitespace() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Writer {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl Writer {",
+                  "        fn new() -> Self {",
+                  "            Writer {",
+                  "                output: String::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_char(&mut self, c: char) -> fmt::Result {",
+                  "            self.output.push(c);",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn write_output(&self) -> &String {",
+                  "            &self.output",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = Writer::new();",
+                  "    ",
+                  "    // Test with a byte value representing 'A' (ASCII 65)",
+                  "    assert!(writer.write_literal_byte(65).is_ok());",
+                  "    assert_eq!(writer.write_output(), \"A\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `write_literal_byte` found for struct `llmtests::test_write_literal_byte_02::Writer` in the current scope\n   --> regex-syntax/src/hir/print.rs:391:20\n    |\n367 |     struct Writer {\n    |     ------------- method `write_literal_byte` not found for this struct\n...\n391 |     assert!(writer.write_literal_byte(65).is_ok());\n    |                    ^^^^^^^^^^^^^^^^^^ method not found in `Writer`\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 18 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 18 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Writer {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl Writer {",
+                  "        fn new() -> Self {",
+                  "            Writer {",
+                  "                output: String::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_char(&mut self, c: char) -> fmt::Result {",
+                  "            self.output.push(c);",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn write_output(&self) -> &String {",
+                  "            &self.output",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = Writer::new();",
+                  "    ",
+                  "    // Test with a byte value representing '' (ASCII 127)",
+                  "    assert!(writer.write_literal_byte(127).is_ok());",
+                  "    assert_eq!(writer.write_output(), \"(?-u:\\\\x7F)\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `write_literal_byte` found for struct `llmtests::test_write_literal_byte_03::Writer` in the current scope\n   --> regex-syntax/src/hir/print.rs:391:20\n    |\n367 |     struct Writer {\n    |     ------------- method `write_literal_byte` not found for this struct\n...\n391 |     assert!(writer.write_literal_byte(127).is_ok());\n    |                    ^^^^^^^^^^^^^^^^^^ method not found in `Writer`\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 18 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 18 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Writer {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl Writer {",
+                  "        fn new() -> Self {",
+                  "            Writer {",
+                  "                output: String::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_char(&mut self, c: char) -> fmt::Result {",
+                  "            self.output.push(c);",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn write_output(&self) -> &String {",
+                  "            &self.output",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = Writer::new();",
+                  "    ",
+                  "    // Test with a byte value representing space (ASCII 32)",
+                  "    assert!(writer.write_literal_byte(32).is_ok());",
+                  "    assert_eq!(writer.write_output(), \"(?-u:\\\\x20)\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `write_literal_byte` found for struct `llmtests::test_write_literal_byte_04::Writer` in the current scope\n   --> regex-syntax/src/hir/print.rs:391:20\n    |\n367 |     struct Writer {\n    |     ------------- method `write_literal_byte` not found for this struct\n...\n391 |     assert!(writer.write_literal_byte(32).is_ok());\n    |                    ^^^^^^^^^^^^^^^^^^ method not found in `Writer`\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 18 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 18 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Writer {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl Writer {",
+                  "        fn new() -> Self {",
+                  "            Writer {",
+                  "                output: String::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_char(&mut self, c: char) -> fmt::Result {",
+                  "            self.output.push(c);",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn write_output(&self) -> &String {",
+                  "            &self.output",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = Writer::new();",
+                  "    ",
+                  "    // Test with a byte value representing newline (ASCII 10)",
+                  "    assert!(writer.write_literal_byte(10).is_ok());",
+                  "    assert_eq!(writer.write_output(), \"(?-u:\\\\x0A)\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:45:38\n   |\n45 |             Error::Parse(ref x) => x.description(),\n   |                                      ^^^^^^^^^^^\n   |\n   = note: `#[warn(deprecated)]` on by default\n\nwarning: use of deprecated method `std::error::Error::description`: use the Display impl or to_string()\n  --> regex-syntax/src/error.rs:46:42\n   |\n46 |             Error::Translate(ref x) => x.description(),\n   |                                          ^^^^^^^^^^^\n\nerror[E0599]: no method named `write_literal_byte` found for struct `llmtests::test_write_literal_byte_05::Writer` in the current scope\n   --> regex-syntax/src/hir/print.rs:391:20\n    |\n367 |     struct Writer {\n    |     ------------- method `write_literal_byte` not found for this struct\n...\n391 |     assert!(writer.write_literal_byte(10).is_ok());\n    |                    ^^^^^^^^^^^^^^^^^^ method not found in `Writer`\n\nwarning: variable does not need to be mutable\n   --> regex-syntax/src/hir/literal/mod.rs:687:17\n    |\n687 |             let mut buf = &mut buf[..i];\n    |                 ----^^^\n    |                 |\n    |                 help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `regex-syntax` (lib test) generated 18 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 18 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: c <= 0x7F as char is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockWriter {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl Write for MockWriter {",
+                  "        fn write(&mut self, buf: &[u8]) -> Result<usize> {",
+                  "            self.output.push_str(std::str::from_utf8(buf).unwrap());",
+                  "            Ok(buf.len())",
+                  "        }",
+                  "",
+                  "        fn flush(&mut self) -> Result<()> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestStruct {",
+                  "        wtr: MockWriter,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn new() -> Self {",
+                  "            TestStruct {",
+                  "                wtr: MockWriter {",
+                  "                    output: String::new(),",
+                  "                },",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_literal_byte(&mut self, b: u8) -> fmt::Result {",
+                  "            let c = b as char;",
+                  "            if c <= 0x7F as char && !c.is_control() && !c.is_whitespace() {",
+                  "                self.wtr.write_char(c)",
+                  "            } else {",
+                  "                write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::new();",
+                  "    let result = test_struct.write_literal_byte(0x80); // Example byte above ASCII range",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(test_struct.wtr.output, \"(?-u:\\\\x80)\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nerror[E0405]: cannot find trait `Write` in this scope\n   --> regex-syntax/src/hir/print.rs:371:10\n    |\n371 |     impl Write for MockWriter {\n    |          ^^^^^ not found in this scope\n    |\nhelp: consider importing one of these traits\n    |\n362 +    use std::io::Write;\n    |\n362 +    use hir::fmt::Write;\n    |\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0405`.\nwarning: `regex-syntax` (lib test) generated 15 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockWriter {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl Write for MockWriter {",
+                  "        fn write(&mut self, buf: &[u8]) -> Result<usize> {",
+                  "            self.output.push_str(std::str::from_utf8(buf).unwrap());",
+                  "            Ok(buf.len())",
+                  "        }",
+                  "",
+                  "        fn flush(&mut self) -> Result<()> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestStruct {",
+                  "        wtr: MockWriter,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn new() -> Self {",
+                  "            TestStruct {",
+                  "                wtr: MockWriter {",
+                  "                    output: String::new(),",
+                  "                },",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_literal_byte(&mut self, b: u8) -> fmt::Result {",
+                  "            let c = b as char;",
+                  "            if c <= 0x7F as char && !c.is_control() && !c.is_whitespace() {",
+                  "                self.wtr.write_char(c)",
+                  "            } else {",
+                  "                write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::new();",
+                  "    let result = test_struct.write_literal_byte(b' '); // Example whitespace byte",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(test_struct.wtr.output, \"(?-u:\\\\x20)\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nerror[E0405]: cannot find trait `Write` in this scope\n   --> regex-syntax/src/hir/print.rs:371:10\n    |\n371 |     impl Write for MockWriter {\n    |          ^^^^^ not found in this scope\n    |\nhelp: consider importing one of these traits\n    |\n362 +    use std::io::Write;\n    |\n362 +    use hir::fmt::Write;\n    |\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0405`.\nwarning: `regex-syntax` (lib test) generated 15 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockWriter {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl Write for MockWriter {",
+                  "        fn write(&mut self, buf: &[u8]) -> Result<usize> {",
+                  "            self.output.push_str(std::str::from_utf8(buf).unwrap());",
+                  "            Ok(buf.len())",
+                  "        }",
+                  "",
+                  "        fn flush(&mut self) -> Result<()> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestStruct {",
+                  "        wtr: MockWriter,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn new() -> Self {",
+                  "            TestStruct {",
+                  "                wtr: MockWriter {",
+                  "                    output: String::new(),",
+                  "                },",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_literal_byte(&mut self, b: u8) -> fmt::Result {",
+                  "            let c = b as char;",
+                  "            if c <= 0x7F as char && !c.is_control() && !c.is_whitespace() {",
+                  "                self.wtr.write_char(c)",
+                  "            } else {",
+                  "                write!(self.wtr, \"(?-u:\\\\x{:02X})\", b)",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_struct = TestStruct::new();",
+                  "    let result = test_struct.write_literal_byte(0x01); // Example control character byte",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(test_struct.wtr.output, \"(?-u:\\\\x01)\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "warning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-capi/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-debug/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\nwarning: /home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax/Cargo.toml: no edition set: defaulting to the 2015 edition while the latest is 2021\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling regex-syntax v0.6.0 (/home/abezbm/rust-utgen-test-crates-new/regex/regex-syntax)\nerror[E0405]: cannot find trait `Write` in this scope\n   --> regex-syntax/src/hir/print.rs:371:10\n    |\n371 |     impl Write for MockWriter {\n    |          ^^^^^ not found in this scope\n    |\nhelp: consider importing one of these traits\n    |\n362 +    use std::io::Write;\n    |\n362 +    use hir::fmt::Write;\n    |\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1445:16\n     |\n1445 |             '0'...'7' => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n     = note: `#[warn(ellipsis_inclusive_range_patterns)]` on by default\n\nwarning: `...` range patterns are deprecated\n    --> regex-syntax/src/ast/parse.rs:1456:16\n     |\n1456 |             '8'...'9' if !self.parser().octal => {\n     |                ^^^ help: use `..=` for an inclusive range\n     |\n     = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n     = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `Primitive`\n    --> regex-syntax/src/ast/parse.rs:2261:49\n     |\n2261 |     use super::{Parser, ParserI, ParserBuilder, Primitive};\n     |                                                 ^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused macro definition: `assert_eq`\n    --> regex-syntax/src/ast/parse.rs:2265:18\n     |\n2265 |     macro_rules! assert_eq {\n     |                  ^^^^^^^^^\n     |\n     = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> regex-syntax/src/ast/mod.rs:1482:9\n     |\n1482 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `ast::parse::Parser`\n   --> regex-syntax/src/error.rs:288:9\n    |\n288 |     use ast::parse::Parser;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ParserBuilder`\n    --> regex-syntax/src/hir/literal/mod.rs:1004:9\n     |\n1004 |     use ParserBuilder;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> regex-syntax/src/hir/print.rs:363:8\n    |\n363 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Position` and `self`\n    --> regex-syntax/src/hir/translate.rs:1094:15\n     |\n1094 |     use ast::{self, Ast, Position, Span};\n     |               ^^^^       ^^^^^^^^\n\nwarning: unused import: `ascii_class`\n    --> regex-syntax/src/hir/translate.rs:1099:36\n     |\n1099 |     use super::{TranslatorBuilder, ascii_class};\n     |                                    ^^^^^^^^^^^\n\nwarning: unused imports: `contains_simple_case_mapping` and `simple_fold`\n   --> regex-syntax/src/unicode.rs:375:17\n    |\n375 |     use super::{contains_simple_case_mapping, simple_fold};\n    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:21\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:37\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: `...` range patterns are deprecated\n   --> regex-syntax/src/lib.rs:195:53\n    |\n195 |         b'_' | b'0' ... b'9' | b'a' ... b'z' | b'A' ... b'Z'  => true,\n    |                                                     ^^^ help: use `..=` for an inclusive range\n    |\n    = warning: this is accepted in the current edition (Rust 2015) but is a hard error in Rust 2021!\n    = note: for more information, see <https://doc.rust-lang.org/nightly/edition-guide/rust-2021/warnings-promoted-to-error.html>\n\nwarning: unused import: `super::*`\n   --> regex-syntax/src/lib.rs:202:9\n    |\n202 |     use super::*;\n    |         ^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0405`.\nwarning: `regex-syntax` (lib test) generated 15 warnings\nerror: could not compile `regex-syntax` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

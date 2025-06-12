@@ -1,0 +1,449 @@
+{
+  "name": "bytes::bytes::owned_drop_impl",
+  "name_with_impl": "bytes::bytes::owned_drop_impl",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1159:1:1175:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: old_cnt > 0 is true\n",
+        "// constraint: old_cnt <= usize::MAX >> 1 is true, with bound old_cnt == usize::MAX >> 1\n",
+        "// constraint: old_cnt != 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::Ordering;",
+            "use core::ptr::null_mut;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::Ordering;",
+                  "",
+                  "    struct TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        drop: unsafe fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    unsafe fn test_drop_fn(_: *mut ()) {",
+                  "        // This is a placeholder for the drop function",
+                  "    }",
+                  "",
+                  "    let ref_cnt_value = (usize::MAX >> 1) + 1; // old_cnt > 0 and old_cnt != 1",
+                  "    let owned_lifetime = TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new(ref_cnt_value),",
+                  "        drop: test_drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned_ptr = &owned_lifetime as *const _ as *mut ();",
+                  "",
+                  "    unsafe {",
+                  "        owned_drop_impl(owned_ptr);",
+                  "        // Post condition: ref_cnt should be decremented but not to 1",
+                  "        assert_eq!(owned_lifetime.ref_cnt.load(Ordering::Acquire), ref_cnt_value - 1);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "",
+                  "    struct TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        drop: unsafe fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    unsafe fn test_drop_fn(_: *mut ()) {",
+                  "        // This is a placeholder for the drop function",
+                  "    }",
+                  "",
+                  "    let owned_lifetime = TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new(0), // Setting ref count to 0 to trigger panic",
+                  "        drop: test_drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned_ptr = &owned_lifetime as *const _ as *mut ();",
+                  "",
+                  "    unsafe {",
+                  "        owned_drop_impl(owned_ptr); // This should panic",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::Ordering;",
+                  "",
+                  "    struct TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        drop: unsafe fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    unsafe fn test_drop_fn(_: *mut ()) {",
+                  "        // This is a placeholder for the drop function",
+                  "    }",
+                  "",
+                  "    let owned_lifetime = TestOwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new(usize::MAX >> 1), // old_cnt <= usize::MAX >> 1",
+                  "        drop: test_drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned_ptr = &owned_lifetime as *const _ as *mut ();",
+                  "",
+                  "    unsafe {",
+                  "        owned_drop_impl(owned_ptr);",
+                  "        // Post condition: ref_cnt should be decremented by 1",
+                  "        assert_eq!(owned_lifetime.ref_cnt.load(Ordering::Acquire), (usize::MAX >> 1) - 1);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: old_cnt > 0 is true\n",
+        "// constraint: old_cnt <= usize::MAX >> 1 is true, with bound old_cnt == usize::MAX >> 1\n",
+        "// constraint: old_cnt != 1 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct TestLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        drop_fn: unsafe fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    unsafe fn test_drop_fn(_: *mut ()) {",
+                  "        // dummy drop function for testing",
+                  "    }",
+                  "",
+                  "    let drop_fn: unsafe fn(*mut ()) = test_drop_fn;",
+                  "",
+                  "    // Creating an instance of OwnedLifetime with old_cnt set to usize::MAX >> 1",
+                  "    let instance = TestLifetime {",
+                  "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+                  "        drop_fn,",
+                  "    };",
+                  "",
+                  "    // Unsafe block to create a raw pointer to simulate the condition",
+                  "    let owned_ptr: *mut () = &instance as *const _ as *mut _;",
+                  "",
+                  "    // Invoke the function, ensuring it does not panic",
+                  "    unsafe { owned_drop_impl(owned_ptr) };",
+                  "",
+                  "    // After function call, verify the ref count has been decremented to 0",
+                  "    assert_eq!(instance.ref_cnt.load(Ordering::Relaxed), usize::MAX >> 1 - 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct TestLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        drop_fn: unsafe fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    unsafe fn test_drop_fn(_: *mut ()) {",
+                  "        // dummy drop function for testing",
+                  "    }",
+                  "",
+                  "    let drop_fn: unsafe fn(*mut ()) = test_drop_fn;",
+                  "",
+                  "    // Creating an instance of OwnedLifetime with old_cnt set to 0 to trigger panic",
+                  "    let instance = TestLifetime {",
+                  "        ref_cnt: AtomicUsize::new(0),",
+                  "        drop_fn,",
+                  "    };",
+                  "",
+                  "    // Unsafe block to create a raw pointer to simulate the condition",
+                  "    let owned_ptr: *mut () = &instance as *const _ as *mut _;",
+                  "",
+                  "    // This call should panic due to the first debug_assert in owned_drop_impl",
+                  "    unsafe { owned_drop_impl(owned_ptr) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: old_cnt > 0 is true\n",
+        "// constraint: old_cnt <= usize::MAX >> 1 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Arrange",
+                  "    struct MockDrop {",
+                  "        drop_called: bool,",
+                  "    }",
+                  "",
+                  "    impl MockDrop {",
+                  "        fn new() -> Self {",
+                  "            Self { drop_called: false }",
+                  "        }",
+                  "",
+                  "        unsafe fn mock_drop_fn(_owned: *mut ()) {",
+                  "            // Simulate the behavior of the drop function being called",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut mock_drop = MockDrop::new();",
+                  "    let ref_cnt = AtomicUsize::new(1); // Set up a ref count of 1",
+                  "    ",
+                  "    let lifetime = OwnedLifetime {",
+                  "        ref_cnt,",
+                  "        drop: MockDrop::mock_drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned: *mut () = &mut lifetime as *mut _ as *mut ();",
+                  "",
+                  "    // Act",
+                  "    unsafe {",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "",
+                  "    // Assert",
+                  "    assert_eq!(mock_drop.drop_called, false, \"Drop should not be called when ref count goes down to zero.\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: variable does not need to be mutable\n    --> src/bytes.rs:1703:9\n     |\n1703 |     let mut mock_drop = MockDrop::new();\n     |         ----^^^^^^^^^\n     |         |\n     |         help: remove this `mut`\n     |\n     = note: `#[warn(unused_mut)]` on by default\n\nerror[E0596]: cannot borrow `lifetime` as mutable, as it is not declared as mutable\n    --> src/bytes.rs:1711:26\n     |\n1711 |     let owned: *mut () = &mut lifetime as *mut _ as *mut ();\n     |                          ^^^^^^^^^^^^^ cannot borrow as mutable\n     |\nhelp: consider changing this to be mutable\n     |\n1706 |     let mut lifetime = OwnedLifetime {\n     |         +++\n\nFor more information about this error, try `rustc --explain E0596`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Arrange",
+                  "    struct MockDrop {",
+                  "        drop_called: bool,",
+                  "    }",
+                  "    ",
+                  "    impl MockDrop {",
+                  "        fn new() -> Self {",
+                  "            Self { drop_called: false }",
+                  "        }",
+                  "",
+                  "        unsafe fn mock_drop_fn(_owned: *mut ()) {",
+                  "            // Simulate the behavior of the drop function being called",
+                  "            drop_called = true; // Records that the drop has been called",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let ref_cnt = AtomicUsize::new(0); // Set up a ref count of 0 to trigger the panic",
+                  "",
+                  "    let lifetime = OwnedLifetime {",
+                  "        ref_cnt,",
+                  "        drop: MockDrop::mock_drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned: *mut () = &mut lifetime as *mut _ as *mut ();",
+                  "",
+                  "    // Act",
+                  "    unsafe {",
+                  "        // This call should panic due to old_cnt being 0",
+                  "        owned_drop_impl(owned);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0425]: cannot find value `drop_called` in this scope\n    --> src/bytes.rs:1701:13\n     |\n1691 |         drop_called: bool,\n     |         ----------- a field by that name exists in `Self`\n...\n1701 |             drop_called = true; // Records that the drop has been called\n     |             ^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0596]: cannot borrow `lifetime` as mutable, as it is not declared as mutable\n    --> src/bytes.rs:1712:26\n     |\n1712 |     let owned: *mut () = &mut lifetime as *mut _ as *mut ();\n     |                          ^^^^^^^^^^^^^ cannot borrow as mutable\n     |\nhelp: consider changing this to be mutable\n     |\n1707 |     let mut lifetime = OwnedLifetime {\n     |         +++\n\nSome errors have detailed explanations: E0425, E0596.\nFor more information about an error, try `rustc --explain E0425`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: old_cnt > 0 is false, with bound old_cnt == 0\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::AtomicUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::sync::atomic::AtomicUsize;",
+                  "",
+                  "    struct OwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        drop: unsafe fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    unsafe extern \"C\" fn drop_fn(_: *mut ()) {}",
+                  "",
+                  "    let owned_lifetime = OwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new(0),",
+                  "        drop: drop_fn,",
+                  "    };",
+                  "",
+                  "    let owned_ptr = &owned_lifetime as *const OwnedLifetime as *mut ();",
+                  "",
+                  "    owned_drop_impl(owned_ptr);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1700:15\n     |\n1700 |         drop: drop_fn,\n     |               ^^^^^^^ expected \"Rust\" fn, found \"C\" fn\n     |\n     = note: expected fn pointer `unsafe fn(_)`\n                   found fn item `unsafe extern \"C\" fn(_) {drop_fn}`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

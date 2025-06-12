@@ -1,0 +1,1193 @@
+{
+  "name": "rand::seq::iterator::IteratorRandom::choose",
+  "name_with_impl": "rand::seq::iterator::IteratorRandom::choose",
+  "mod_info": {
+    "name": "seq::iterator",
+    "loc": "src/seq/mod.rs:31:1:31:14"
+  },
+  "visible": true,
+  "loc": "src/seq/iterator.rs:66:5:119:6",
+  "doc": "/// Uniformly sample one element\n///\n/// Assuming that the [`Iterator::size_hint`] is correct, this method\n/// returns one uniformly-sampled random element of the slice, or `None`\n/// only if the slice is empty. Incorrect bounds on the `size_hint` may\n/// cause this method to incorrectly return `None` if fewer elements than\n/// the advertised `lower` bound are present and may prevent sampling of\n/// elements beyond an advertised `upper` bound (i.e. incorrect `size_hint`\n/// is memory-safe, but may result in unexpected `None` result and\n/// non-uniform distribution).\n///\n/// With an accurate [`Iterator::size_hint`] and where [`Iterator::nth`] is\n/// a constant-time operation, this method can offer `O(1)` performance.\n/// Where no size hint is\n/// available, complexity is `O(n)` where `n` is the iterator length.\n/// Partial hints (where `lower > 0`) also improve performance.\n///\n/// Note further that [`Iterator::size_hint`] may affect the number of RNG\n/// samples used as well as the result (while remaining uniform sampling).\n/// Consider instead using [`IteratorRandom::choose_stable`] to avoid\n/// [`Iterator`] combinators which only change size hints from affecting the\n/// results.\n///\n/// # Example\n///\n/// ```\n/// use rand::seq::IteratorRandom;\n///\n/// let words = \"Mary had a little lamb\".split(' ');\n/// println!(\"{}\", words.choose(&mut rand::rng()).unwrap());\n/// ```\n",
+  "code": [
+    "fn choose<R>(mut self, rng: &mut R) -> Option<Self::Item>",
+    "where",
+    "    R: Rng + ?Sized,",
+    "{",
+    "    let (mut lower, mut upper) = self.size_hint();",
+    "    let mut result = None;",
+    "",
+    "    // Handling for this condition outside the loop allows the optimizer to eliminate the loop",
+    "    // when the Iterator is an ExactSizeIterator. This has a large performance impact on e.g.",
+    "    // seq_iter_choose_from_1000.",
+    "    if upper == Some(lower) {",
+    "        return match lower {",
+    "            0 => None,",
+    "            1 => self.next(),",
+    "            _ => self.nth(rng.random_range(..lower)),",
+    "        };",
+    "    }",
+    "",
+    "    let mut coin_flipper = CoinFlipper::new(rng);",
+    "    let mut consumed = 0;",
+    "",
+    "    // Continue until the iterator is exhausted",
+    "    loop {",
+    "        if lower > 1 {",
+    "            let ix = coin_flipper.rng.random_range(..lower + consumed);",
+    "            let skip = if ix < lower {",
+    "                result = self.nth(ix);",
+    "                lower - (ix + 1)",
+    "            } else {",
+    "                lower",
+    "            };",
+    "            if upper == Some(lower) {",
+    "                return result;",
+    "            }",
+    "            consumed += lower;",
+    "            if skip > 0 {",
+    "                self.nth(skip - 1);",
+    "            }",
+    "        } else {",
+    "            let elem = self.next();",
+    "            if elem.is_none() {",
+    "                return result;",
+    "            }",
+    "            consumed += 1;",
+    "            if coin_flipper.random_ratio_one_over(consumed) {",
+    "                result = elem;",
+    "            }",
+    "        }",
+    "",
+    "        let hint = self.size_hint();",
+    "        lower = hint.0;",
+    "        upper = hint.1;",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 14,
+    "contra": 8,
+    "min_set": 10
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 78,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower matches 1",
+          "norm": null,
+          "value": "true",
+          "line": 79,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower matches _",
+          "norm": null,
+          "value": "true",
+          "line": 80,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        10,
+        11,
+        56,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower matches 1",
+          "norm": null,
+          "value": "true",
+          "line": 79,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower matches 1",
+          "norm": null,
+          "value": "true",
+          "line": 77,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        6,
+        8,
+        9,
+        56,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 78,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower matches 0",
+          "norm": null,
+          "value": "true",
+          "line": 77,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        56,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "true",
+          "line": 91,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23,
+        24,
+        25,
+        27,
+        28,
+        29,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "true",
+          "line": 91,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "skip > 0",
+          "norm": "0 < skip",
+          "value": "true",
+          "line": 101,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23,
+        24,
+        25,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        37,
+        52,
+        53,
+        14,
+        15,
+        38,
+        39,
+        40,
+        41,
+        54,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "true",
+          "line": 91,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "skip > 0",
+          "norm": "0 < skip",
+          "value": "false",
+          "line": 101,
+          "bound": "skip == 0",
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23,
+        24,
+        25,
+        27,
+        28,
+        30,
+        31,
+        36,
+        37,
+        52,
+        53,
+        14,
+        15,
+        38,
+        39,
+        40,
+        41,
+        54,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "false",
+          "line": 91,
+          "bound": "ix == lower",
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        26,
+        27,
+        28,
+        29,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "false",
+          "line": 91,
+          "bound": "ix == lower",
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "skip > 0",
+          "norm": "0 < skip",
+          "value": "true",
+          "line": 101,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        37,
+        52,
+        53,
+        14,
+        15,
+        38,
+        39,
+        40,
+        41,
+        54,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "false",
+          "line": 91,
+          "bound": "ix == lower",
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "skip > 0",
+          "norm": "0 < skip",
+          "value": "false",
+          "line": 101,
+          "bound": "skip == 0",
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        26,
+        27,
+        28,
+        30,
+        31,
+        36,
+        37,
+        52,
+        53,
+        14,
+        15,
+        38,
+        39,
+        40,
+        41,
+        54,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "true",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        38,
+        39,
+        40,
+        41,
+        54,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "coin_flipper.random_ratio_one_over(consumed)",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "true",
+          "line": 91,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        38,
+        39,
+        40,
+        42,
+        43,
+        44,
+        45,
+        46,
+        48,
+        50,
+        51,
+        52,
+        53,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23,
+        24,
+        25,
+        27,
+        28,
+        29,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "coin_flipper.random_ratio_one_over(consumed)",
+          "norm": null,
+          "value": "true",
+          "line": 110,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "false",
+          "line": 91,
+          "bound": "ix == lower",
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        38,
+        39,
+        40,
+        42,
+        43,
+        44,
+        45,
+        46,
+        48,
+        50,
+        51,
+        52,
+        53,
+        14,
+        15,
+        16,
+        17,
+        18,
+        26,
+        27,
+        28,
+        29,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "coin_flipper.random_ratio_one_over(consumed)",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "true",
+          "line": 91,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        38,
+        39,
+        40,
+        42,
+        43,
+        44,
+        49,
+        50,
+        51,
+        52,
+        53,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        23,
+        24,
+        25,
+        27,
+        28,
+        29,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "false",
+          "line": 76,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "false",
+          "line": 89,
+          "bound": "lower == 1",
+          "may_panic": false
+        },
+        {
+          "cond": "elem.is_none()",
+          "norm": null,
+          "value": "false",
+          "line": 106,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "coin_flipper.random_ratio_one_over(consumed)",
+          "norm": null,
+          "value": "false",
+          "line": 110,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "lower > 1",
+          "norm": "1 < lower",
+          "value": "true",
+          "line": 89,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "ix < lower",
+          "norm": null,
+          "value": "false",
+          "line": 91,
+          "bound": "ix == lower",
+          "may_panic": false
+        },
+        {
+          "cond": "upper == Some(lower)",
+          "norm": "Some(lower) == upper",
+          "value": "true",
+          "line": 97,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "result",
+      "path": [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        15,
+        38,
+        39,
+        40,
+        42,
+        43,
+        44,
+        49,
+        50,
+        51,
+        52,
+        53,
+        14,
+        15,
+        16,
+        17,
+        18,
+        26,
+        27,
+        28,
+        29,
+        55,
+        57,
+        58,
+        59
+      ],
+      "may_contra": true,
+      "min_set": true
+    }
+  ]
+}

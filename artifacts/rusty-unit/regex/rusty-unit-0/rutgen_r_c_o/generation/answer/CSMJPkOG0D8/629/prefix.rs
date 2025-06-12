@@ -1,0 +1,49 @@
+// Answer 0
+
+#[test]
+fn test_exec_at_with_at_equal_to_text_len() {
+    let text: Vec<u8> = vec![0u8; 10]; // text.len() is 10
+    let prog = Program {
+        insts: Vec::new(),
+        matches: Vec::new(),
+        captures: Vec::new(),
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: 0,
+        byte_classes: Vec::new(),
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: false,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher::new(),
+        dfa_size_limit: 0,
+    };
+    
+    let mut cache = CacheInner {
+        compiled: HashMap::new(),
+        trans: Transitions::new(),
+        states: Vec::new(),
+        start_states: Vec::new(),
+        stack: Vec::new(),
+        flush_count: 0,
+        size: 0,
+    };
+    
+    let mut fsm = Fsm {
+        prog: &prog,
+        start: 0,
+        at: text.len(), // at is equal to text.len()
+        quit_after_match: false,
+        last_match_si: STATE_UNKNOWN,
+        last_cache_flush: 0,
+        cache: &mut cache,
+    };
+    
+    let mut qcur = SparseSet { dense: Vec::new(), sparse: Vec::new(), size: 0 };
+    let mut qnext = SparseSet { dense: Vec::new(), sparse: Vec::new(), size: 0 };
+
+    fsm.exec_at(&mut qcur, &mut qnext, &text);
+}
+

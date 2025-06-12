@@ -1,0 +1,318 @@
+{
+  "name": "indexmap::map::core::map::core::IndexMapCore<K, V>::try_reserve_exact",
+  "name_with_impl": "indexmap::map::core::{impl#2}::try_reserve_exact",
+  "mod_info": {
+    "name": "map::core",
+    "loc": "src/map.rs:4:1:4:10"
+  },
+  "visible": true,
+  "loc": "src/map/core.rs:291:5:298:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.indices\n            .try_reserve(additional, get_hash(&self.entries))\n            .map_err(TryReserveError::from_hashbrown)? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct Indices {",
+            "    reserved: usize,",
+            "}",
+            "",
+            "impl Indices {",
+            "    fn try_reserve(&mut self, additional: usize, _hash: usize) -> Result<(), &'static str> {",
+            "        if self.reserved + additional > 100 {",
+            "            return Err(\"Exceeded maximum capacity\");",
+            "        }",
+            "        self.reserved += additional;",
+            "        Ok(())",
+            "    }",
+            "}",
+            "",
+            "#[derive(Default)]",
+            "struct Entries {",
+            "    reserved: usize,",
+            "}",
+            "",
+            "impl Entries {",
+            "    fn try_reserve_exact(&mut self, additional: usize) -> Result<(), &'static str> {",
+            "        if self.reserved + additional > 100 {",
+            "            return Err(\"Exceeded maximum capacity\");",
+            "        }",
+            "        self.reserved += additional;",
+            "        Ok(())",
+            "    }",
+            "}",
+            "",
+            "#[derive(Default)]",
+            "struct MyMap {",
+            "    indices: Indices,",
+            "    entries: Entries,",
+            "}",
+            "",
+            "struct TryReserveError;",
+            "",
+            "impl TryReserveError {",
+            "    fn from_hashbrown(_: &'static str) -> Self {",
+            "        TryReserveError",
+            "    }",
+            "",
+            "    fn from_alloc(_: &'static str) -> Self {",
+            "        TryReserveError",
+            "    }",
+            "}",
+            "",
+            "fn get_hash(_entries: &Entries) -> usize {",
+            "    0",
+            "}",
+            "",
+            "impl MyMap {",
+            "    pub(crate) fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {",
+            "        self.indices",
+            "            .try_reserve(additional, get_hash(&self.entries))",
+            "            .map_err(TryReserveError::from_hashbrown)?;",
+            "        self.entries",
+            "            .try_reserve_exact(additional)",
+            "            .map_err(TryReserveError::from_alloc)",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = MyMap::default();",
+                  "    assert!(map.try_reserve_exact(10).is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = MyMap::default();",
+                  "    map.indices.reserved = 95; // Set initial reserved to near the limit",
+                  "    assert_eq!(map.try_reserve_exact(10).is_err(), true);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = MyMap::default();",
+                  "    map.entries.reserved = 95; // Set initial reserved to near the limit",
+                  "    assert_eq!(map.try_reserve_exact(10).is_err(), true);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.indices\n            .try_reserve(additional, get_hash(&self.entries))\n            .map_err(TryReserveError::from_hashbrown)? is Ok/Some\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct CustomMap {",
+            "    indices: Vec<usize>,",
+            "    entries: Vec<usize>,",
+            "}",
+            "",
+            "impl CustomMap {",
+            "    pub(crate) fn try_reserve_exact(&mut self, additional: usize) -> Result<(), TryReserveError> {",
+            "        self.indices",
+            "            .try_reserve(additional, get_hash(&self.entries))",
+            "            .map_err(TryReserveError::from_hashbrown)?;",
+            "        self.entries",
+            "            .try_reserve_exact(additional)",
+            "            .map_err(TryReserveError::from_alloc)",
+            "    }",
+            "}",
+            "",
+            "// Dummy function to simulate get_hash behavior",
+            "fn get_hash(entries: &Vec<usize>) -> usize {",
+            "    entries.len() // Simplistic hash function",
+            "}",
+            "",
+            "// Dummy error types to simulate original context",
+            "pub struct TryReserveError;",
+            "",
+            "impl TryReserveError {",
+            "    pub fn from_hashbrown(_: ()) -> Self {",
+            "        TryReserveError",
+            "    }",
+            "",
+            "    pub fn from_alloc(_: ()) -> Self {",
+            "        TryReserveError",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut custom_map = CustomMap::default();",
+                  "    ",
+                  "    // Initially empty map",
+                  "    assert_eq!(custom_map.try_reserve_exact(5), Ok(()));",
+                  "    ",
+                  "    // After reserving, ensure indices and entries can still be reserved",
+                  "    assert_eq!(custom_map.indices.len(), 0);",
+                  "    assert_eq!(custom_map.entries.len(), 0);",
+                  "    ",
+                  "    // Try adding some initial entries",
+                  "    custom_map.entries.push(1);",
+                  "    custom_map.entries.push(2);",
+                  "    ",
+                  "    // Now we should be able to reserve",
+                  "    assert_eq!(custom_map.try_reserve_exact(3), Ok(()));",
+                  "    assert_eq!(custom_map.indices.len(), 5); // assuming try_reserve updates length based on additional",
+                  "    assert_eq!(custom_map.entries.len(), 2); // entries should still be the same",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0061]: this method takes 1 argument but 2 arguments were supplied\n    --> src/map/core.rs:752:14\n     |\n752  |             .try_reserve(additional, get_hash(&self.entries))\n     |              ^^^^^^^^^^^             ----------------------- unexpected argument #2 of type `usize`\n     |\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:1038:12\n     |\n1038 |     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {\n     |            ^^^^^^^^^^^\nhelp: remove the extra argument\n     |\n752  -             .try_reserve(additional, get_hash(&self.entries))\n752  +             .try_reserve(additional)\n     |\n\nerror[E0631]: type mismatch in function arguments\n   --> src/map/core.rs:753:22\n    |\n753 |             .map_err(TryReserveError::from_hashbrown)?;\n    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected due to this\n    |              |\n    |              required by a bound introduced by this call\n...\n769 |     pub fn from_hashbrown(_: ()) -> Self {\n    |     ------------------------------------ found signature defined here\n    |\n    = note: expected function signature `fn(std::collections::TryReserveError) -> _`\n               found function signature `fn(()) -> _`\nnote: required by a bound in `Result::<T, E>::map_err`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:851:26\n    |\n851 |     pub fn map_err<F, O: FnOnce(E) -> F>(self, op: O) -> Result<T, F> {\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`\nhelp: consider wrapping the function in a closure\n    |\n753 |             .map_err(|arg0: std::collections::TryReserveError| TryReserveError::from_hashbrown(/* () */))?;\n    |                      +++++++++++++++++++++++++++++++++++++++++                                ++++++++++\n\nerror[E0631]: type mismatch in function arguments\n   --> src/map/core.rs:756:22\n    |\n756 |             .map_err(TryReserveError::from_alloc)\n    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected due to this\n    |              |\n    |              required by a bound introduced by this call\n...\n773 |     pub fn from_alloc(_: ()) -> Self {\n    |     -------------------------------- found signature defined here\n    |\n    = note: expected function signature `fn(std::collections::TryReserveError) -> _`\n               found function signature `fn(()) -> _`\nnote: required by a bound in `Result::<T, E>::map_err`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:851:26\n    |\n851 |     pub fn map_err<F, O: FnOnce(E) -> F>(self, op: O) -> Result<T, F> {\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`\nhelp: consider wrapping the function in a closure\n    |\n756 |             .map_err(|arg0: std::collections::TryReserveError| TryReserveError::from_alloc(/* () */))\n    |                      +++++++++++++++++++++++++++++++++++++++++                            ++++++++++\n\nerror[E0369]: binary operation `==` cannot be applied to type `Result<(), llmtests::TryReserveError>`\n   --> src/map/core.rs:784:5\n    |\n784 |     assert_eq!(custom_map.try_reserve_exact(5), Ok(()));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     Result<(), llmtests::TryReserveError>\n    |     Result<(), llmtests::TryReserveError>\n    |\nnote: an implementation of `PartialEq` might be missing for `llmtests::TryReserveError`\n   --> src/map/core.rs:766:1\n    |\n766 | pub struct TryReserveError;\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(PartialEq)]`\n    |\n766 + #[derive(PartialEq)]\n767 | pub struct TryReserveError;\n    |\n\nerror[E0277]: `llmtests::TryReserveError` doesn't implement `Debug`\n   --> src/map/core.rs:784:5\n    |\n784 |     assert_eq!(custom_map.try_reserve_exact(5), Ok(()));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `llmtests::TryReserveError` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `llmtests::TryReserveError`, which is required by `Result<(), llmtests::TryReserveError>: Debug`\n    = note: add `#[derive(Debug)]` to `llmtests::TryReserveError` or manually `impl Debug for llmtests::TryReserveError`\n    = help: the trait `Debug` is implemented for `Result<T, E>`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(Debug)]`\n    |\n766 + #[derive(Debug)]\n767 | pub struct TryReserveError;\n    |\n\nerror[E0369]: binary operation `==` cannot be applied to type `Result<(), llmtests::TryReserveError>`\n   --> src/map/core.rs:795:5\n    |\n795 |     assert_eq!(custom_map.try_reserve_exact(3), Ok(()));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     Result<(), llmtests::TryReserveError>\n    |     Result<(), llmtests::TryReserveError>\n    |\nnote: an implementation of `PartialEq` might be missing for `llmtests::TryReserveError`\n   --> src/map/core.rs:766:1\n    |\n766 | pub struct TryReserveError;\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(PartialEq)]`\n    |\n766 + #[derive(PartialEq)]\n767 | pub struct TryReserveError;\n    |\n\nerror[E0277]: `llmtests::TryReserveError` doesn't implement `Debug`\n   --> src/map/core.rs:795:5\n    |\n795 |     assert_eq!(custom_map.try_reserve_exact(3), Ok(()));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `llmtests::TryReserveError` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `llmtests::TryReserveError`, which is required by `Result<(), llmtests::TryReserveError>: Debug`\n    = note: add `#[derive(Debug)]` to `llmtests::TryReserveError` or manually `impl Debug for llmtests::TryReserveError`\n    = help: the trait `Debug` is implemented for `Result<T, E>`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(Debug)]`\n    |\n766 + #[derive(Debug)]\n767 | pub struct TryReserveError;\n    |\n\nSome errors have detailed explanations: E0061, E0277, E0369, E0631.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 9 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut custom_map = CustomMap::default();",
+                  "    ",
+                  "    // Simulate a condition where indices cannot accommodate additional",
+                  "    // Let's push to the indices directly to simulate over-reserving without handling the real allocation",
+                  "    custom_map.indices.push(1);",
+                  "    custom_map.indices.push(2);",
+                  "    ",
+                  "    // Attempt to reserve exceeding current capacity",
+                  "    custom_map.try_reserve_exact(10).unwrap();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0061]: this method takes 1 argument but 2 arguments were supplied\n    --> src/map/core.rs:752:14\n     |\n752  |             .try_reserve(additional, get_hash(&self.entries))\n     |              ^^^^^^^^^^^             ----------------------- unexpected argument #2 of type `usize`\n     |\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:1038:12\n     |\n1038 |     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {\n     |            ^^^^^^^^^^^\nhelp: remove the extra argument\n     |\n752  -             .try_reserve(additional, get_hash(&self.entries))\n752  +             .try_reserve(additional)\n     |\n\nerror[E0631]: type mismatch in function arguments\n   --> src/map/core.rs:753:22\n    |\n753 |             .map_err(TryReserveError::from_hashbrown)?;\n    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected due to this\n    |              |\n    |              required by a bound introduced by this call\n...\n769 |     pub fn from_hashbrown(_: ()) -> Self {\n    |     ------------------------------------ found signature defined here\n    |\n    = note: expected function signature `fn(std::collections::TryReserveError) -> _`\n               found function signature `fn(()) -> _`\nnote: required by a bound in `Result::<T, E>::map_err`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:851:26\n    |\n851 |     pub fn map_err<F, O: FnOnce(E) -> F>(self, op: O) -> Result<T, F> {\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`\nhelp: consider wrapping the function in a closure\n    |\n753 |             .map_err(|arg0: std::collections::TryReserveError| TryReserveError::from_hashbrown(/* () */))?;\n    |                      +++++++++++++++++++++++++++++++++++++++++                                ++++++++++\n\nerror[E0631]: type mismatch in function arguments\n   --> src/map/core.rs:756:22\n    |\n756 |             .map_err(TryReserveError::from_alloc)\n    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected due to this\n    |              |\n    |              required by a bound introduced by this call\n...\n773 |     pub fn from_alloc(_: ()) -> Self {\n    |     -------------------------------- found signature defined here\n    |\n    = note: expected function signature `fn(std::collections::TryReserveError) -> _`\n               found function signature `fn(()) -> _`\nnote: required by a bound in `Result::<T, E>::map_err`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:851:26\n    |\n851 |     pub fn map_err<F, O: FnOnce(E) -> F>(self, op: O) -> Result<T, F> {\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`\nhelp: consider wrapping the function in a closure\n    |\n756 |             .map_err(|arg0: std::collections::TryReserveError| TryReserveError::from_alloc(/* () */))\n    |                      +++++++++++++++++++++++++++++++++++++++++                            ++++++++++\n\nerror[E0277]: `llmtests::TryReserveError` doesn't implement `Debug`\n    --> src/map/core.rs:790:38\n     |\n790  |     custom_map.try_reserve_exact(10).unwrap();\n     |                                      ^^^^^^ `llmtests::TryReserveError` cannot be formatted using `{:?}`\n     |\n     = help: the trait `Debug` is not implemented for `llmtests::TryReserveError`\n     = note: add `#[derive(Debug)]` to `llmtests::TryReserveError` or manually `impl Debug for llmtests::TryReserveError`\nnote: required by a bound in `Result::<T, E>::unwrap`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1098:12\n     |\n1096 |     pub fn unwrap(self) -> T\n     |            ------ required by a bound in this associated function\n1097 |     where\n1098 |         E: fmt::Debug,\n     |            ^^^^^^^^^^ required by this bound in `Result::<T, E>::unwrap`\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(Debug)]`\n     |\n766  + #[derive(Debug)]\n767  | pub struct TryReserveError;\n     |\n\nSome errors have detailed explanations: E0061, E0277, E0631.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 4 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut custom_map = CustomMap::default();",
+                  "    ",
+                  "    assert_eq!(custom_map.try_reserve_exact(0), Ok(())); // Reserving zero should succeed",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling getrandom v0.3.2\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0061]: this method takes 1 argument but 2 arguments were supplied\n    --> src/map/core.rs:752:14\n     |\n752  |             .try_reserve(additional, get_hash(&self.entries))\n     |              ^^^^^^^^^^^             ----------------------- unexpected argument #2 of type `usize`\n     |\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:1038:12\n     |\n1038 |     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {\n     |            ^^^^^^^^^^^\nhelp: remove the extra argument\n     |\n752  -             .try_reserve(additional, get_hash(&self.entries))\n752  +             .try_reserve(additional)\n     |\n\nerror[E0631]: type mismatch in function arguments\n   --> src/map/core.rs:753:22\n    |\n753 |             .map_err(TryReserveError::from_hashbrown)?;\n    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected due to this\n    |              |\n    |              required by a bound introduced by this call\n...\n769 |     pub fn from_hashbrown(_: ()) -> Self {\n    |     ------------------------------------ found signature defined here\n    |\n    = note: expected function signature `fn(std::collections::TryReserveError) -> _`\n               found function signature `fn(()) -> _`\nnote: required by a bound in `Result::<T, E>::map_err`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:851:26\n    |\n851 |     pub fn map_err<F, O: FnOnce(E) -> F>(self, op: O) -> Result<T, F> {\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`\nhelp: consider wrapping the function in a closure\n    |\n753 |             .map_err(|arg0: std::collections::TryReserveError| TryReserveError::from_hashbrown(/* () */))?;\n    |                      +++++++++++++++++++++++++++++++++++++++++                                ++++++++++\n\nerror[E0631]: type mismatch in function arguments\n   --> src/map/core.rs:756:22\n    |\n756 |             .map_err(TryReserveError::from_alloc)\n    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected due to this\n    |              |\n    |              required by a bound introduced by this call\n...\n773 |     pub fn from_alloc(_: ()) -> Self {\n    |     -------------------------------- found signature defined here\n    |\n    = note: expected function signature `fn(std::collections::TryReserveError) -> _`\n               found function signature `fn(()) -> _`\nnote: required by a bound in `Result::<T, E>::map_err`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:851:26\n    |\n851 |     pub fn map_err<F, O: FnOnce(E) -> F>(self, op: O) -> Result<T, F> {\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`\nhelp: consider wrapping the function in a closure\n    |\n756 |             .map_err(|arg0: std::collections::TryReserveError| TryReserveError::from_alloc(/* () */))\n    |                      +++++++++++++++++++++++++++++++++++++++++                            ++++++++++\n\nerror[E0369]: binary operation `==` cannot be applied to type `Result<(), llmtests::TryReserveError>`\n   --> src/map/core.rs:783:5\n    |\n783 |     assert_eq!(custom_map.try_reserve_exact(0), Ok(())); // Reserving zero should succeed\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     Result<(), llmtests::TryReserveError>\n    |     Result<(), llmtests::TryReserveError>\n    |\nnote: an implementation of `PartialEq` might be missing for `llmtests::TryReserveError`\n   --> src/map/core.rs:766:1\n    |\n766 | pub struct TryReserveError;\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(PartialEq)]`\n    |\n766 + #[derive(PartialEq)]\n767 | pub struct TryReserveError;\n    |\n\nerror[E0277]: `llmtests::TryReserveError` doesn't implement `Debug`\n   --> src/map/core.rs:783:5\n    |\n783 |     assert_eq!(custom_map.try_reserve_exact(0), Ok(())); // Reserving zero should succeed\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `llmtests::TryReserveError` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `llmtests::TryReserveError`, which is required by `Result<(), llmtests::TryReserveError>: Debug`\n    = note: add `#[derive(Debug)]` to `llmtests::TryReserveError` or manually `impl Debug for llmtests::TryReserveError`\n    = help: the trait `Debug` is implemented for `Result<T, E>`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(Debug)]`\n    |\n766 + #[derive(Debug)]\n767 | pub struct TryReserveError;\n    |\n\nSome errors have detailed explanations: E0061, E0277, E0369, E0631.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 6 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut custom_map = CustomMap::default();",
+                  "    ",
+                  "    // Test with a large number that should succeed",
+                  "    assert_eq!(custom_map.try_reserve_exact(1000), Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nwarning: unused import: `ntest::timeout`\n   --> src/map/core.rs:742:8\n    |\n742 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0061]: this method takes 1 argument but 2 arguments were supplied\n    --> src/map/core.rs:752:14\n     |\n752  |             .try_reserve(additional, get_hash(&self.entries))\n     |              ^^^^^^^^^^^             ----------------------- unexpected argument #2 of type `usize`\n     |\nnote: method defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:1038:12\n     |\n1038 |     pub fn try_reserve(&mut self, additional: usize) -> Result<(), TryReserveError> {\n     |            ^^^^^^^^^^^\nhelp: remove the extra argument\n     |\n752  -             .try_reserve(additional, get_hash(&self.entries))\n752  +             .try_reserve(additional)\n     |\n\nerror[E0631]: type mismatch in function arguments\n   --> src/map/core.rs:753:22\n    |\n753 |             .map_err(TryReserveError::from_hashbrown)?;\n    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected due to this\n    |              |\n    |              required by a bound introduced by this call\n...\n769 |     pub fn from_hashbrown(_: ()) -> Self {\n    |     ------------------------------------ found signature defined here\n    |\n    = note: expected function signature `fn(std::collections::TryReserveError) -> _`\n               found function signature `fn(()) -> _`\nnote: required by a bound in `Result::<T, E>::map_err`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:851:26\n    |\n851 |     pub fn map_err<F, O: FnOnce(E) -> F>(self, op: O) -> Result<T, F> {\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`\nhelp: consider wrapping the function in a closure\n    |\n753 |             .map_err(|arg0: std::collections::TryReserveError| TryReserveError::from_hashbrown(/* () */))?;\n    |                      +++++++++++++++++++++++++++++++++++++++++                                ++++++++++\n\nerror[E0631]: type mismatch in function arguments\n   --> src/map/core.rs:756:22\n    |\n756 |             .map_err(TryReserveError::from_alloc)\n    |              ------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected due to this\n    |              |\n    |              required by a bound introduced by this call\n...\n773 |     pub fn from_alloc(_: ()) -> Self {\n    |     -------------------------------- found signature defined here\n    |\n    = note: expected function signature `fn(std::collections::TryReserveError) -> _`\n               found function signature `fn(()) -> _`\nnote: required by a bound in `Result::<T, E>::map_err`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:851:26\n    |\n851 |     pub fn map_err<F, O: FnOnce(E) -> F>(self, op: O) -> Result<T, F> {\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Result::<T, E>::map_err`\nhelp: consider wrapping the function in a closure\n    |\n756 |             .map_err(|arg0: std::collections::TryReserveError| TryReserveError::from_alloc(/* () */))\n    |                      +++++++++++++++++++++++++++++++++++++++++                            ++++++++++\n\nerror[E0369]: binary operation `==` cannot be applied to type `Result<(), llmtests::TryReserveError>`\n   --> src/map/core.rs:784:5\n    |\n784 |     assert_eq!(custom_map.try_reserve_exact(1000), Ok(()));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     Result<(), llmtests::TryReserveError>\n    |     Result<(), llmtests::TryReserveError>\n    |\nnote: an implementation of `PartialEq` might be missing for `llmtests::TryReserveError`\n   --> src/map/core.rs:766:1\n    |\n766 | pub struct TryReserveError;\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(PartialEq)]`\n    |\n766 + #[derive(PartialEq)]\n767 | pub struct TryReserveError;\n    |\n\nerror[E0277]: `llmtests::TryReserveError` doesn't implement `Debug`\n   --> src/map/core.rs:784:5\n    |\n784 |     assert_eq!(custom_map.try_reserve_exact(1000), Ok(()));\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `llmtests::TryReserveError` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `llmtests::TryReserveError`, which is required by `Result<(), llmtests::TryReserveError>: Debug`\n    = note: add `#[derive(Debug)]` to `llmtests::TryReserveError` or manually `impl Debug for llmtests::TryReserveError`\n    = help: the trait `Debug` is implemented for `Result<T, E>`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::TryReserveError` with `#[derive(Debug)]`\n    |\n766 + #[derive(Debug)]\n767 | pub struct TryReserveError;\n    |\n\nSome errors have detailed explanations: E0061, E0277, E0369, E0631.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 6 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

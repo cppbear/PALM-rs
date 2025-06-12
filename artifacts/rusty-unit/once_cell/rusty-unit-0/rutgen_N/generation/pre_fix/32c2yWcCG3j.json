@@ -1,0 +1,108 @@
+{
+  "name": "once_cell::race::race::OnceNonZeroUsize::get_unchecked",
+  "name_with_impl": "once_cell::race::{impl#0}::get_unchecked",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:68:5:100:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::num::NonZeroUsize;",
+            "use core::mem::align_of;",
+            "use super::*;",
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": true,
+          "common": [
+            "    struct RaceCell {",
+            "        inner: AtomicUsize,",
+            "    }",
+            "",
+            "    impl RaceCell {",
+            "        fn new(value: NonZeroUsize) -> Self {",
+            "            RaceCell {",
+            "                inner: AtomicUsize::new(value.get()),",
+            "            }",
+            "        }",
+            "",
+            "        unsafe fn get_unchecked(&self) -> NonZeroUsize {",
+            "            #[inline(always)]",
+            "            fn as_const_ptr(r: &AtomicUsize) -> *const usize {",
+            "",
+            "                let p: *const AtomicUsize = r;",
+            "                const _ALIGNMENT_COMPATIBLE: () =",
+            "                    assert!(align_of::<AtomicUsize>() % align_of::<usize>() == 0);",
+            "                p.cast::<usize>()",
+            "            }",
+            "",
+            "            let p = as_const_ptr(&self.inner);",
+            "            let val = unsafe { p.read() };",
+            "            unsafe { NonZeroUsize::new_unchecked(val) }",
+            "        }",
+            "    }"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let cell = RaceCell::new(NonZeroUsize::new(10).unwrap());",
+                  "    unsafe {",
+                  "        let value = cell.get_unchecked();",
+                  "        assert_eq!(value.get(), 10);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let cell = RaceCell { inner: AtomicUsize::new(0) };",
+                  "    unsafe {",
+                  "        cell.get_unchecked();",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

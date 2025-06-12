@@ -1,0 +1,773 @@
+{
+  "name": "base64::read::decoder::read::decoder::DecoderReader<'e, E, R>::decode_to_buf",
+  "name_with_impl": "base64::read::decoder::{impl#1}::decode_to_buf",
+  "mod_info": {
+    "name": "read::decoder",
+    "loc": "src/read/mod.rs:2:1:2:13"
+  },
+  "visible": false,
+  "loc": "src/read/decoder.rs:140:5:206:6",
+  "doc": "/// Decode the requested number of bytes from the b64 buffer into the provided buffer. It's the\n/// caller's responsibility to choose the number of b64 bytes to decode correctly.\n///\n/// Returns a Result with the number of decoded bytes written to `buf`.\n///\n/// # Panics\n///\n/// panics if `buf` is too small\n",
+  "code": [
+    "fn decode_to_buf(&mut self, b64_len_to_decode: usize, buf: &mut [u8]) -> io::Result<usize> {",
+    "    debug_assert!(self.b64_len >= b64_len_to_decode);",
+    "    debug_assert!(self.b64_offset + self.b64_len <= BUF_SIZE);",
+    "    debug_assert!(!buf.is_empty());",
+    "",
+    "    let b64_to_decode = &self.b64_buffer[self.b64_offset..self.b64_offset + b64_len_to_decode];",
+    "    let decode_metadata = self",
+    "        .engine",
+    "        .internal_decode(",
+    "            b64_to_decode,",
+    "            buf,",
+    "            self.engine.internal_decoded_len_estimate(b64_len_to_decode),",
+    "        )",
+    "        .map_err(|dse| match dse {",
+    "            DecodeSliceError::DecodeError(de) => {",
+    "                match de {",
+    "                    DecodeError::InvalidByte(offset, byte) => {",
+    "                        match (byte, self.padding_offset) {",
+    "                            // if there was padding in a previous block of decoding that happened to",
+    "                            // be correct, and we now find more padding that happens to be incorrect,",
+    "                            // to be consistent with non-reader decodes, record the error at the first",
+    "                            // padding",
+    "                            (PAD_BYTE, Some(first_pad_offset)) => {",
+    "                                DecodeError::InvalidByte(first_pad_offset, PAD_BYTE)",
+    "                            }",
+    "                            _ => {",
+    "                                DecodeError::InvalidByte(self.input_consumed_len + offset, byte)",
+    "                            }",
+    "                        }",
+    "                    }",
+    "                    DecodeError::InvalidLength(len) => {",
+    "                        DecodeError::InvalidLength(self.input_consumed_len + len)",
+    "                    }",
+    "                    DecodeError::InvalidLastSymbol(offset, byte) => {",
+    "                        DecodeError::InvalidLastSymbol(self.input_consumed_len + offset, byte)",
+    "                    }",
+    "                    DecodeError::InvalidPadding => DecodeError::InvalidPadding,",
+    "                }",
+    "            }",
+    "            DecodeSliceError::OutputSliceTooSmall => {",
+    "                unreachable!(\"buf is sized correctly in calling code\")",
+    "            }",
+    "        })",
+    "        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;",
+    "",
+    "    if let Some(offset) = self.padding_offset {",
+    "        // we've already seen padding",
+    "        if decode_metadata.decoded_len > 0 {",
+    "            // we read more after already finding padding; report error at first padding byte",
+    "            return Err(io::Error::new(",
+    "                io::ErrorKind::InvalidData,",
+    "                DecodeError::InvalidByte(offset, PAD_BYTE),",
+    "            ));",
+    "        }",
+    "    }",
+    "",
+    "    self.padding_offset = self.padding_offset.or(decode_metadata",
+    "        .padding_offset",
+    "        .map(|offset| self.input_consumed_len + offset));",
+    "    self.input_consumed_len += b64_len_to_decode;",
+    "    self.b64_offset += b64_len_to_decode;",
+    "    self.b64_len -= b64_len_to_decode;",
+    "",
+    "    debug_assert!(self.b64_offset + self.b64_len <= BUF_SIZE);",
+    "",
+    "    Ok(decode_metadata.decoded_len)",
+    "}"
+  ],
+  "size": {
+    "chain": 9,
+    "contra": 0,
+    "min_set": 7
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "true",
+          "line": 141,
+          "bound": "self.b64_len == b64_len_to_decode",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 142,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "buf.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 143,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11,
+        12,
+        13,
+        14,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "true",
+          "line": 141,
+          "bound": "self.b64_len == b64_len_to_decode",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 142,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "buf.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 143,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_buffer[self.b64_offset..self.b64_offset + b64_len_to_decode]",
+          "norm": null,
+          "value": "",
+          "line": 145,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "self\n            .engine\n            .internal_decode(\n                b64_to_decode,\n                buf,\n                self.engine.internal_decoded_len_estimate(b64_len_to_decode),\n            )\n            .map_err(|dse| match dse {\n                DecodeSliceError::DecodeError(de) => {\n                    match de {\n                        DecodeError::InvalidByte(offset, byte) => {\n                            match (byte, self.padding_offset) {\n                                // if there was padding in a previous block of decoding that happened to\n                                // be correct, and we now find more padding that happens to be incorrect,\n                                // to be consistent with non-reader decodes, record the error at the first\n                                // padding\n                                (PAD_BYTE, Some(first_pad_offset)) => {\n                                    DecodeError::InvalidByte(first_pad_offset, PAD_BYTE)\n                                }\n                                _ => {\n                                    DecodeError::InvalidByte(self.input_consumed_len + offset, byte)\n                                }\n                            }\n                        }\n                        DecodeError::InvalidLength(len) => {\n                            DecodeError::InvalidLength(self.input_consumed_len + len)\n                        }\n                        DecodeError::InvalidLastSymbol(offset, byte) => {\n                            DecodeError::InvalidLastSymbol(self.input_consumed_len + offset, byte)\n                        }\n                        DecodeError::InvalidPadding => DecodeError::InvalidPadding,\n                    }\n                }\n                DecodeSliceError::OutputSliceTooSmall => {\n                    unreachable!(\"buf is sized correctly in calling code\")\n                }\n            })\n            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 146,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        26,
+        28,
+        29,
+        50,
+        51,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "true",
+          "line": 141,
+          "bound": "self.b64_len == b64_len_to_decode",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 142,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "buf.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 143,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_buffer[self.b64_offset..self.b64_offset + b64_len_to_decode]",
+          "norm": null,
+          "value": "",
+          "line": 145,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "self\n            .engine\n            .internal_decode(\n                b64_to_decode,\n                buf,\n                self.engine.internal_decoded_len_estimate(b64_len_to_decode),\n            )\n            .map_err(|dse| match dse {\n                DecodeSliceError::DecodeError(de) => {\n                    match de {\n                        DecodeError::InvalidByte(offset, byte) => {\n                            match (byte, self.padding_offset) {\n                                // if there was padding in a previous block of decoding that happened to\n                                // be correct, and we now find more padding that happens to be incorrect,\n                                // to be consistent with non-reader decodes, record the error at the first\n                                // padding\n                                (PAD_BYTE, Some(first_pad_offset)) => {\n                                    DecodeError::InvalidByte(first_pad_offset, PAD_BYTE)\n                                }\n                                _ => {\n                                    DecodeError::InvalidByte(self.input_consumed_len + offset, byte)\n                                }\n                            }\n                        }\n                        DecodeError::InvalidLength(len) => {\n                            DecodeError::InvalidLength(self.input_consumed_len + len)\n                        }\n                        DecodeError::InvalidLastSymbol(offset, byte) => {\n                            DecodeError::InvalidLastSymbol(self.input_consumed_len + offset, byte)\n                        }\n                        DecodeError::InvalidPadding => DecodeError::InvalidPadding,\n                    }\n                }\n                DecodeSliceError::OutputSliceTooSmall => {\n                    unreachable!(\"buf is sized correctly in calling code\")\n                }\n            })\n            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 146,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(offset) = self.padding_offset",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 203,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(decode_metadata.decoded_len)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        27,
+        30,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        49,
+        53
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "true",
+          "line": 141,
+          "bound": "self.b64_len == b64_len_to_decode",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 142,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "buf.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 143,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_buffer[self.b64_offset..self.b64_offset + b64_len_to_decode]",
+          "norm": null,
+          "value": "",
+          "line": 145,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "self\n            .engine\n            .internal_decode(\n                b64_to_decode,\n                buf,\n                self.engine.internal_decoded_len_estimate(b64_len_to_decode),\n            )\n            .map_err(|dse| match dse {\n                DecodeSliceError::DecodeError(de) => {\n                    match de {\n                        DecodeError::InvalidByte(offset, byte) => {\n                            match (byte, self.padding_offset) {\n                                // if there was padding in a previous block of decoding that happened to\n                                // be correct, and we now find more padding that happens to be incorrect,\n                                // to be consistent with non-reader decodes, record the error at the first\n                                // padding\n                                (PAD_BYTE, Some(first_pad_offset)) => {\n                                    DecodeError::InvalidByte(first_pad_offset, PAD_BYTE)\n                                }\n                                _ => {\n                                    DecodeError::InvalidByte(self.input_consumed_len + offset, byte)\n                                }\n                            }\n                        }\n                        DecodeError::InvalidLength(len) => {\n                            DecodeError::InvalidLength(self.input_consumed_len + len)\n                        }\n                        DecodeError::InvalidLastSymbol(offset, byte) => {\n                            DecodeError::InvalidLastSymbol(self.input_consumed_len + offset, byte)\n                        }\n                        DecodeError::InvalidPadding => DecodeError::InvalidPadding,\n                    }\n                }\n                DecodeSliceError::OutputSliceTooSmall => {\n                    unreachable!(\"buf is sized correctly in calling code\")\n                }\n            })\n            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 146,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(offset) = self.padding_offset",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "false",
+          "line": 203,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        27,
+        30,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        47,
+        59
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "true",
+          "line": 141,
+          "bound": "self.b64_len == b64_len_to_decode",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 142,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "buf.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 143,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_buffer[self.b64_offset..self.b64_offset + b64_len_to_decode]",
+          "norm": null,
+          "value": "",
+          "line": 145,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "self\n            .engine\n            .internal_decode(\n                b64_to_decode,\n                buf,\n                self.engine.internal_decoded_len_estimate(b64_len_to_decode),\n            )\n            .map_err(|dse| match dse {\n                DecodeSliceError::DecodeError(de) => {\n                    match de {\n                        DecodeError::InvalidByte(offset, byte) => {\n                            match (byte, self.padding_offset) {\n                                // if there was padding in a previous block of decoding that happened to\n                                // be correct, and we now find more padding that happens to be incorrect,\n                                // to be consistent with non-reader decodes, record the error at the first\n                                // padding\n                                (PAD_BYTE, Some(first_pad_offset)) => {\n                                    DecodeError::InvalidByte(first_pad_offset, PAD_BYTE)\n                                }\n                                _ => {\n                                    DecodeError::InvalidByte(self.input_consumed_len + offset, byte)\n                                }\n                            }\n                        }\n                        DecodeError::InvalidLength(len) => {\n                            DecodeError::InvalidLength(self.input_consumed_len + len)\n                        }\n                        DecodeError::InvalidLastSymbol(offset, byte) => {\n                            DecodeError::InvalidLastSymbol(self.input_consumed_len + offset, byte)\n                        }\n                        DecodeError::InvalidPadding => DecodeError::InvalidPadding,\n                    }\n                }\n                DecodeSliceError::OutputSliceTooSmall => {\n                    unreachable!(\"buf is sized correctly in calling code\")\n                }\n            })\n            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 146,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(offset) = self.padding_offset",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "decode_metadata.decoded_len > 0",
+          "norm": "0 < decode_metadata.decoded_len",
+          "value": "true",
+          "line": 187,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Err(io::Error::new(\n                    io::ErrorKind::InvalidData,\n                    DecodeError::InvalidByte(offset, PAD_BYTE),\n                ))",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        27,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        52,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "true",
+          "line": 141,
+          "bound": "self.b64_len == b64_len_to_decode",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 142,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "buf.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 143,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_buffer[self.b64_offset..self.b64_offset + b64_len_to_decode]",
+          "norm": null,
+          "value": "",
+          "line": 145,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "self\n            .engine\n            .internal_decode(\n                b64_to_decode,\n                buf,\n                self.engine.internal_decoded_len_estimate(b64_len_to_decode),\n            )\n            .map_err(|dse| match dse {\n                DecodeSliceError::DecodeError(de) => {\n                    match de {\n                        DecodeError::InvalidByte(offset, byte) => {\n                            match (byte, self.padding_offset) {\n                                // if there was padding in a previous block of decoding that happened to\n                                // be correct, and we now find more padding that happens to be incorrect,\n                                // to be consistent with non-reader decodes, record the error at the first\n                                // padding\n                                (PAD_BYTE, Some(first_pad_offset)) => {\n                                    DecodeError::InvalidByte(first_pad_offset, PAD_BYTE)\n                                }\n                                _ => {\n                                    DecodeError::InvalidByte(self.input_consumed_len + offset, byte)\n                                }\n                            }\n                        }\n                        DecodeError::InvalidLength(len) => {\n                            DecodeError::InvalidLength(self.input_consumed_len + len)\n                        }\n                        DecodeError::InvalidLastSymbol(offset, byte) => {\n                            DecodeError::InvalidLastSymbol(self.input_consumed_len + offset, byte)\n                        }\n                        DecodeError::InvalidPadding => DecodeError::InvalidPadding,\n                    }\n                }\n                DecodeSliceError::OutputSliceTooSmall => {\n                    unreachable!(\"buf is sized correctly in calling code\")\n                }\n            })\n            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 146,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(offset) = self.padding_offset",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "decode_metadata.decoded_len > 0",
+          "norm": "0 < decode_metadata.decoded_len",
+          "value": "false",
+          "line": 187,
+          "bound": "decode_metadata.decoded_len == 0",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 203,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(decode_metadata.decoded_len)",
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        27,
+        30,
+        31,
+        32,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        49,
+        53
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "true",
+          "line": 141,
+          "bound": "self.b64_len == b64_len_to_decode",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "true",
+          "line": 142,
+          "bound": "self.b64_offset + self.b64_len == BUF_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "buf.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 143,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_buffer[self.b64_offset..self.b64_offset + b64_len_to_decode]",
+          "norm": null,
+          "value": "",
+          "line": 145,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "self\n            .engine\n            .internal_decode(\n                b64_to_decode,\n                buf,\n                self.engine.internal_decoded_len_estimate(b64_len_to_decode),\n            )\n            .map_err(|dse| match dse {\n                DecodeSliceError::DecodeError(de) => {\n                    match de {\n                        DecodeError::InvalidByte(offset, byte) => {\n                            match (byte, self.padding_offset) {\n                                // if there was padding in a previous block of decoding that happened to\n                                // be correct, and we now find more padding that happens to be incorrect,\n                                // to be consistent with non-reader decodes, record the error at the first\n                                // padding\n                                (PAD_BYTE, Some(first_pad_offset)) => {\n                                    DecodeError::InvalidByte(first_pad_offset, PAD_BYTE)\n                                }\n                                _ => {\n                                    DecodeError::InvalidByte(self.input_consumed_len + offset, byte)\n                                }\n                            }\n                        }\n                        DecodeError::InvalidLength(len) => {\n                            DecodeError::InvalidLength(self.input_consumed_len + len)\n                        }\n                        DecodeError::InvalidLastSymbol(offset, byte) => {\n                            DecodeError::InvalidLastSymbol(self.input_consumed_len + offset, byte)\n                        }\n                        DecodeError::InvalidPadding => DecodeError::InvalidPadding,\n                    }\n                }\n                DecodeSliceError::OutputSliceTooSmall => {\n                    unreachable!(\"buf is sized correctly in calling code\")\n                }\n            })\n            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 146,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(offset) = self.padding_offset",
+          "norm": null,
+          "value": "true",
+          "line": 185,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "decode_metadata.decoded_len > 0",
+          "norm": "0 < decode_metadata.decoded_len",
+          "value": "false",
+          "line": 187,
+          "bound": "decode_metadata.decoded_len == 0",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "false",
+          "line": 203,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        8,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        27,
+        30,
+        31,
+        32,
+        36,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        47,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "true",
+          "line": 141,
+          "bound": "self.b64_len == b64_len_to_decode",
+          "may_panic": false
+        },
+        {
+          "cond": "self.b64_offset + self.b64_len <= BUF_SIZE",
+          "norm": "BUF_SIZE >= self.b64_offset + self.b64_len",
+          "value": "false",
+          "line": 142,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        9,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.b64_len >= b64_len_to_decode",
+          "norm": "b64_len_to_decode <= self.b64_len",
+          "value": "false",
+          "line": 141,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        59
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

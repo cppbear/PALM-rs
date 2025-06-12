@@ -1,0 +1,574 @@
+{
+  "name": "rand_core::block::<block::BlockRng64<R> as RngCore>::fill_bytes",
+  "name_with_impl": "rand_core::block::{impl#7}::fill_bytes",
+  "mod_info": {
+    "name": "block",
+    "loc": "rand_core/src/lib.rs:44:1:44:15"
+  },
+  "visible": true,
+  "loc": "rand_core/src/block.rs:382:5:397:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: read_len < dest.len() is true\n",
+        "// constraint: self.index >= self.results.as_ref().len() is true, with bound self.index == self.results.as_ref().len()\n",
+        "// may panic: self.results.as_mut()[self.index..] may panic in certain situations\n",
+        "// may panic: dest[read_len..] may panic in certain situations\n",
+        "// constraint: read_len < dest.len() is false, with bound read_len == dest.len()\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct Core {",
+            "    results: Vec<u8>,",
+            "}",
+            "",
+            "impl Core {",
+            "    fn generate(&mut self, results: &mut Vec<u8>) {",
+            "        results.extend_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]); // Simulated random data",
+            "    }",
+            "}",
+            "",
+            "struct FillBytes {",
+            "    core: Core,",
+            "    results: Vec<u8>,",
+            "    index: usize,",
+            "    half_used: bool,",
+            "}",
+            "",
+            "impl FillBytes {",
+            "    fn new() -> Self {",
+            "        Self {",
+            "            core: Core::default(),",
+            "            results: vec![0; 8], // Initializing with 8 bytes",
+            "            index: 0,",
+            "            half_used: false,",
+            "        }",
+            "    }",
+            "    ",
+            "    fn fill_bytes(&mut self, dest: &mut [u8]) {",
+            "        let mut read_len = 0;",
+            "        self.half_used = false;",
+            "        while read_len < dest.len() {",
+            "            if self.index >= self.results.len() {",
+            "                self.core.generate(&mut self.results);",
+            "                self.index = 0;",
+            "            }",
+            "",
+            "            let (consumed_u64, filled_u8) = self.fill_via_chunks(&self.results[self.index..], &mut dest[read_len..]);",
+            "            self.index += consumed_u64;",
+            "            read_len += filled_u8;",
+            "        }",
+            "    }",
+            "",
+            "    fn fill_via_chunks(&self, source: &[u8], dest: &mut [u8]) -> (usize, usize) {",
+            "        let to_copy = std::cmp::min(source.len(), dest.len());",
+            "        dest[..to_copy].copy_from_slice(&source[..to_copy]);",
+            "        (1, to_copy) // Simulate that one u64 was consumed and `to_copy` bytes were filled",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut fill_bytes = FillBytes::new();",
+                  "    let mut dest = vec![0; 10]; // A buffer of 10 bytes",
+                  "    fill_bytes.fill_bytes(&mut dest);",
+                  "    assert_eq!(dest.len(), 10);",
+                  "    assert_ne!(dest, vec![0; 10]); // Ensure some bytes were filled",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut fill_bytes = FillBytes::new();",
+                  "    let mut dest = vec![0; 9]; // Dest is of smaller size",
+                  "    fill_bytes.fill_bytes(&mut dest);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut fill_bytes = FillBytes::new();",
+                  "    fill_bytes.index = 8; // Set index equal to the size of results",
+                  "    let mut dest = vec![0; 8];",
+                  "    fill_bytes.fill_bytes(&mut dest);",
+                  "    assert_eq!(dest.len(), 8);",
+                  "    assert_ne!(dest, vec![0; 8]); // Ensure some bytes were filled",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut fill_bytes = FillBytes::new();",
+                  "    let mut dest = vec![0; 8];",
+                  "    fill_bytes.fill_bytes(&mut dest);",
+                  "    assert_eq!(dest.len(), 8);",
+                  "    assert_ne!(dest, vec![0; 8]); // Ensure some bytes were filled",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut fill_bytes = FillBytes::new();",
+                  "    fill_bytes.results.clear(); // Make results empty",
+                  "    let mut dest = vec![0; 5];",
+                  "    fill_bytes.fill_bytes(&mut dest);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: read_len < dest.len() is true\n",
+        "// constraint: self.index >= self.results.as_ref().len() is false\n",
+        "// may panic: self.results.as_mut()[self.index..] may panic in certain situations\n",
+        "// may panic: dest[read_len..] may panic in certain situations\n",
+        "// constraint: read_len < dest.len() is false, with bound read_len == dest.len()\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct CoreMock;",
+                  "",
+                  "    impl CoreMock {",
+                  "        fn generate(&self, results: &mut Vec<u64>) {",
+                  "            results.extend(vec![0u64; 10]); // Provide test data",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RandCore {",
+                  "        core: CoreMock,",
+                  "        results: Vec<u64>,",
+                  "        index: usize,",
+                  "        half_used: bool,",
+                  "    }",
+                  "",
+                  "    impl RandCore {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                core: CoreMock,",
+                  "                results: vec![],",
+                  "                index: 0,",
+                  "                half_used: false,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn fill_bytes(&mut self, dest: &mut [u8]) {",
+                  "            let mut read_len = 0;",
+                  "            self.half_used = false;",
+                  "            while read_len < dest.len() {",
+                  "                if self.index >= self.results.len() {",
+                  "                    self.core.generate(&mut self.results);",
+                  "                    self.index = 0;",
+                  "                }",
+                  "",
+                  "                let (consumed_u64, filled_u8) = fill_via_chunks(",
+                  "                    &self.results[self.index..],",
+                  "                    &mut dest[read_len..],",
+                  "                );",
+                  "",
+                  "                self.index += consumed_u64;",
+                  "                read_len += filled_u8;",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn fill_via_chunks(src: &[u64], dest: &mut [u8]) -> (usize, usize) {",
+                  "        let mut consumed = 0;",
+                  "        let mut written = 0;",
+                  "        for &value in src.iter().take(dest.len() / 8) {",
+                  "            let bytes = value.to_le_bytes();",
+                  "            for byte in &bytes {",
+                  "                if written < dest.len() {",
+                  "                    dest[written] = *byte;",
+                  "                    written += 1;",
+                  "                }",
+                  "            }",
+                  "            consumed += 1;",
+                  "        }",
+                  "        (consumed, written)",
+                  "    }",
+                  "",
+                  "    let mut dest = vec![0u8; 80]; // Enough space to fill",
+                  "    let mut rand_core = RandCore::new();",
+                  "    rand_core.fill_bytes(&mut dest);",
+                  "",
+                  "    assert_eq!(dest.len(), 80);",
+                  "    for byte in dest.iter() {",
+                  "        assert!(*byte != 0); // Ensure that bytes were filled",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct CoreMock;",
+                  "",
+                  "    impl CoreMock {",
+                  "        fn generate(&self, results: &mut Vec<u64>) {",
+                  "            // No need to generate as dest is empty",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RandCore {",
+                  "        core: CoreMock,",
+                  "        results: Vec<u64>,",
+                  "        index: usize,",
+                  "        half_used: bool,",
+                  "    }",
+                  "",
+                  "    impl RandCore {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                core: CoreMock,",
+                  "                results: vec![],",
+                  "                index: 0,",
+                  "                half_used: false,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn fill_bytes(&mut self, dest: &mut [u8]) {",
+                  "            let mut read_len = 0;",
+                  "            self.half_used = false;",
+                  "            while read_len < dest.len() {",
+                  "                if self.index >= self.results.len() {",
+                  "                    self.core.generate(&mut self.results);",
+                  "                    self.index = 0;",
+                  "                }",
+                  "",
+                  "                let (consumed_u64, filled_u8) = fill_via_chunks(",
+                  "                    &self.results[self.index..],",
+                  "                    &mut dest[read_len..],",
+                  "                );",
+                  "",
+                  "                self.index += consumed_u64;",
+                  "                read_len += filled_u8;",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn fill_via_chunks(src: &[u64], dest: &mut [u8]) -> (usize, usize) {",
+                  "        (0, 0) // No bytes to fill as dest is empty",
+                  "    }",
+                  "",
+                  "    let mut dest: Vec<u8> = vec![];",
+                  "    let mut rand_core = RandCore::new();",
+                  "    rand_core.fill_bytes(&mut dest);",
+                  "",
+                  "    assert!(dest.is_empty());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct CoreMock;",
+                  "",
+                  "    impl CoreMock {",
+                  "        fn generate(&self, results: &mut Vec<u64>) {",
+                  "            results.extend(vec![0u64; 10]);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RandCore {",
+                  "        core: CoreMock,",
+                  "        results: Vec<u64>,",
+                  "        index: usize,",
+                  "        half_used: bool,",
+                  "    }",
+                  "",
+                  "    impl RandCore {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                core: CoreMock,",
+                  "                results: vec![],",
+                  "                index: 0,",
+                  "                half_used: false,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn fill_bytes(&mut self, dest: &mut [u8]) {",
+                  "            let mut read_len = 0;",
+                  "            self.half_used = false;",
+                  "            while read_len < dest.len() {",
+                  "                if self.index >= self.results.len() {",
+                  "                    self.core.generate(&mut self.results);",
+                  "                    self.index = 0;",
+                  "                }",
+                  "",
+                  "                let (consumed_u64, filled_u8) = fill_via_chunks(",
+                  "                    &self.results[self.index..],",
+                  "                    &mut dest[read_len..],",
+                  "                );",
+                  "",
+                  "                self.index += consumed_u64;",
+                  "                read_len += filled_u8;",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn fill_via_chunks(src: &[u64], dest: &mut [u8]) -> (usize, usize) {",
+                  "        let mut consumed = 0;",
+                  "        let mut written = 0;",
+                  "        for &value in src.iter() {",
+                  "            let bytes = value.to_le_bytes();",
+                  "            for byte in &bytes {",
+                  "                if written < dest.len() {",
+                  "                    dest[written] = *byte;",
+                  "                    written += 1;",
+                  "                } else {",
+                  "                    panic!(\"Attempted to write past the end of the destination slice\");",
+                  "                }",
+                  "            }",
+                  "            consumed += 1;",
+                  "        }",
+                  "        (consumed, written)",
+                  "    }",
+                  "",
+                  "    let mut dest = vec![0u8; 5]; // Smaller than what will be produced",
+                  "    let mut rand_core = RandCore::new();",
+                  "    rand_core.fill_bytes(&mut dest);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: read_len < dest.len() is false, with bound read_len == dest.len()\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct Core {",
+            "    // Example fields that might be used by the core",
+            "}",
+            "",
+            "impl Core {",
+            "    fn generate(&mut self, results: &mut Vec<u8>) {",
+            "        // For testing purposes, fill results with some dummy data",
+            "        results.extend_from_slice(&[1, 2, 3, 4, 5, 6, 7, 8]);",
+            "    }",
+            "}",
+            "",
+            "struct RandomGenerator {",
+            "    core: Core,",
+            "    results: Vec<u8>,",
+            "    index: usize,",
+            "    half_used: bool,",
+            "}",
+            "",
+            "impl Default for RandomGenerator {",
+            "    fn default() -> Self {",
+            "        Self {",
+            "            core: Core::default(),",
+            "            results: vec![],",
+            "            index: 0,",
+            "            half_used: false,",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "fn fill_via_chunks(source: &[u8], dest: &mut [u8]) -> (usize, usize) {",
+            "    let to_copy = source.len().min(dest.len());",
+            "    dest[..to_copy].copy_from_slice(&source[..to_copy]);",
+            "    (to_copy / 8, to_copy) // assuming 8 bytes per u64",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut generator = RandomGenerator::default();",
+                  "    let mut dest: [u8; 8] = [0; 8]; // Size exactly matching the expected chunk",
+                  "",
+                  "    generator.fill_bytes(&mut dest);",
+                  "",
+                  "    assert_eq!(dest, [1, 2, 3, 4, 5, 6, 7, 8]); // Verify it filled correctly",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling rand_core v0.9.3 (/home/utgen/workspace/rand/rand_core)\nwarning: unused imports: `BlockRng64` and `BlockRng`\n   --> rand_core/src/block.rs:428:24\n    |\n428 |     use crate::block::{BlockRng, BlockRng64, BlockRngCore};\n    |                        ^^^^^^^^  ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `RngCore`\n   --> rand_core/src/block.rs:429:17\n    |\n429 |     use crate::{RngCore, SeedableRng};\n    |                 ^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> rand_core/src/block.rs:538:8\n    |\n538 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> rand_core/src/impls.rs:176:9\n    |\n176 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: the method `fill_bytes` exists for struct `RandomGenerator`, but its trait bounds were not satisfied\n   --> rand_core/src/block.rs:581:15\n    |\n551 | struct RandomGenerator {\n    | ---------------------- method `fill_bytes` not found for this struct because it doesn't satisfy `RandomGenerator: DerefMut`, `RandomGenerator: Deref` or `RandomGenerator: RngCore`\n...\n581 |     generator.fill_bytes(&mut dest);\n    |               ^^^^^^^^^^ method cannot be called on `RandomGenerator` due to unsatisfied trait bounds\n    |\nnote: the following trait bounds were not satisfied:\n      `RandomGenerator: DerefMut`\n      `RandomGenerator: Deref`\n   --> rand_core/src/lib.rs:159:9\n    |\n159 | impl<T: DerefMut> RngCore for T\n    |         ^^^^^^^^  -------     -\n    |         |\n    |         unsatisfied trait bound introduced here\n160 | where\n161 |     T::Target: RngCore,\n    |                ^^^^^^^ unsatisfied trait bound introduced here\nnote: the traits `Deref` and `DerefMut` must be implemented\n   --> /rustc/5069856495870486134dd2ca0b0e2516308c5c2a/library/core/src/ops/deref.rs:136:1\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `RngCore` defines an item `fill_bytes`, perhaps you need to implement it\n   --> rand_core/src/lib.rs:131:1\n    |\n131 | pub trait RngCore {\n    | ^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super`\n   --> rand_core/src/block.rs:537:8\n    |\n537 |    use super::*;\n    |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `rand_core` (lib test) generated 5 warnings\nerror: could not compile `rand_core` (lib test) due to 1 previous error; 5 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut generator = RandomGenerator::default();",
+                  "    let mut dest: [u8; 5] = [0; 5]; // Smaller buffer than the available results",
+                  "",
+                  "    generator.fill_bytes(&mut dest);",
+                  "",
+                  "    assert_eq!(dest, [1, 2, 3, 4, 5]); // Verify it fills as much as possible",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling rand_core v0.9.3 (/home/utgen/workspace/rand/rand_core)\nwarning: unused imports: `BlockRng64` and `BlockRng`\n   --> rand_core/src/block.rs:428:24\n    |\n428 |     use crate::block::{BlockRng, BlockRng64, BlockRngCore};\n    |                        ^^^^^^^^  ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `RngCore`\n   --> rand_core/src/block.rs:429:17\n    |\n429 |     use crate::{RngCore, SeedableRng};\n    |                 ^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> rand_core/src/block.rs:538:8\n    |\n538 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> rand_core/src/impls.rs:176:9\n    |\n176 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: the method `fill_bytes` exists for struct `RandomGenerator`, but its trait bounds were not satisfied\n   --> rand_core/src/block.rs:581:15\n    |\n551 | struct RandomGenerator {\n    | ---------------------- method `fill_bytes` not found for this struct because it doesn't satisfy `RandomGenerator: DerefMut`, `RandomGenerator: Deref` or `RandomGenerator: RngCore`\n...\n581 |     generator.fill_bytes(&mut dest);\n    |               ^^^^^^^^^^ method cannot be called on `RandomGenerator` due to unsatisfied trait bounds\n    |\nnote: the following trait bounds were not satisfied:\n      `RandomGenerator: DerefMut`\n      `RandomGenerator: Deref`\n   --> rand_core/src/lib.rs:159:9\n    |\n159 | impl<T: DerefMut> RngCore for T\n    |         ^^^^^^^^  -------     -\n    |         |\n    |         unsatisfied trait bound introduced here\n160 | where\n161 |     T::Target: RngCore,\n    |                ^^^^^^^ unsatisfied trait bound introduced here\nnote: the traits `Deref` and `DerefMut` must be implemented\n   --> /rustc/5069856495870486134dd2ca0b0e2516308c5c2a/library/core/src/ops/deref.rs:136:1\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `RngCore` defines an item `fill_bytes`, perhaps you need to implement it\n   --> rand_core/src/lib.rs:131:1\n    |\n131 | pub trait RngCore {\n    | ^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super`\n   --> rand_core/src/block.rs:537:8\n    |\n537 |    use super::*;\n    |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `rand_core` (lib test) generated 5 warnings\nerror: could not compile `rand_core` (lib test) due to 1 previous error; 5 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

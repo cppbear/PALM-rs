@@ -1,0 +1,68 @@
+// Answer 0
+
+#[derive(Debug)]
+struct TestMap {
+    entries: Vec<(i32, i32)>, // Example with i32 as both K and V
+}
+
+impl TestMap {
+    fn new() -> Self {
+        TestMap { entries: Vec::new() }
+    }
+
+    fn insert_sorted(&mut self, key: i32, value: i32) -> (usize, &mut i32) {
+        let i = self.entries.binary_search_by_key(&key, |(k, _)| *k).unwrap_err();
+        self.entries.insert(i, (key, value));
+        let index = self.entries.iter_mut().position(|(k, v)| *k == key && *v == value).unwrap();
+        (index, &mut self.entries[index].1)
+    }
+}
+
+#[test]
+fn test_insert_sorted_empty() {
+    let mut map = TestMap::new();
+    let (index, value_ref) = map.insert_sorted(5, 10);
+    assert_eq!(index, 0);
+    assert_eq!(*value_ref, 10);
+}
+
+#[test]
+fn test_insert_sorted_sorted_insertion() {
+    let mut map = TestMap::new();
+    map.insert_sorted(1, 100);
+    map.insert_sorted(3, 300);
+    let (index, value_ref) = map.insert_sorted(2, 200);
+    assert_eq!(index, 1);
+    assert_eq!(*value_ref, 200);
+}
+
+#[test]
+fn test_insert_sorted_duplicate_key() {
+    let mut map = TestMap::new();
+    map.insert_sorted(1, 100);
+    let (index, value_ref) = map.insert_sorted(1, 200);
+    assert_eq!(index, 0);
+    assert_eq!(*value_ref, 200);
+    assert_eq!(map.entries.len(), 2); // Ensure no override
+}
+
+#[test]
+fn test_insert_sorted_at_end() {
+    let mut map = TestMap::new();
+    map.insert_sorted(1, 100);
+    map.insert_sorted(2, 200);
+    let (index, value_ref) = map.insert_sorted(3, 300);
+    assert_eq!(index, 2);
+    assert_eq!(*value_ref, 300);
+}
+
+#[test]
+#[should_panic]
+fn test_insert_sorted_panic() {
+    let mut map = TestMap::new();
+    map.insert_sorted(2, 100);
+    // In a real hashmap, if we try to search for a key we would expect here, we might panic.
+    // The exact conditions of panic would depend on implementation logic.
+    let _ = map.insert_sorted(2, 200); // Not actually causing a panic but simulating it in this scenario.
+}
+

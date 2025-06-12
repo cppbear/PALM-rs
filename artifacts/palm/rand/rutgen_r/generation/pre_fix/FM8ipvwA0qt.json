@@ -1,0 +1,150 @@
+{
+  "name": "rand_core::block::<block::BlockRng64<R> as SeedableRng>::try_from_rng",
+  "name_with_impl": "rand_core::block::{impl#8}::try_from_rng",
+  "mod_info": {
+    "name": "block",
+    "loc": "rand_core/src/lib.rs:44:1:44:15"
+  },
+  "visible": true,
+  "loc": "rand_core/src/block.rs:419:5:421:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct TestRng {",
+            "    value: u32,",
+            "}",
+            "",
+            "impl TestRng {",
+            "    fn new(seed: u32) -> Self {",
+            "        TestRng { value: seed }",
+            "    }",
+            "}",
+            "",
+            "trait TryRngCore {",
+            "    type Error;",
+            "",
+            "    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Self::Error>;",
+            "}",
+            "",
+            "impl TryRngCore for TestRng {",
+            "    type Error = ();",
+            "",
+            "    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Self::Error> {",
+            "        if self.value > 0 {",
+            "            dest.copy_from_slice(&self.value.to_le_bytes());",
+            "            self.value -= 1;",
+            "            Ok(())",
+            "        } else {",
+            "            Err(())",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "struct R;",
+            "",
+            "impl R {",
+            "    fn try_from_rng<S: TryRngCore>(rng: &mut S) -> Result<u32, S::Error> {",
+            "        let mut bytes = [0u8; 4];",
+            "        rng.try_fill_bytes(&mut bytes)?;",
+            "        Ok(u32::from_le_bytes(bytes))",
+            "    }",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "struct MyStruct {",
+            "    value: u32,",
+            "}",
+            "",
+            "impl MyStruct {",
+            "    fn new(value: u32) -> Self {",
+            "        MyStruct { value }",
+            "    }",
+            "",
+            "    fn try_from_rng<S: TryRngCore>(rng: &mut S) -> Result<Self, S::Error> {",
+            "        R::try_from_rng(rng).map(Self::new)",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut rng = TestRng::new(1);",
+                  "    let result = MyStruct::try_from_rng(&mut rng).unwrap();",
+                  "    assert_eq!(result.value, 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut rng = TestRng::new(2);",
+                  "    let result1 = MyStruct::try_from_rng(&mut rng).unwrap();",
+                  "    let result2 = MyStruct::try_from_rng(&mut rng).unwrap();",
+                  "    assert_eq!(result1.value, 2);",
+                  "    assert_eq!(result2.value, 1);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut rng = TestRng::new(0);",
+                  "    let result: Result<MyStruct, ()> = MyStruct::try_from_rng(&mut rng);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

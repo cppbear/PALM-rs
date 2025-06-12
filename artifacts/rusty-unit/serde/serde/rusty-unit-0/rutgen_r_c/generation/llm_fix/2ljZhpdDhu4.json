@@ -1,0 +1,240 @@
+{
+  "name": "serde::format::<format::Buf<'a> as std::fmt::Write>::write_str",
+  "name_with_impl": "serde::format::{impl#1}::write_str",
+  "mod_info": {
+    "name": "format",
+    "loc": "serde/src/lib.rs:314:1:314:12"
+  },
+  "visible": true,
+  "loc": "serde/src/format.rs:21:5:29:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.offset + s.len() > self.bytes.len() is true\n",
+        "// expected return value/type: Err(fmt::Error)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer: [u8; 5] = [0; 5];",
+                  "    let mut buf = Buf {",
+                  "        bytes: &mut buffer,",
+                  "        offset: 5, // Set offset to the full length of the buffer",
+                  "    };",
+                  "",
+                  "    let result = buf.write_str(\"hello\"); // This exceeds the buffer capacity",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer: [u8; 5] = [0; 5];",
+                  "    let mut buf = Buf {",
+                  "        bytes: &mut buffer,",
+                  "        offset: 0, // Set offset to 0",
+                  "    };",
+                  "",
+                  "    let result = buf.write_str(\"hello\"); // This should succeed, filling the buffer",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(&buffer, b\"hello\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer: [u8; 5] = [0; 5];",
+                  "    let mut buf = Buf {",
+                  "        bytes: &mut buffer,",
+                  "        offset: 4, // Set offset close to the capacity",
+                  "    };",
+                  "",
+                  "    let result = buf.write_str(\"o\"); // This should cause overflow",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.offset + s.len() > self.bytes.len() is false, with bound self.offset + s.len() == self.bytes.len()\n",
+        "// may panic: self.bytes[self.offset..self.offset + s.len()] may panic in certain situations\n",
+        "// may panic: self.bytes[self.offset..self.offset + s.len()].copy_from_slice(s.as_bytes()) may panic in certain situations\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [0u8; 10];",
+                  "    let mut buf = Buf {",
+                  "        bytes: &mut buffer,",
+                  "        offset: 0,",
+                  "    };",
+                  "    let result = buf.write_str(\"abcde\");",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(&buffer[..5], b\"abcde\");",
+                  "    assert_eq!(buf.offset, 5);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\nerror[E0502]: cannot borrow `buffer` as immutable because it is also borrowed as mutable\n  --> serde/src/format.rs:48:17\n   |\n43 |         bytes: &mut buffer,\n   |                ----------- mutable borrow occurs here\n...\n48 |     assert_eq!(&buffer[..5], b\"abcde\");\n   |                 ^^^^^^ immutable borrow occurs here\n49 |     assert_eq!(buf.offset, 5);\n   |     ------------------------- mutable borrow later used here\n\nFor more information about this error, try `rustc --explain E0502`.\nerror: could not compile `serde` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [0u8; 10];",
+                  "    let mut buf = Buf {",
+                  "        bytes: &mut buffer,",
+                  "        offset: 0,",
+                  "    };",
+                  "    let result = buf.write_str(\"\");",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(&buffer[..0], b\"\");",
+                  "    assert_eq!(buf.offset, 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\nerror[E0502]: cannot borrow `buffer` as immutable because it is also borrowed as mutable\n  --> serde/src/format.rs:48:17\n   |\n43 |         bytes: &mut buffer,\n   |                ----------- mutable borrow occurs here\n...\n48 |     assert_eq!(&buffer[..0], b\"\");\n   |                 ^^^^^^ immutable borrow occurs here\n49 |     assert_eq!(buf.offset, 0);\n   |     ------------------------- mutable borrow later used here\n\nFor more information about this error, try `rustc --explain E0502`.\nerror: could not compile `serde` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [0u8; 10];",
+                  "    let mut buf = Buf {",
+                  "        bytes: &mut buffer,",
+                  "        offset: 5,",
+                  "    };",
+                  "    let result = buf.write_str(\"fghij\");",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(&buffer[..10], b\"abcdefghij\");",
+                  "    assert_eq!(buf.offset, 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\nerror[E0502]: cannot borrow `buffer` as immutable because it is also borrowed as mutable\n  --> serde/src/format.rs:48:17\n   |\n43 |         bytes: &mut buffer,\n   |                ----------- mutable borrow occurs here\n...\n48 |     assert_eq!(&buffer[..10], b\"abcdefghij\");\n   |                 ^^^^^^ immutable borrow occurs here\n49 |     assert_eq!(buf.offset, 10);\n   |     -------------------------- mutable borrow later used here\n\nFor more information about this error, try `rustc --explain E0502`.\nerror: could not compile `serde` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [0u8; 3];",
+                  "    let mut buf = Buf {",
+                  "        bytes: &mut buffer,",
+                  "        offset: 0,",
+                  "    };",
+                  "    let result = buf.write_str(\"abcd\");",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+// Answer 0
+
+#[test]
+fn test_replace_entry_with_occupied_true() {
+    let mut map: HashMap<&str, u32> = [("x", 10), ("y", 20)].into();
+    
+    let raw_entry = match map.raw_entry_mut().from_key(&"x") {
+        RawEntryMut::Vacant(_) => panic!(),
+        RawEntryMut::Occupied(o) => o.replace_entry_with(|k, v| {
+            Some(v + 5) // Returns Some with the new value
+        }),
+    };
+    
+    match raw_entry {
+        RawEntryMut::Vacant(_) => panic!(),
+        RawEntryMut::Occupied(o) => {
+            let (key, value) = o.get_key_value_mut();
+            assert_eq!(key, &"x");
+            assert_eq!(*value, 15); // Verify the value was updated correctly
+        },
+    }
+}
+
+#[test]
+fn test_replace_entry_with_existing_value() {
+    let mut map: HashMap<i32, String> = [(1, "one".to_string()), (2, "two".to_string())].into();
+    
+    let raw_entry = match map.raw_entry_mut().from_key(&1) {
+        RawEntryMut::Vacant(_) => panic!(),
+        RawEntryMut::Occupied(o) => o.replace_entry_with(|k, v| {
+            Some(format!("{} modified", v)) // Update to a new string and return Some
+        }),
+    };
+    
+    match raw_entry {
+        RawEntryMut::Vacant(_) => panic!(),
+        RawEntryMut::Occupied(o) => {
+            let (key, value) = o.get_key_value_mut();
+            assert_eq!(*key, 1);
+            assert_eq!(value, &"one modified".to_string()); // Check if string was modified
+        },
+    }
+}
+

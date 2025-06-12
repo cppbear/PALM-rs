@@ -1,0 +1,200 @@
+{
+  "name": "bytes::bytes_mut::shared_v_clone",
+  "name_with_impl": "bytes::bytes_mut::shared_v_clone",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1785:1:1791:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use alloc::sync::Arc;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   // use alloc::sync::Arc;",
+                  "",
+                  "    struct MockOwner {",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    let owner = MockOwner {",
+                  "        data: vec![1, 2, 3, 4],",
+                  "    };",
+                  "",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        vec: owner.data.clone(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    }));",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(shared.cast());",
+                  "    let bytes = unsafe { shared_v_clone(&atomic_ptr, owner.data.as_ptr(), owner.data.len()) };",
+                  "",
+                  "   assert_eq!(bytes.len(), owner.data.len());",
+                  "   assert_eq!(unsafe { slice::from_raw_parts(bytes.as_ptr(), bytes.len()) }, owner.data.as_slice());",
+                  "",
+                  "    // Clean up the shared allocation to prevent memory leak.",
+                  "    // NOTE: In a real test, you would ensure the shared memory is correctly managed.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let atomic_ptr = AtomicPtr::new(ptr::null_mut());",
+                  "    unsafe { shared_v_clone(&atomic_ptr, ptr::null(), 0) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        vec: Vec::new(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    }));",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(shared.cast());",
+                  "    let bytes = unsafe { shared_v_clone(&atomic_ptr, ptr::null(), 0) };",
+                  "",
+                  "   assert_eq!(bytes.len(), 0);  ",
+                  "   assert_eq!(bytes.as_ptr(), ptr::null());  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let owner = vec![1, 2, 3];",
+                  "",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        vec: owner.clone(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    }));",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(shared.cast());",
+                  "    unsafe { shared_v_clone(&atomic_ptr, owner.as_ptr(), 4) }; // Triggering panic on out of range length",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockOwner {",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    let owner = MockOwner {",
+                  "        data: vec![5, 6, 7, 8],",
+                  "    };",
+                  "",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        vec: owner.data.clone(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    }));",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(shared.cast());",
+                  "    ",
+                  "    let bytes1 = unsafe { shared_v_clone(&atomic_ptr, owner.data.as_ptr(), owner.data.len()) };",
+                  "    let bytes2 = unsafe { shared_v_clone(&atomic_ptr, owner.data.as_ptr(), owner.data.len()) };",
+                  "",
+                  "   assert_eq!(bytes1.len(), owner.data.len());",
+                  "   assert_eq!(bytes2.len(), owner.data.len());",
+                  "   assert_eq!(bytes1.as_ref(), owner.data.as_slice());",
+                  "   assert_eq!(bytes2.as_ref(), owner.data.as_slice());",
+                  "",
+                  "    // Clean up the shared allocation to prevent memory leak.",
+                  "    // Normally you'd ensure correct deallocation depending on the reference count.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+fn deref(&self) -> &Vec<u8> { &self.v }

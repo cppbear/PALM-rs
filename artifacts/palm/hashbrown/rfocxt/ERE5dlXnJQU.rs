@@ -1,0 +1,32 @@
+use crate::alloc::alloc::{handle_alloc_error, Layout};
+use crate::scopeguard::{guard, ScopeGuard};
+use crate::TryReserveError;
+use core::array;
+use core::iter::FusedIterator;
+use core::marker::PhantomData;
+use core::mem;
+use core::ptr::NonNull;
+use core::{hint, ptr};
+pub(crate) use self::alloc::{do_alloc, Allocator, Global};
+use self::bitmask::BitMaskIter;
+use self::imp::Group;
+#[cfg(not(feature = "nightly"))]
+use core::convert::{identity as likely, identity as unlikely};
+#[cfg(feature = "nightly")]
+use core::intrinsics::{likely, unlikely};
+cfg_if! {
+    if #[cfg(all(target_feature = "sse2", any(target_arch = "x86", target_arch =
+    "x86_64"), not(miri),))] { mod sse2; use sse2 as imp; } else if #[cfg(all(target_arch
+    = "aarch64", target_feature = "neon", target_endian = "little", not(miri),))] { mod
+    neon; use neon as imp; } else { mod generic; use generic as imp; }
+}
+#[cfg_attr(target_os = "emscripten", inline(never))]
+#[cfg_attr(not(target_os = "emscripten"), inline)]
+fn capacity_to_buckets(cap: usize) -> Option<usize> {
+    debug_assert_ne!(cap, 0);
+    if cap < 8 {
+        return Some(if cap < 4 { 4 } else { 8 });
+    }
+    let adjusted_cap = cap.checked_mul(8)? / 7;
+    Some(adjusted_cap.next_power_of_two())
+}

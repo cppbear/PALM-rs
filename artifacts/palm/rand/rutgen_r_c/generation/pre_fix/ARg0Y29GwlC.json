@@ -1,0 +1,359 @@
+{
+  "name": "rand_core::le::read_u64_into",
+  "name_with_impl": "rand_core::le::read_u64_into",
+  "mod_info": {
+    "name": "le",
+    "loc": "rand_core/src/lib.rs:46:1:46:12"
+  },
+  "visible": true,
+  "loc": "rand_core/src/le.rs:38:1:43:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: src.len() >= 8 * dst.len() is true, with bound src.len() == 8 * dst.len()\n",
+        "// may panic: src.chunks_exact(8) may panic in certain situations\n",
+        "// constraint: (out, chunk) in dst.iter_mut().zip(src.chunks_exact(8)) is true\n",
+        "// may panic: chunk.try_into().unwrap() may panic in certain situations\n",
+        "// constraint: (out, chunk) in dst.iter_mut().zip(src.chunks_exact(8)) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: Vec<u8> = (0..16u64).flat_map(|n| n.to_le_bytes().to_vec()).collect(); // src has buffer for 2 u64",
+                  "    let mut dst = vec![0u64; 2]; // 2 u64s will be filled",
+                  "",
+                  "    read_u64_into(&src, &mut dst);",
+                  "",
+                  "    assert_eq!(dst, vec![0, 1]); // Check the expected values",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: Vec<u8> = (0..10u64).flat_map(|n| n.to_le_bytes().to_vec()).collect(); // Not enough bytes for 2 u64s",
+                  "    let mut dst = vec![0u64; 2]; // 2 u64s",
+                  "",
+                  "    read_u64_into(&src, &mut dst); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: Vec<u8> = vec![0u8; 15]; // Not enough full chunks to convert to u64",
+                  "    let mut dst = vec![0u64; 2]; // 2 u64s will be filled",
+                  "",
+                  "    read_u64_into(&src, &mut dst); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: src.len() >= 8 * dst.len() is true, with bound src.len() == 8 * dst.len()\n",
+        "// may panic: src.chunks_exact(8) may panic in certain situations\n",
+        "// constraint: (out, chunk) in dst.iter_mut().zip(src.chunks_exact(8)) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: [u8; 16] = [1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0];",
+                  "    let mut dst: [u64; 2] = [0; 2];",
+                  "    read_u64_into(&src, &mut dst);",
+                  "    assert_eq!(dst, [1, 2]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: [u8; 8] = [1, 0, 0, 0, 0, 0, 0, 0];",
+                  "    let mut dst: [u64; 2] = [0; 2];",
+                  "    read_u64_into(&src, &mut dst); // Should panic because src.len() < 8 * dst.len()",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: [u8; 24] = [",
+                  "        1, 0, 0, 0, 0, 0, 0, 0,",
+                  "        2, 0, 0, 0, 0, 0, 0, 0,",
+                  "        3, 0, 0, 0, 0, 0, 0, 0,",
+                  "    ];",
+                  "    let mut dst: [u64; 3] = [0; 3];",
+                  "    read_u64_into(&src, &mut dst);",
+                  "    assert_eq!(dst, [1, 2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: [u8; 0] = [];",
+                  "    let mut dst: [u64; 0] = [];",
+                  "    read_u64_into(&src, &mut dst); // Should not panic, as dst is empty",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: [u8; 0] = [];",
+                  "    let mut dst: [u64; 1] = [0];",
+                  "    read_u64_into(&src, &mut dst); // Should panic because src.len() < 8 * dst.len()",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: src.len() >= 8 * dst.len() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: &[u8] = &[1, 2, 3, 4, 5]; // Length is 5, not enough for even one u64",
+                  "    let mut dst: [u64; 1] = [0]; // We need at least 8 bytes in src for one u64",
+                  "    read_u64_into(src, &mut dst);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8]; // Length is 8",
+                  "    let mut dst: [u64; 2] = [0; 2]; // Need 16 bytes in src",
+                  "    read_u64_into(src, &mut dst);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0, ",
+                  "                       2, 0, 0, 0, 0, 0, 0, 0]; // 16 bytes for 2 u64s",
+                  "    let mut dst: [u64; 2] = [0; 2]; // Prepare two u64s",
+                  "    read_u64_into(src, &mut dst);",
+                  "    assert_eq!(dst, [1, 2]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let src: &[u8] = &[1, 0, 0, 0, 0, 0, 0, 0, ",
+                  "                       2, 0, 0, 0, 0, 0, 0, 0,",
+                  "                       3, 0, 0, 0, 0, 0, 0, 0,",
+                  "                       4, 0, 0, 0, 0, 0, 0, 0]; // 32 bytes for 4 u64s",
+                  "    let mut dst: [u64; 4] = [0; 4]; // Prepare four u64s",
+                  "    read_u64_into(src, &mut dst);",
+                  "    assert_eq!(dst, [1, 2, 3, 4]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

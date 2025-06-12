@@ -1,0 +1,1060 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "// Mock implementation of the Read trait for testing purposes",
+      "struct MockRead {",
+      "    data: Vec<u8>,",
+      "    pos: usize,",
+      "}",
+      "",
+      "impl MockRead {",
+      "    fn new(data: Vec<u8>) -> Self {",
+      "        MockRead { data, pos: 0 }",
+      "    }",
+      "}",
+      "",
+      "impl<'de> Read<'de> for MockRead {",
+      "    const should_early_return_if_failed: bool = false;",
+      "",
+      "    fn next(&mut self) -> Result<Option<u8>> {",
+      "        if self.pos < self.data.len() {",
+      "            let byte = self.data[self.pos];",
+      "            self.pos += 1;",
+      "            Ok(Some(byte))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn peek(&mut self) -> Result<Option<u8>> {",
+      "        if self.pos < self.data.len() {",
+      "            Ok(Some(self.data[self.pos]))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn discard(&mut self) {",
+      "        self.pos += 1;",
+      "    }",
+      "",
+      "    fn position(&self) -> Position {",
+      "        Position { line: 1, column: self.pos as u32 }",
+      "    }",
+      "",
+      "    fn peek_position(&self) -> Position {",
+      "        Position { line: 1, column: self.pos as u32 }",
+      "    }",
+      "",
+      "    fn byte_offset(&self) -> usize {",
+      "        self.pos",
+      "    }",
+      "",
+      "    fn parse_str<'s>(&'s mut self, _: &'s mut Vec<u8>) -> Result<Reference<'de, 's, str>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn parse_str_raw<'s>(&'s mut self, _: &'s mut Vec<u8>) -> Result<Reference<'de, 's, [u8]>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn ignore_str(&mut self) -> Result<()> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn decode_hex_escape(&mut self) -> Result<u16> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    // Additional required methods omitted for brevity",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 5,",
+          "    };",
+          "    deserializer.ignore_exponent().unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b' '] ), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+', b'2', b'0', b'4']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'3', b'-', b' '] ), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(vec![b'4', b'-', b'1', b'0']),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 5,",
+          "    };",
+          "    deserializer.ignore_exponent().unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Ok(())));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Err(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'+' , b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Ok(())));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'+' , b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'-', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Err(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'+' , b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'-', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'1', b'-']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Err(ErrorCode::InvalidNumber)));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'4', b'-', b'1', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Ok(())));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'4', b'-', b'1', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Err(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'4', b'-', b'1', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'+' , b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Ok(())));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'4', b'-', b'1', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'+' , b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'-', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Err(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'4', b'-', b'1', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'-', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'4', b'1', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'+' , b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'-', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'1', b'-']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(matches!(result, Err(ErrorCode::InvalidNumber)));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(vec![b'5', b'+']),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 5,",
+          "    };",
+          "    deserializer.ignore_exponent().unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'x']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'x']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'x']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'x']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'x']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'5', b'+']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'0', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+', b'A']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'+']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'-']), scratch: Vec::new(), remaining_depth: 0 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'x']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Ok(()));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(vec![b'6', b'+', b'a']),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 5,",
+          "    };",
+          "    deserializer.ignore_exponent().unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    assert!(deserializer.ignore_exponent().is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    assert!(matches!(deserializer.ignore_exponent(), Err(err) if err.code() == ErrorCode::InvalidNumber));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::InvalidNumber);"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(deserializer.peek_or_null().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(deserializer.next_char_or_null().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(deserializer.peek_or_null().is_err());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'6', b'+', b'a']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    assert!(deserializer.ignore_exponent().is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'6', b'+', b'a']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    assert!(matches!(deserializer.ignore_exponent(), Err(err) if err.code() == ErrorCode::InvalidNumber));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'6', b'+', b'a']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'6', b'+', b'a']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::InvalidNumber);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'6', b'+', b'a']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(deserializer.peek_or_null().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'6', b'+', b'a']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(deserializer.next_char_or_null().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'6', b'+', b'a']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'6', b'+', b'a']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let result = deserializer.ignore_exponent();",
+            "    assert!(deserializer.peek_or_null().is_err());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MockRead::new(vec![b'7', b'5', b'0']),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 5,",
+          "    };",
+          "    deserializer.ignore_exponent().unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'-', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'-', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'0', b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'-', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'0', b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'-', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'0', b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'5', b'0', b'x']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'7', b'5', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'7', b'5', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'7', b'5', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'-', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'7', b'5', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'-', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'0', b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert!(deserializer.ignore_exponent().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'7', b'5', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'-', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'0', b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MockRead::new(vec![b'7', b'5', b'0']),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 5,",
+            "    };",
+            "    deserializer.ignore_exponent().unwrap();",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'+', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'-', b'5', b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'5', b'0', b'5']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'0']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    let mut deserializer = Deserializer { read: MockRead::new(vec![b'2', b'5', b'0', b'x']), scratch: Vec::new(), remaining_depth: 5 };",
+            "    assert_eq!(deserializer.ignore_exponent(), Err(deserializer.error(ErrorCode::InvalidNumber)));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

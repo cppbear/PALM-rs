@@ -1,0 +1,385 @@
+{
+  "name": "serde::__private::ser::<__private::ser::TaggedSerializer<S> as ser::Serializer>::serialize_struct_variant",
+  "name_with_impl": "serde::__private::ser::{impl#2}::serialize_struct_variant",
+  "mod_info": {
+    "name": "__private::ser",
+    "loc": "serde/src/private/mod.rs:4:1:4:13"
+  },
+  "visible": true,
+  "loc": "serde/src/private/ser.rs:310:5:325:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.delegate.serialize_map(Some(2)) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockDelegate;",
+                  "",
+                  "    impl MockDelegate {",
+                  "        fn serialize_map(&self, _: Option<usize>) -> Result<&'static str, &'static str> {",
+                  "            Err(\"serialization error\")",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializer {",
+                  "        delegate: MockDelegate,",
+                  "        tag: &'static str,",
+                  "        variant_name: &'static str,",
+                  "    }",
+                  "",
+                  "    impl TestSerializer {",
+                  "        fn serialize_struct_variant(",
+                  "            self,",
+                  "            _: &'static str,",
+                  "            _: u32,",
+                  "            inner_variant: &'static str,",
+                  "            _: usize,",
+                  "        ) -> Result<&'static str, &'static str> {",
+                  "            let mut map = self.delegate.serialize_map(Some(2))?;",
+                  "            // The rest of the function logic is omitted since we are testing for error.",
+                  "            Ok(\"success\") // Placeholder, won't reach here",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let serializer = TestSerializer {",
+                  "        delegate: MockDelegate,",
+                  "        tag: \"test_tag\",",
+                  "        variant_name: \"test_variant\",",
+                  "    };",
+                  "    ",
+                  "    let result = serializer.serialize_struct_variant(\"test\", 0, \"inner_variant\", 0);",
+                  "    assert!(result.is_err());",
+                  "    assert_eq!(result.unwrap_err(), \"serialization error\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.delegate.serialize_map(Some(2)) matches Ok(val) is true\n",
+        "// constraint: map.serialize_key(inner_variant) matches Ok(val) is true\n",
+        "// constraint: map.serialize_entry(self.tag, self.variant_name) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct MockDelegate;",
+            "",
+            "impl MockDelegate {",
+            "    fn serialize_map(&self, _: Option<usize>) -> Result<MockMap, &'static str> {",
+            "        Ok(MockMap::new())",
+            "    }",
+            "}",
+            "",
+            "struct MockMap {",
+            "    entries: Vec<(String, String)>,",
+            "}",
+            "",
+            "impl MockMap {",
+            "    fn new() -> Self {",
+            "        MockMap { entries: Vec::new() }",
+            "    }",
+            "",
+            "    fn serialize_entry(&mut self, key: &str, value: &str) -> Result<(), &'static str> {",
+            "        if key == \"error\" { // Force an error condition",
+            "            Err(\"entry serialization failed\")",
+            "        } else {",
+            "            self.entries.push((key.to_string(), value.to_string()));",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    fn serialize_key(&mut self, key: &str) -> Result<(), &'static str> {",
+            "        if key == \"error\" { // Force an error condition",
+            "            Err(\"key serialization failed\")",
+            "        } else {",
+            "            self.entries.push((key.to_string(), String::new()));",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "struct TestSerializer {",
+            "    delegate: MockDelegate,",
+            "    tag: &'static str,",
+            "    variant_name: &'static str,",
+            "}",
+            "",
+            "impl TestSerializer {",
+            "    fn serialize_struct_variant(",
+            "        self,",
+            "        _: &'static str,",
+            "        _: u32,",
+            "        inner_variant: &'static str,",
+            "        len: usize,",
+            "    ) -> Result<MockStructVariant, &'static str> {",
+            "        let mut map = self.delegate.serialize_map(Some(2))?;",
+            "        map.serialize_entry(self.tag, self.variant_name)?;",
+            "        map.serialize_key(inner_variant)?;",
+            "        Ok(MockStructVariant::new(map, inner_variant, len))",
+            "    }",
+            "}",
+            "",
+            "struct MockStructVariant {",
+            "    map: MockMap,",
+            "    inner_variant: &'static str,",
+            "    len: usize,",
+            "}",
+            "",
+            "impl MockStructVariant {",
+            "    fn new(map: MockMap, inner_variant: &'static str, len: usize) -> Self {",
+            "        MockStructVariant { map, inner_variant, len }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let serializer = TestSerializer {",
+                  "        delegate: MockDelegate,",
+                  "        tag: \"tag_example\",",
+                  "        variant_name: \"variant_example\",",
+                  "    };",
+                  "    let result = serializer.serialize_struct_variant(\"example\", 0, \"error\", 0);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.delegate.serialize_map(Some(2)) matches Ok(val) is true\n",
+        "// constraint: map.serialize_key(inner_variant) matches Ok(val) is true\n",
+        "// constraint: map.serialize_entry(self.tag, self.variant_name) matches Ok(val) is true\n",
+        "// constraint: map.serialize_key(inner_variant) matches Ok(val) is true\n",
+        "// constraint: map.serialize_key(inner_variant) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Define a struct to implement the necessary traits",
+                  "    struct TestDelegate;",
+                  "",
+                  "    impl TestDelegate {",
+                  "        fn serialize_map(&self, _len: Option<usize>) -> Result<TestMap, &'static str> {",
+                  "            Ok(TestMap::new())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestMap {",
+                  "        entries: Vec<(String, String)>",
+                  "    }",
+                  "",
+                  "    impl TestMap {",
+                  "        fn new() -> Self {",
+                  "            TestMap { entries: Vec::new() }",
+                  "        }",
+                  "",
+                  "        fn serialize_entry(&mut self, key: &str, value: &str) -> Result<(), &'static str> {",
+                  "            self.entries.push((key.to_string(), value.to_string()));",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn serialize_key(&mut self, key: &str) -> Result<(), &'static str> {",
+                  "            // Let's assume keys should not be empty for success",
+                  "            if key.is_empty() {",
+                  "                Err(\"Key should not be empty\")",
+                  "            } else {",
+                  "                self.entries.push((key.to_string(), String::new()));",
+                  "                Ok(())",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializer {",
+                  "        delegate: TestDelegate,",
+                  "        tag: &'static str,",
+                  "        variant_name: &'static str,",
+                  "    }",
+                  "",
+                  "    impl TestSerializer {",
+                  "        fn serialize_struct_variant(",
+                  "            self,",
+                  "            _: &'static str,",
+                  "            _: u32,",
+                  "            inner_variant: &'static str,",
+                  "            len: usize,",
+                  "        ) -> Result<TestMap, &'static str> {",
+                  "            let mut map = self.delegate.serialize_map(Some(2))?;",
+                  "            map.serialize_entry(self.tag, self.variant_name)?;",
+                  "            map.serialize_key(inner_variant)?;",
+                  "            Ok(map)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let serializer = TestSerializer {",
+                  "        delegate: TestDelegate,",
+                  "        tag: \"tag_value\",",
+                  "        variant_name: \"variant_value\",",
+                  "    };",
+                  "    ",
+                  "    let result = serializer.serialize_struct_variant(\"struct_name\", 0, \"inner_variant\", 10);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Same setup as before",
+                  "    struct TestDelegate;",
+                  "",
+                  "    impl TestDelegate {",
+                  "        fn serialize_map(&self, _len: Option<usize>) -> Result<TestMap, &'static str> {",
+                  "            Ok(TestMap::new())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestMap {",
+                  "        entries: Vec<(String, String)>",
+                  "    }",
+                  "",
+                  "    impl TestMap {",
+                  "        fn new() -> Self {",
+                  "            TestMap { entries: Vec::new() }",
+                  "        }",
+                  "",
+                  "        fn serialize_entry(&mut self, key: &str, value: &str) -> Result<(), &'static str> {",
+                  "            self.entries.push((key.to_string(), value.to_string()));",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn serialize_key(&mut self, key: &str) -> Result<(), &'static str> {",
+                  "            if key.is_empty() {",
+                  "                Err(\"Key should not be empty\")",
+                  "            } else {",
+                  "                self.entries.push((key.to_string(), String::new()));",
+                  "                Ok(())",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializer {",
+                  "        delegate: TestDelegate,",
+                  "        tag: &'static str,",
+                  "        variant_name: &'static str,",
+                  "    }",
+                  "",
+                  "    impl TestSerializer {",
+                  "        fn serialize_struct_variant(",
+                  "            self,",
+                  "            _: &'static str,",
+                  "            _: u32,",
+                  "            inner_variant: &'static str,",
+                  "            len: usize,",
+                  "        ) -> Result<TestMap, &'static str> {",
+                  "            let mut map = self.delegate.serialize_map(Some(2))?;",
+                  "            map.serialize_entry(self.tag, self.variant_name)?;",
+                  "            map.serialize_key(inner_variant)?;",
+                  "            Ok(map)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let serializer = TestSerializer {",
+                  "        delegate: TestDelegate,",
+                  "        tag: \"tag_value\",",
+                  "        variant_name: \"variant_value\",",
+                  "    };",
+                  "",
+                  "    // This test will force the inner_variant to be empty, leading to an error",
+                  "    let result = serializer.serialize_struct_variant(\"struct_name\", 0, \"\", 10);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

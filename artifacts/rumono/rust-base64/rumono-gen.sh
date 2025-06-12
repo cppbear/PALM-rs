@@ -1,0 +1,2 @@
+cd /home/rumono/rust-base64
+fuzz-target-generator --edition=2018 --crate-type lib --crate-name base64 src/lib.rs -o /home/rumono/rust-base64/target/doc --cfg 'feature="alloc"' --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs)' --check-cfg 'cfg(feature, values("alloc", "default", "std"))' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat -C metadata=650f32960eb71943 -L dependency=/home/rumono/rust-base64/target/debug/deps --crate-version 0.22.1

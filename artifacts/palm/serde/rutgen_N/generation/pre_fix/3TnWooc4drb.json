@@ -1,0 +1,130 @@
+{
+  "name": "serde::__private::ser::<__private::ser::TaggedSerializer<S> as ser::Serializer>::serialize_struct",
+  "name_with_impl": "serde::__private::ser::{impl#2}::serialize_struct",
+  "mod_info": {
+    "name": "__private::ser",
+    "loc": "serde/src/private/mod.rs:4:1:4:13"
+  },
+  "visible": true,
+  "loc": "serde/src/private/ser.rs:286:5:294:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct MockDelegate {",
+            "    fields: Vec<(String, String)>,",
+            "}",
+            "",
+            "impl MockDelegate {",
+            "    fn serialize_struct(&mut self, _name: &'static str, len: usize) -> Result<MockSerializeStruct, &'static str> {",
+            "        Ok(MockSerializeStruct { fields: vec![], expected_len: len })",
+            "    }",
+            "}",
+            "",
+            "struct MockSerializeStruct {",
+            "    fields: Vec<(String, String)>,",
+            "    expected_len: usize,",
+            "}",
+            "",
+            "impl MockSerializeStruct {",
+            "    fn serialize_field(&mut self, key: &str, value: &str) -> Result<(), &'static str> {",
+            "        if self.fields.len() < self.expected_len {",
+            "            self.fields.push((key.to_string(), value.to_string()));",
+            "            Ok(())",
+            "        } else {",
+            "            Err(\"Exceeded the expected length\")",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "struct Serializer {",
+            "    delegate: MockDelegate,",
+            "    tag: &'static str,",
+            "    variant_name: &'static str,",
+            "}",
+            "",
+            "impl Serializer {",
+            "    fn new(tag: &'static str, variant_name: &'static str) -> Self {",
+            "        Serializer {",
+            "            delegate: MockDelegate::default(),",
+            "            tag,",
+            "            variant_name,",
+            "        }",
+            "    }",
+            "",
+            "    fn serialize_struct(",
+            "        self,",
+            "        name: &'static str,",
+            "        len: usize,",
+            "    ) -> Result<MockSerializeStruct, &'static str> {",
+            "        let mut state = self.delegate.serialize_struct(name, len + 1)?;",
+            "        state.serialize_field(self.tag, self.variant_name)?;",
+            "        Ok(state)",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let serializer = Serializer::new(\"test_tag\", \"test_variant\");",
+                  "    let result = serializer.serialize_struct(\"test_name\", 1);",
+                  "    assert!(result.is_ok());",
+                  "    let state = result.unwrap();",
+                  "    assert_eq!(state.fields.len(), 1);",
+                  "    assert_eq!(state.fields[0], (\"test_tag\".to_string(), \"test_variant\".to_string()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/utgen/workspace/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/utgen/workspace/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1366:8\n     |\n1366 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0596]: cannot borrow `self.delegate` as mutable, as `self` is not declared as mutable\n    --> serde/src/private/ser.rs:1414:25\n     |\n1414 |         let mut state = self.delegate.serialize_struct(name, len + 1)?;\n     |                         ^^^^^^^^^^^^^ cannot borrow as mutable\n     |\nhelp: consider changing this to be mutable\n     |\n1410 |         mut self,\n     |         +++\n\nFor more information about this error, try `rustc --explain E0596`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let serializer = Serializer::new(\"test_tag\", \"test_variant\");",
+                  "    let result = serializer.serialize_struct(\"test_name\", 0);",
+                  "    assert!(result.is_ok());",
+                  "    let mut state = result.unwrap();",
+                  "    let _ = state.serialize_field(\"extra_field\", \"value\");",
+                  "    let err = state.serialize_field(\"extra_field2\", \"value2\").unwrap_err();",
+                  "    assert_eq!(err, \"Exceeded the expected length\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/utgen/workspace/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/utgen/workspace/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1366:8\n     |\n1366 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0596]: cannot borrow `self.delegate` as mutable, as `self` is not declared as mutable\n    --> serde/src/private/ser.rs:1414:25\n     |\n1414 |         let mut state = self.delegate.serialize_struct(name, len + 1)?;\n     |                         ^^^^^^^^^^^^^ cannot borrow as mutable\n     |\nhelp: consider changing this to be mutable\n     |\n1410 |         mut self,\n     |         +++\n\nFor more information about this error, try `rustc --explain E0596`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

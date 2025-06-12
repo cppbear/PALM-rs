@@ -1,0 +1,265 @@
+{
+  "name": "bytes::bytes::shared_to_mut_impl",
+  "name_with_impl": "bytes::bytes::shared_to_mut_impl",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1426:1:1459:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: (*shared).ref_cnt.load(Ordering::Acquire) == 1 is false\n",
+        "// may panic: b.advance_unchecked(off) may panic in certain situations\n",
+        "// expected return value/type: b\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::mem::ManuallyDrop;",
+            "use std::ptr::null_mut;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::ManuallyDrop;",
+                  "    use std::ptr::null_mut;",
+                  "",
+                  "    // Create a Shared buffer with a ref count greater than 1",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        buf: Box::into_raw(Box::new([1u8, 2, 3, 4, 5])) as *mut u8,",
+                  "        cap: 5,",
+                  "        ref_cnt: AtomicUsize::new(2), // Simulating multiple references",
+                  "    }));",
+                  "",
+                  "    let ptr = unsafe { (*shared).buf };",
+                  "    let len = 5; // Length of data to copy",
+                  "",
+                  "    // Call the function under test",
+                  "    let result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+                  "",
+                  "    // Assert the result",
+                  "    assert_eq!(result.len(), 5);",
+                  "    assert_eq!(result.as_slice(), &[1, 2, 3, 4, 5]);",
+                  "",
+                  "    // Cleanup; since the operation has increased `ref_cnt`, we must handle that.",
+                  "    unsafe {",
+                  "        release_shared(shared);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `std::mem::ManuallyDrop`\n    --> src/bytes.rs:1688:9\n     |\n1688 |     use std::mem::ManuallyDrop;\n     |         ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::ptr::null_mut`\n    --> src/bytes.rs:1689:9\n     |\n1689 |     use std::ptr::null_mut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0624]: method `as_slice` is private\n    --> src/bytes.rs:1706:23\n     |\n1706 |     assert_eq!(result.as_slice(), &[1, 2, 3, 4, 5]);\n     |                       ^^^^^^^^ private method\n     |\n    ::: src/bytes_mut.rs:942:5\n     |\n942  |     fn as_slice(&self) -> &[u8] {\n     |     --------------------------- private method defined here\n     |\n     = help: items from traits can only be used if the trait is in scope\nhelp: trait `SlicePattern` which provides `as_slice` is implemented but not in scope; perhaps you want to import it\n     |\n1683 +    use core::slice::SlicePattern;\n     |\n\nFor more information about this error, try `rustc --explain E0624`.\nwarning: `bytes` (lib test) generated 4 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::ManuallyDrop;",
+                  "    ",
+                  "    // Create a Shared buffer with a ref count of 1",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        buf: Box::into_raw(Box::new([1u8, 2, 3, 4, 5])) as *mut u8,",
+                  "        cap: 5,",
+                  "        ref_cnt: AtomicUsize::new(1), // Only one reference",
+                  "    }));",
+                  "",
+                  "    let ptr = unsafe { (*shared).buf };",
+                  "    let len = 5; // Length of data to copy",
+                  "",
+                  "    // Call the function under test",
+                  "    let result = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+                  "",
+                  "    // `advance_unchecked` can panic, so we expect this test to panic",
+                  "    assert_eq!(result.len(), 5);",
+                  "    assert_eq!(result.as_slice(), &[1, 2, 3, 4, 5]); // May not reach this point due to panic",
+                  "",
+                  "    // Cleanup; Dangerous as the function can panic, ensure we clean allocated memory",
+                  "    unsafe {",
+                  "        release_shared(shared);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `std::mem::ManuallyDrop`\n    --> src/bytes.rs:1689:9\n     |\n1689 |     use std::mem::ManuallyDrop;\n     |         ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0624]: method `as_slice` is private\n    --> src/bytes.rs:1706:23\n     |\n1706 |     assert_eq!(result.as_slice(), &[1, 2, 3, 4, 5]); // May not reach this point due to panic\n     |                       ^^^^^^^^ private method\n     |\n    ::: src/bytes_mut.rs:942:5\n     |\n942  |     fn as_slice(&self) -> &[u8] {\n     |     --------------------------- private method defined here\n     |\n     = help: items from traits can only be used if the trait is in scope\nhelp: trait `SlicePattern` which provides `as_slice` is implemented but not in scope; perhaps you want to import it\n     |\n1683 +    use core::slice::SlicePattern;\n     |\n\nFor more information about this error, try `rustc --explain E0624`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: (*shared).ref_cnt.load(Ordering::Acquire) == 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::mem::ManuallyDrop;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::ManuallyDrop;",
+                  "    ",
+                  "    // Create a `Shared` instance with ref_cnt initialized to 1",
+                  "    let buf_size = 10;",
+                  "    let buf = Box::into_raw(Box::new(vec![0u8; buf_size])) as *mut u8;",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        buf,",
+                  "        cap: buf_size,",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    }));",
+                  "",
+                  "    // Create a pointer to the buffer",
+                  "    let ptr = unsafe { (*shared).buf };",
+                  "",
+                  "    // Call the function under test",
+                  "    let len = buf_size;",
+                  "    let mut_bytes = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+                  "",
+                  "    // Check that the BytesMut has the expected contents",
+                  "    assert_eq!(mut_bytes.len(), buf_size);",
+                  "    assert_eq!(unsafe { &*(mut_bytes.as_slice() as *const [u8] as *const [u8]) }, &[0u8; 10]);",
+                  "",
+                  "    // Clean up",
+                  "    unsafe {",
+                  "        // The buffer was moved into BytesMut and should be handled properly",
+                  "        let _ = Box::from_raw(ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `std::mem::ManuallyDrop`\n    --> src/bytes.rs:1688:9\n     |\n1688 |     use std::mem::ManuallyDrop;\n     |         ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0624]: method `as_slice` is private\n    --> src/bytes.rs:1708:38\n     |\n1708 |     assert_eq!(unsafe { &*(mut_bytes.as_slice() as *const [u8] as *const [u8]) }, &[0u8; 10]);\n     |                                      ^^^^^^^^ private method\n     |\n    ::: src/bytes_mut.rs:942:5\n     |\n942  |     fn as_slice(&self) -> &[u8] {\n     |     --------------------------- private method defined here\n     |\n     = help: items from traits can only be used if the trait is in scope\nhelp: trait `SlicePattern` which provides `as_slice` is implemented but not in scope; perhaps you want to import it\n     |\n1683 +    use core::slice::SlicePattern;\n     |\n\nFor more information about this error, try `rustc --explain E0624`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::ManuallyDrop;",
+                  "    ",
+                  "    // Create a `Shared` instance with ref_cnt initialized to more than 1",
+                  "    let buf_size = 10;",
+                  "    let buf = Box::into_raw(Box::new(vec![1u8; buf_size])) as *mut u8;",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        buf,",
+                  "        cap: buf_size,",
+                  "        ref_cnt: AtomicUsize::new(2), // More than one reference",
+                  "    }));",
+                  "",
+                  "    // Create a pointer to the buffer",
+                  "    let ptr = unsafe { (*shared).buf };",
+                  "",
+                  "    // Call the function under test",
+                  "    let len = buf_size;",
+                  "    let mut_bytes = unsafe { shared_to_mut_impl(shared, ptr, len) };",
+                  "",
+                  "    // Check that the BytesMut has the expected contents",
+                  "    assert_eq!(mut_bytes.len(), buf_size);",
+                  "    assert_eq!(unsafe { &*(mut_bytes.as_slice() as *const [u8] as *const [u8]) }, &[1u8; 10]);",
+                  "",
+                  "    // Clean up",
+                  "    unsafe {",
+                  "        // The original shared reference was released",
+                  "        let _ = Box::from_raw(ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `std::mem::ManuallyDrop`\n    --> src/bytes.rs:1688:9\n     |\n1688 |     use std::mem::ManuallyDrop;\n     |         ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0624]: method `as_slice` is private\n    --> src/bytes.rs:1708:38\n     |\n1708 |     assert_eq!(unsafe { &*(mut_bytes.as_slice() as *const [u8] as *const [u8]) }, &[1u8; 10]);\n     |                                      ^^^^^^^^ private method\n     |\n    ::: src/bytes_mut.rs:942:5\n     |\n942  |     fn as_slice(&self) -> &[u8] {\n     |     --------------------------- private method defined here\n     |\n     = help: items from traits can only be used if the trait is in scope\nhelp: trait `SlicePattern` which provides `as_slice` is implemented but not in scope; perhaps you want to import it\n     |\n1683 +    use core::slice::SlicePattern;\n     |\n\nFor more information about this error, try `rustc --explain E0624`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::ManuallyDrop;",
+                  "    ",
+                  "    // Create a `Shared` instance, but do not allocate a buffer, leading to an invalid pointer",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        buf: std::ptr::null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    }));",
+                  "",
+                  "    // Call the function under test with an invalid pointer",
+                  "    let len = 0;",
+                  "",
+                  "    // This should panic due to dereferencing a null pointer",
+                  "    unsafe { shared_to_mut_impl(shared, std::ptr::null(), len) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

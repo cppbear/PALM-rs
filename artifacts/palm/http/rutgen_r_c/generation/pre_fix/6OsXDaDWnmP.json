@@ -1,0 +1,459 @@
+{
+  "name": "http::header::name::parse_hdr",
+  "name_with_impl": "http::header::name::parse_hdr",
+  "mod_info": {
+    "name": "header::name",
+    "loc": "src/header/mod.rs:74:1:74:10"
+  },
+  "visible": false,
+  "loc": "src/header/name.rs:1073:1:1101:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: data.len() matches 0 is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// may panic: b[0..len] may panic in certain situations\n",
+        "// constraint: StandardHeader::from_bytes(name) matches Some(sh) is true\n",
+        "// constraint: StandardHeader::from_bytes(name) matches Some(sh) is true\n",
+        "// expected return value/type: Ok(sh.into())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn test_parse_hdr_empty() {",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+            "    let input: &[u8] = &[];",
+            "    let result = parse_hdr(input, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_err());",
+            "}",
+            "",
+            "fn test_parse_hdr_valid_standard_header() {",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+            "    let input: &[u8] = b\"accept\"; // corresponds to the standard header",
+            "    let result = parse_hdr(input, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_ok());",
+            "",
+            "    if let Ok(header_name) = result {",
+            "        assert_eq!(header_name.inner, Repr::Standard(StandardHeader::Accept));",
+            "    }",
+            "}",
+            "",
+            "fn test_parse_hdr_invalid_with_null_byte() {",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+            "    let input: &[u8] = b\"accept\\0extra\";",
+            "    let result = parse_hdr(input, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_err());",
+            "}",
+            "",
+            "fn test_parse_hdr_long_valid_standard_header() {",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+            "    let input: &[u8] = b\"accept-encoding\"; // another valid standard header",
+            "    let result = parse_hdr(input, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_ok());",
+            "",
+            "    if let Ok(header_name) = result {",
+            "        assert_eq!(header_name.inner, Repr::Standard(StandardHeader::AcceptEncoding));",
+            "    }",
+            "}",
+            "",
+            "fn test_parse_hdr_custom_header() {",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+            "    let input: &[u8] = b\"custom-header\"; ",
+            "    let result = parse_hdr(input, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_ok());",
+            "",
+            "    if let Ok(header_name) = result {",
+            "        assert_eq!(header_name.inner, Repr::Custom(MaybeLower { buf: input, lower: true }));",
+            "    }",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: data.len() matches 0 is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// may panic: b[0..len] may panic in certain situations\n",
+        "// constraint: StandardHeader::from_bytes(name) matches None is true\n",
+        "// constraint: name.contains(&0) is true\n",
+        "// expected return value/type: Err(InvalidHeaderName::new())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn test_parse_hdr_empty_data() {",
+            "    let data: &[u8] = &[];",
+            "    let mut b: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut b, &HEADER_CHARS);",
+            "    assert_eq!(result, Err(InvalidHeaderName::new()));",
+            "}",
+            "",
+            "fn test_parse_hdr_valid_data_too_long() {",
+            "    let data: &[u8] = b\"example_header\";",
+            "    let mut b: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut b, &HEADER_CHARS);",
+            "    // This case will return Ok since the length is greater than SCRATCH_BUF_SIZE and not an error condition.",
+            "    assert!(result.is_ok());",
+            "}",
+            "",
+            "fn test_parse_hdr_valid_data_with_null_byte() {",
+            "    let data: &[u8] = b\"example\\0header\";",
+            "    let mut b: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut b, &HEADER_CHARS);",
+            "    assert_eq!(result, Err(InvalidHeaderName::new()));",
+            "}",
+            "",
+            "fn test_parse_hdr_standard_header_not_found() {",
+            "    let data: &[u8] = b\"unknown_header\";",
+            "    let mut b: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut b, &HEADER_CHARS);",
+            "    // This is a case where the header does not match any of the standard headers.",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: data.len() matches 0 is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is true\n",
+        "// may panic: b[0..len] may panic in certain situations\n",
+        "// constraint: StandardHeader::from_bytes(name) matches None is true\n",
+        "// constraint: name.contains(&0) is false\n",
+        "// expected return value/type: Ok(HdrName::custom(name, true))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn test_parse_hdr_empty() {",
+            "    let data: &[u8] = &[];",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_err());",
+            "}",
+            "",
+            "fn test_parse_hdr_valid_custom() {",
+            "    let data: &[u8] = b\"custom-header\";",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_ok());",
+            "    if let Ok(hdr_name) = result {",
+            "        // Check custom name characteristics",
+            "        assert_eq!(hdr_name.inner, Repr::Custom(MaybeLower { buf: data, lower: true }));",
+            "    }",
+            "}",
+            "",
+            "fn test_parse_hdr_valid_standard_header() {",
+            "    let data: &[u8] = b\"accept\";",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_ok());",
+            "    // Check if it converts to standard header",
+            "    if let Ok(hdr_name) = result {",
+            "        match hdr_name.inner {",
+            "            Repr::Standard(_) => {}",
+            "            _ => panic!(\"Expected standard header, but got something else\"),",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "fn test_parse_hdr_invalid_with_null_character() {",
+            "    let data: &[u8] = b\"invalid\\0header\";",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_err());",
+            "}",
+            "",
+            "fn test_parse_hdr_overflow() {",
+            "    let data: &[u8] = &[1; SCRATCH_BUF_OVERFLOW]; // Generate a buffer larger than allowed",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_ok());",
+            "} ",
+            "",
+            "fn test_parse_hdr_custom_large_length() {",
+            "    let data = b\"more-than-64-characters-header-name\";",
+            "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = Default::default();",
+            "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+            "    assert!(result.is_ok());",
+            "    if let Ok(hdr_name) = result {",
+            "        assert_eq!(hdr_name.inner, Repr::Custom(MaybeLower { buf: data, lower: false }));",
+            "    }",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "// constraint: data.len() matches 0 is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is false\n",
+        "// constraint: data.len() matches SCRATCH_BUF_OVERFLOW..=super::MAX_HEADER_NAME_LEN is true\n",
+        "// constraint: data.len() matches SCRATCH_BUF_OVERFLOW..=super::MAX_HEADER_NAME_LEN is true\n",
+        "// constraint: data.len() matches SCRATCH_BUF_OVERFLOW..=super::MAX_HEADER_NAME_LEN is true\n",
+        "// expected return value/type: Ok(HdrName::custom(data, false))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let data: &[u8] = &[];",
+                  "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+                  "    assert!(parse_hdr(data, &mut buffer, &HEADER_CHARS).is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let data: &[u8] = b\"valid-header\";",
+                  "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+                  "    assert!(parse_hdr(data, &mut buffer, &HEADER_CHARS).is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let data: &[u8] = &[b'a'; SCRATCH_BUF_OVERFLOW];",
+                  "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+                  "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+                  "    assert!(result.is_ok());",
+                  "    if let Ok(hdr_name) = result {",
+                  "        assert_eq!(hdr_name.inner, Repr::Custom(MaybeLower { buf: data, lower: false }));",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/header/name.rs:1926:8\n     |\n1926 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `name::Repr<name::MaybeLower<'_>>`\n    --> src/header/name.rs:1935:9\n     |\n1935 |         assert_eq!(hdr_name.inner, Repr::Custom(MaybeLower { buf: data, lower: false }));\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |         |\n     |         name::Repr<name::MaybeLower<'_>>\n     |         name::Repr<name::MaybeLower<'_>>\n     |\nnote: an implementation of `PartialEq` might be missing for `name::MaybeLower<'_>`\n    --> src/header/name.rs:55:1\n     |\n55   | struct MaybeLower<'a> {\n     | ^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `name::MaybeLower<'_>` with `#[derive(PartialEq)]`\n     |\n55   + #[derive(PartialEq)]\n56   | struct MaybeLower<'a> {\n     |\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let data: &[u8] = &[b'a'; super::MAX_HEADER_NAME_LEN + 1];",
+                  "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+                  "    assert!(parse_hdr(data, &mut buffer, &HEADER_CHARS).is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nerror[E0425]: cannot find value `MAX_HEADER_NAME_LEN` in module `super`\n    --> src/header/name.rs:1930:38\n     |\n1930 |     let data: &[u8] = &[b'a'; super::MAX_HEADER_NAME_LEN + 1];\n     |                                      ^^^^^^^^^^^^^^^^^^^ not found in `super`\n     |\nhelp: consider importing this constant\n     |\n1925 +    use crate::header::MAX_HEADER_NAME_LEN;\n     |\nhelp: if you import `MAX_HEADER_NAME_LEN`, refer to it directly\n     |\n1930 -     let data: &[u8] = &[b'a'; super::MAX_HEADER_NAME_LEN + 1];\n1930 +     let data: &[u8] = &[b'a'; MAX_HEADER_NAME_LEN + 1];\n     |\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/header/name.rs:1926:8\n     |\n1926 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0425`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 9,
+      "prompt_conds": [
+        "// constraint: data.len() matches 0 is true\n",
+        "// constraint: data.len() matches len @ 1..=SCRATCH_BUF_SIZE is false\n",
+        "// constraint: data.len() matches SCRATCH_BUF_OVERFLOW..=super::MAX_HEADER_NAME_LEN is false\n",
+        "// expected return value/type: Err(InvalidHeaderName::new())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let data: &[u8] = &[];",
+                  "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+                  "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let data: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]; // Length greater than SCRATCH_BUF_SIZE",
+                  "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+                  "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let data: &[u8] = &[0; SCRATCH_BUF_OVERFLOW]; // Length is SCRATCH_BUF_OVERFLOW",
+                  "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+                  "    let result = parse_hdr(data, &mut buffer, &HEADER_CHARS);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 10,
+      "prompt_conds": [
+        "// constraint: data.len() matches 0 is true\n",
+        "// constraint: data.len() matches 0 is true\n",
+        "// expected return value/type: Err(InvalidHeaderName::new())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let data: &[u8] = &[];",
+                  "    let mut buffer: [MaybeUninit<u8>; SCRATCH_BUF_SIZE] = unsafe { MaybeUninit::uninit().assume_init() };",
+                  "    let table = &HEADER_CHARS;",
+                  "",
+                  "    let result = parse_hdr(data, &mut buffer, table);",
+                  "",
+                  "    assert!(result.is_err());",
+                  "    if let Err(e) = result {",
+                  "        assert!(std::mem::size_of::<InvalidHeaderName>() > 0);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

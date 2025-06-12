@@ -1,0 +1,95 @@
+// Answer 0
+
+#[test]
+fn test_from_seed_valid() {
+    struct Pcg128 {
+        state: u128,
+        increment: u128,
+    }
+    
+    impl Pcg128 {
+        fn from_seed(seed: [u8; 32]) -> Self {
+            let mut seed_u64 = [0u64; 4];
+            let bytes: &[u8] = &seed;
+            seed_u64[0] = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
+            seed_u64[1] = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
+            seed_u64[2] = u64::from_le_bytes(bytes[16..24].try_into().unwrap());
+            seed_u64[3] = u64::from_le_bytes(bytes[24..32].try_into().unwrap());
+            let state = u128::from(seed_u64[0]) | (u128::from(seed_u64[1]) << 64);
+            let incr = u128::from(seed_u64[2]) | (u128::from(seed_u64[3]) << 64);
+
+            Pcg128 {
+                state,
+                increment: incr | 1,
+            }
+        }
+    }
+
+    let seed: [u8; 32] = [1; 32];
+    let pcg = Pcg128::from_seed(seed);
+    assert_eq!(pcg.state, 1);
+    assert_eq!(pcg.increment, (u128::from(1u64) << 64) | 1);
+}
+
+#[test]
+fn test_from_seed_odd_increment() {
+    struct Pcg128 {
+        state: u128,
+        increment: u128,
+    }
+
+    impl Pcg128 {
+        fn from_seed(seed: [u8; 32]) -> Self {
+            let mut seed_u64 = [0u64; 4];
+            let bytes: &[u8] = &seed;
+            seed_u64[0] = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
+            seed_u64[1] = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
+            seed_u64[2] = u64::from_le_bytes(bytes[16..24].try_into().unwrap());
+            seed_u64[3] = u64::from_le_bytes(bytes[24..32].try_into().unwrap());
+            let state = u128::from(seed_u64[0]) | (u128::from(seed_u64[1]) << 64);
+            let incr = u128::from(seed_u64[2]) | (u128::from(seed_u64[3]) << 64);
+
+            Pcg128 {
+                state,
+                increment: incr | 1,
+            }
+        }
+    }
+
+    let seed: [u8; 32] = [0; 32];
+    let pcg = Pcg128::from_seed(seed);
+    assert_eq!(pcg.state, 0);
+    assert_eq!(pcg.increment, 1);
+}
+
+#[test]
+fn test_from_seed_edge_case() {
+    struct Pcg128 {
+        state: u128,
+        increment: u128,
+    }
+
+    impl Pcg128 {
+        fn from_seed(seed: [u8; 32]) -> Self {
+            let mut seed_u64 = [0u64; 4];
+            let bytes: &[u8] = &seed;
+            seed_u64[0] = u64::from_le_bytes(bytes[0..8].try_into().unwrap());
+            seed_u64[1] = u64::from_le_bytes(bytes[8..16].try_into().unwrap());
+            seed_u64[2] = u64::from_le_bytes(bytes[16..24].try_into().unwrap());
+            seed_u64[3] = u64::from_le_bytes(bytes[24..32].try_into().unwrap());
+            let state = u128::from(seed_u64[0]) | (u128::from(seed_u64[1]) << 64);
+            let incr = u128::from(seed_u64[2]) | (u128::from(seed_u64[3]) << 64);
+
+            Pcg128 {
+                state,
+                increment: incr | 1,
+            }
+        }
+    }
+
+    let seed: [u8; 32] = [255; 32];
+    let pcg = Pcg128::from_seed(seed);
+    assert_eq!(pcg.state, u128::from(u64::MAX) | (u128::from(u64::MAX) << 64));
+    assert_eq!(pcg.increment, (u128::from(u64::MAX) | (u128::from(u64::MAX) << 64)) | 1);
+}
+

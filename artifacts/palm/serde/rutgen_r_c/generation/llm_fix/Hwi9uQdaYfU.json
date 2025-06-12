@@ -1,0 +1,154 @@
+{
+  "name": "serde::de::value::<de::value::SeqDeserializer<I, E> as de::IntoDeserializer<'de, E>>::into_deserializer",
+  "name_with_impl": "serde::de::value::{impl#53}::into_deserializer",
+  "mod_info": {
+    "name": "de::value",
+    "loc": "serde/src/de/mod.rs:119:1:119:15"
+  },
+  "visible": true,
+  "loc": "serde/src/de/value.rs:1076:5:1078:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// expected return value/type: self\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::marker::PhantomData;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::marker::PhantomData;",
+                  "",
+                  "    struct MockError;",
+                  "    ",
+                  "    impl de::Error for MockError {",
+                  "        fn custom<T>(msg: T) -> Self where T: std::fmt::Display { MockError }",
+                  "    }",
+                  "",
+                  "    let vec: Vec<i32> = vec![1, 2, 3];",
+                  "    ",
+                  "    struct TestIterator {",
+                  "        iter: std::iter::Fuse<std::slice::Iter<'static, i32>>,",
+                  "        count: usize,",
+                  "    }",
+                  "",
+                  "    impl<'de> SeqAccess<'de> for TestIterator {",
+                  "        type Error = MockError;",
+                  "        ",
+                  "        fn next_element_seed<T>(&mut self, _: T) -> Result<Option<T::Value>, Self::Error>",
+                  "        where",
+                  "            T: DeserializeSeed<'de>",
+                  "        {",
+                  "            if self.count < self.iter.len() {",
+                  "                self.count += 1;",
+                  "                Ok(Some(/* some value here */))",
+                  "            } else {",
+                  "                Ok(None)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> Option<usize> {",
+                  "            Some(self.iter.len() - self.count)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let seq_deserializer = SeqDeserializer {",
+                  "        iter: vec.iter().fuse(),",
+                  "        count: 0,",
+                  "        marker: PhantomData,",
+                  "    };",
+                  "",
+                  "    let deserialized: SeqDeserializer<_, MockError> = seq_deserializer.into_deserializer();",
+                  "    assert_eq!(deserialized.iter.clone().count(), vec.len()); // Ensuring the deserializer is equal to the original",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\nerror[E0405]: cannot find trait `DeserializeSeed` in this scope\n    --> serde/src/de/value.rs:1928:16\n     |\n1928 |             T: DeserializeSeed<'de>\n     |                ^^^^^^^^^^^^^^^\n     |\n    ::: serde/src/de/mod.rs:914:1\n     |\n914  | pub trait Deserializer<'de>: Sized {\n     | ---------------------------------- similarly named trait `Deserializer` defined here\n     |\nhelp: a trait with a similar name exists\n     |\n1928 |             T: Deserializer<'de>\n     |                ~~~~~~~~~~~~\nhelp: consider importing this trait\n     |\n1900 +    use crate::de::DeserializeSeed;\n     |\n\nerror[E0220]: associated type `Value` not found for `T`\n    --> serde/src/de/value.rs:1926:70\n     |\n1926 |         fn next_element_seed<T>(&mut self, _: T) -> Result<Option<T::Value>, Self::Error>\n     |                                                                      ^^^^^ associated type `Value` not found\n\nerror[E0277]: the trait bound `MockError: std::error::Error` is not satisfied\n    --> serde/src/de/value.rs:1912:24\n     |\n1912 |     impl de::Error for MockError {\n     |                        ^^^^^^^^^ the trait `std::error::Error` is not implemented for `MockError`\n     |\nnote: required by a bound in `de::Error`\n    --> serde/src/de/mod.rs:161:38\n     |\n161  |         pub trait Error: Sized $(+ $($supertrait)::+)* {\n     |                                      ^^^^^^^^^^^ required by this bound in `Error`\n...\n300  | declare_error_trait!(Error: Sized + StdError);\n     | --------------------------------------------- in this macro invocation\n     = note: this error originates in the macro `declare_error_trait` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nerror[E0277]: the trait bound `MockError: std::error::Error` is not satisfied\n    --> serde/src/de/value.rs:1924:22\n     |\n1924 |         type Error = MockError;\n     |                      ^^^^^^^^^ the trait `std::error::Error` is not implemented for `MockError`, which is required by `<TestIterator as de::SeqAccess<'de>>::Error: de::Error`\n     |\n     = help: the following other types implement trait `de::Error`:\n               MockError\n               value::Error\nnote: required for `<TestIterator as de::SeqAccess<'de>>::Error` to implement `de::Error`\n    --> serde/src/de/mod.rs:161:19\n     |\n161  |         pub trait Error: Sized $(+ $($supertrait)::+)* {\n     |                   ^^^^^\n...\n300  | declare_error_trait!(Error: Sized + StdError);\n     | --------------------------------------------- in this macro invocation\nnote: required by a bound in `de::SeqAccess::Error`\n    --> serde/src/de/mod.rs:1713:17\n     |\n1713 |     type Error: Error;\n     |                 ^^^^^ required by this bound in `SeqAccess::Error`\n     = note: this error originates in the macro `declare_error_trait` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nSome errors have detailed explanations: E0220, E0277, E0405.\nFor more information about an error, try `rustc --explain E0220`.\nerror: could not compile `serde` (lib test) due to 4 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::marker::PhantomData;",
+                  "",
+                  "    struct MockError;",
+                  "    ",
+                  "    impl de::Error for MockError {",
+                  "        fn custom<T>(msg: T) -> Self where T: std::fmt::Display { MockError }",
+                  "    }",
+                  "",
+                  "    let vec: Vec<i32> = vec![];",
+                  "",
+                  "    struct TestIterator {",
+                  "        iter: std::iter::Fuse<std::slice::Iter<'static, i32>>,",
+                  "        count: usize,",
+                  "    }",
+                  "",
+                  "    impl<'de> SeqAccess<'de> for TestIterator {",
+                  "        type Error = MockError;",
+                  "        ",
+                  "        fn next_element_seed<T>(&mut self, _: T) -> Result<Option<T::Value>, Self::Error>",
+                  "        where",
+                  "            T: DeserializeSeed<'de>",
+                  "        {",
+                  "            if self.count < self.iter.len() {",
+                  "                self.count += 1;",
+                  "                Ok(Some(/* some value here */))",
+                  "            } else {",
+                  "                Ok(None)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> Option<usize> {",
+                  "            Some(self.iter.len() - self.count)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let seq_deserializer = SeqDeserializer {",
+                  "        iter: vec.iter().fuse(),",
+                  "        count: 0,",
+                  "        marker: PhantomData,",
+                  "    };",
+                  "",
+                  "    let deserialized: SeqDeserializer<_, MockError> = seq_deserializer.into_deserializer();",
+                  "    assert_eq!(deserialized.iter.clone().count(), vec.len()); // Ensuring the deserializer remains empty",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\nerror[E0405]: cannot find trait `DeserializeSeed` in this scope\n    --> serde/src/de/value.rs:1928:16\n     |\n1928 |             T: DeserializeSeed<'de>\n     |                ^^^^^^^^^^^^^^^\n     |\n    ::: serde/src/de/mod.rs:914:1\n     |\n914  | pub trait Deserializer<'de>: Sized {\n     | ---------------------------------- similarly named trait `Deserializer` defined here\n     |\nhelp: a trait with a similar name exists\n     |\n1928 |             T: Deserializer<'de>\n     |                ~~~~~~~~~~~~\nhelp: consider importing this trait\n     |\n1900 +    use crate::de::DeserializeSeed;\n     |\n\nerror[E0220]: associated type `Value` not found for `T`\n    --> serde/src/de/value.rs:1926:70\n     |\n1926 |         fn next_element_seed<T>(&mut self, _: T) -> Result<Option<T::Value>, Self::Error>\n     |                                                                      ^^^^^ associated type `Value` not found\n\nerror[E0277]: the trait bound `MockError: std::error::Error` is not satisfied\n    --> serde/src/de/value.rs:1912:24\n     |\n1912 |     impl de::Error for MockError {\n     |                        ^^^^^^^^^ the trait `std::error::Error` is not implemented for `MockError`\n     |\nnote: required by a bound in `de::Error`\n    --> serde/src/de/mod.rs:161:38\n     |\n161  |         pub trait Error: Sized $(+ $($supertrait)::+)* {\n     |                                      ^^^^^^^^^^^ required by this bound in `Error`\n...\n300  | declare_error_trait!(Error: Sized + StdError);\n     | --------------------------------------------- in this macro invocation\n     = note: this error originates in the macro `declare_error_trait` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nerror[E0277]: the trait bound `MockError: std::error::Error` is not satisfied\n    --> serde/src/de/value.rs:1924:22\n     |\n1924 |         type Error = MockError;\n     |                      ^^^^^^^^^ the trait `std::error::Error` is not implemented for `MockError`, which is required by `<TestIterator as de::SeqAccess<'de>>::Error: de::Error`\n     |\n     = help: the following other types implement trait `de::Error`:\n               MockError\n               value::Error\nnote: required for `<TestIterator as de::SeqAccess<'de>>::Error` to implement `de::Error`\n    --> serde/src/de/mod.rs:161:19\n     |\n161  |         pub trait Error: Sized $(+ $($supertrait)::+)* {\n     |                   ^^^^^\n...\n300  | declare_error_trait!(Error: Sized + StdError);\n     | --------------------------------------------- in this macro invocation\nnote: required by a bound in `de::SeqAccess::Error`\n    --> serde/src/de/mod.rs:1713:17\n     |\n1713 |     type Error: Error;\n     |                 ^^^^^ required by this bound in `SeqAccess::Error`\n     = note: this error originates in the macro `declare_error_trait` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nSome errors have detailed explanations: E0220, E0277, E0405.\nFor more information about an error, try `rustc --explain E0220`.\nerror: could not compile `serde` (lib test) due to 4 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

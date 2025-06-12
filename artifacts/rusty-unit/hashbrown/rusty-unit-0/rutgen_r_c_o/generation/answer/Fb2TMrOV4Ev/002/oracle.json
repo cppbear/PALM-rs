@@ -1,0 +1,487 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestType;",
+          "    impl TestType {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+          "    let bucket = Bucket { ptr: base_ptr };",
+          "    let offset = 1; // Valid offset within bounds",
+          "    let new_bucket = unsafe { bucket.next_n(offset) };",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    assert_eq!(bucket.ptr.as_ptr(), base_ptr.as_ptr()); // Ensure original pointer is correct"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    assert!(unsafe { bucket.next_n(1).ptr.as_ptr() < bucket.ptr.as_ptr() }); // Check pointer moves back with offset"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    assert!(unsafe { bucket.next_n(1).ptr.as_ptr() == invalid_mut(1) }); // Check invalid_mut path for ZST logic is not used (IS_ZERO_SIZED is false)"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 1; // Valid offset within bounds",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    assert_eq!(bucket.ptr.as_ptr(), base_ptr.as_ptr()); // Ensure original pointer is correct",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 1; // Valid offset within bounds",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    assert!(unsafe { bucket.next_n(1).ptr.as_ptr() < bucket.ptr.as_ptr() }); // Check pointer moves back with offset",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 1; // Valid offset within bounds",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    assert!(unsafe { bucket.next_n(1).ptr.as_ptr() == invalid_mut(1) }); // Check invalid_mut path for ZST logic is not used (IS_ZERO_SIZED is false)",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestType;",
+          "    impl TestType {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+          "    let bucket = Bucket { ptr: base_ptr };",
+          "    let offset = 10; // Assuming this is equal to RawTableInner.bucket_mask",
+          "    let new_bucket = unsafe { bucket.next_n(offset) }; ",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    assert!(base_ptr.as_ptr() != ptr::null_mut());"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let offset = 10;",
+            "    assert!(offset <= RawTableInner.bucket_mask);"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let offset = 10;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert!(new_bucket.ptr.as_ptr() != ptr::null_mut());"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let offset = 10;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert_eq!(new_bucket.ptr.as_ptr(), bucket.ptr.as_ptr().sub(offset));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 10; // Assuming this is equal to RawTableInner.bucket_mask",
+            "    let new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    assert!(base_ptr.as_ptr() != ptr::null_mut());",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 10; // Assuming this is equal to RawTableInner.bucket_mask",
+            "    let new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let offset = 10;",
+            "    assert!(offset <= RawTableInner.bucket_mask);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 10; // Assuming this is equal to RawTableInner.bucket_mask",
+            "    let new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let offset = 10;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert!(new_bucket.ptr.as_ptr() != ptr::null_mut());",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 10; // Assuming this is equal to RawTableInner.bucket_mask",
+            "    let new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let offset = 10;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert_eq!(new_bucket.ptr.as_ptr(), bucket.ptr.as_ptr().sub(offset));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestType;",
+          "    impl TestType {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+          "    let bucket = Bucket { ptr: base_ptr };",
+          "    let offset = 5; // Valid offset below RawTableInner.bucket_mask",
+          "    let new_bucket = unsafe { bucket.next_n(offset) };",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert!(new_bucket.ptr.as_ptr() != bucket.ptr.as_ptr());"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert_eq!(new_bucket.ptr.as_ptr(), bucket.ptr.as_ptr().sub(offset));"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert!(new_bucket.ptr.is_non_null());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5; // Valid offset below RawTableInner.bucket_mask",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert!(new_bucket.ptr.as_ptr() != bucket.ptr.as_ptr());",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5; // Valid offset below RawTableInner.bucket_mask",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert_eq!(new_bucket.ptr.as_ptr(), bucket.ptr.as_ptr().sub(offset));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5; // Valid offset below RawTableInner.bucket_mask",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 5;",
+            "    let new_bucket = unsafe { bucket.next_n(offset) };",
+            "    assert!(new_bucket.ptr.is_non_null());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestType;",
+          "    impl TestType {",
+          "        const IS_ZERO_SIZED: bool = false;",
+          "    }",
+          "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+          "    let bucket = Bucket { ptr: base_ptr };",
+          "    let offset = 11; // Assuming this exceeds RawTableInner.bucket_mask",
+          "    let _new_bucket = unsafe { bucket.next_n(offset) }; ",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr() != ptr::null_mut());"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr() as usize + offset == 11);"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr().sub(offset).is_null() == false);"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr() as usize <= RawTableInner.bucket_mask);"
+          ],
+          [
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr() as usize + 1 <= RawTableInner.buckets());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11; // Assuming this exceeds RawTableInner.bucket_mask",
+            "    let _new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr() != ptr::null_mut());",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11; // Assuming this exceeds RawTableInner.bucket_mask",
+            "    let _new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr() as usize + offset == 11);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11; // Assuming this exceeds RawTableInner.bucket_mask",
+            "    let _new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr().sub(offset).is_null() == false);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11; // Assuming this exceeds RawTableInner.bucket_mask",
+            "    let _new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr() as usize <= RawTableInner.bucket_mask);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestType;",
+            "    impl TestType {",
+            "        const IS_ZERO_SIZED: bool = false;",
+            "    }",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11; // Assuming this exceeds RawTableInner.bucket_mask",
+            "    let _new_bucket = unsafe { bucket.next_n(offset) }; ",
+            "    let base_ptr = NonNull::new(unsafe { &mut *(0 as *mut TestType) }).unwrap();",
+            "    let bucket = Bucket { ptr: base_ptr };",
+            "    let offset = 11;",
+            "    assert!(bucket.ptr.as_ptr() as usize + 1 <= RawTableInner.buckets());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

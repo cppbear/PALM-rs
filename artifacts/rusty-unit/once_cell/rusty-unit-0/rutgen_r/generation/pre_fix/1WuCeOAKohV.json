@@ -1,0 +1,238 @@
+{
+  "name": "once_cell::race::once_box::race::once_box::OnceBox<T>::get_or_init",
+  "name_with_impl": "once_cell::race::once_box::{impl#3}::get_or_init",
+  "mod_info": {
+    "name": "race::once_box",
+    "loc": "src/race.rs:354:1:498:2"
+  },
+  "visible": true,
+  "loc": "src/race.rs:432:9:441:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.get_or_try_init(|| Ok::<Box<T>, Void>(f())) matches Err(void) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FakeCell {",
+                  "        initialized: bool,",
+                  "    }",
+                  "",
+                  "    impl FakeCell {",
+                  "        fn get_or_try_init<F, T>(&mut self, f: F) -> Result<Box<T>, ()>",
+                  "        where",
+                  "            F: FnOnce() -> Result<Box<T>, ()>,",
+                  "        {",
+                  "            if self.initialized {",
+                  "                Err(())",
+                  "            } else {",
+                  "                self.initialized = true;",
+                  "                f()",
+                  "            }",
+                  "        }",
+                  "        ",
+                  "        fn get_or_init<F, T>(&mut self, f: F) -> &Box<T>",
+                  "        where",
+                  "            F: FnOnce() -> Box<T>,",
+                  "        {",
+                  "            enum Void {}",
+                  "            match self.get_or_try_init(|| Ok::<Box<T>, Void>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = FakeCell { initialized: false };",
+                  "    ",
+                  "    // This will call `f`, return Ok and succeed.",
+                  "    let value1: &Box<String> = cell.get_or_init(|| Box::new(\"Hello\".to_string()));",
+                  "    assert_eq!(&**value1, \"Hello\");",
+                  "",
+                  "    // This will cause the initialization to fail and reach the `Err(void)` case, triggering the panic.",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        let _value2: &Box<String> = cell.get_or_init(|| Box::new(\"World\".to_string()));",
+                  "    });",
+                  "",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0277]: the type `&mut FakeCell` may not be safely transferred across an unwind boundary\n   --> src/race.rs:542:43\n    |\n542 |       let result = std::panic::catch_unwind(|| {\n    |                    ------------------------ ^-\n    |                    |                        |\n    |  __________________|________________________within this `{closure@src/race.rs:542:43: 542:45}`\n    | |                  |\n    | |                  required by a bound introduced by this call\n543 | |         let _value2: &Box<String> = cell.get_or_init(|| Box::new(\"World\".to_string()));\n544 | |     });\n    | |_____^ `&mut FakeCell` may not be safely transferred across an unwind boundary\n    |\n    = help: within `{closure@src/race.rs:542:43: 542:45}`, the trait `UnwindSafe` is not implemented for `&mut FakeCell`, which is required by `{closure@src/race.rs:542:43: 542:45}: UnwindSafe`\n    = note: `UnwindSafe` is implemented for `&FakeCell`, but not for `&mut FakeCell`\nnote: required because it's used within this closure\n   --> src/race.rs:542:43\n    |\n542 |     let result = std::panic::catch_unwind(|| {\n    |                                           ^^\nnote: required by a bound in `std::panic::catch_unwind`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n    |\n349 | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n    |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nerror[E0308]: mismatched types\n   --> src/race.rs:528:43\n    |\n528 |             match self.get_or_try_init(|| Ok::<Box<T>, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^^^^^ expected `Result<Box<_>, ()>`, found `Result<Box<T>, Void>`\n    |\n    = note: expected enum `Result<std::boxed::Box<_>, ()>`\n               found enum `Result<std::boxed::Box<T>, FakeCell::get_or_init::Void>`\n\nerror[E0308]: mismatched types\n   --> src/race.rs:529:28\n    |\n523 |         fn get_or_init<F, T>(&mut self, f: F) -> &Box<T>\n    |                                                  ------- expected `&std::boxed::Box<T>` because of return type\n...\n529 |                 Ok(val) => val,\n    |                            ^^^ expected `&Box<T>`, found `Box<_>`\n    |\n    = note: expected reference `&std::boxed::Box<T>`\n                  found struct `std::boxed::Box<_>`\nhelp: consider borrowing here\n    |\n529 |                 Ok(val) => &val,\n    |                            +\n\nSome errors have detailed explanations: E0277, E0308.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 3 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.get_or_try_init(|| Ok::<Box<T>, Void>(f())) matches Ok(val) is true\n",
+        "// constraint: self.get_or_try_init(|| Ok::<Box<T>, Void>(f())) matches Ok(val) is true\n",
+        "// expected return value/type: val\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        initialized: bool,",
+                  "        value: Option<Box<i32>>,",
+                  "    }",
+                  "",
+                  "    impl TestCell {",
+                  "        pub fn new() -> Self {",
+                  "            Self {",
+                  "                initialized: false,",
+                  "                value: None,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn get_or_try_init<F>(&mut self, f: F) -> Result<&Box<i32>, &'static str>",
+                  "        where",
+                  "            F: FnOnce() -> Result<Box<i32>, ()>,",
+                  "        {",
+                  "            if self.initialized {",
+                  "                Ok(self.value.as_ref().unwrap())",
+                  "            } else {",
+                  "                let result = f();",
+                  "                match result {",
+                  "                    Ok(val) => {",
+                  "                        self.initialized = true;",
+                  "                        self.value = Some(val);",
+                  "                        Ok(self.value.as_ref().unwrap())",
+                  "                    },",
+                  "                    Err(_) => Err(\"Initialization failed\"),",
+                  "                }",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn get_or_init<F>(&mut self, f: F) -> &Box<i32>",
+                  "        where",
+                  "            F: FnOnce() -> Box<i32>,",
+                  "        {",
+                  "            match self.get_or_try_init(|| Ok::<Box<i32>, ()>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(_) => panic!(\"Initialization should not fail\"),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = TestCell::new();",
+                  "    let value = cell.get_or_init(|| Box::new(42));",
+                  "    assert_eq!(*value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:551:24\n    |\n551 |     assert_eq!(*value, 42);\n    |                        ^^ expected `Box<i32>`, found integer\n    |\n    = note: expected struct `std::boxed::Box<i32>`\n                 found type `{integer}`\n    = note: for more on the distinction between the stack and the heap, read https://doc.rust-lang.org/book/ch15-01-box.html, https://doc.rust-lang.org/rust-by-example/std/box.html, and https://doc.rust-lang.org/std/boxed/index.html\nhelp: store this in the heap by calling `Box::new`\n    |\n551 |     assert_eq!(*value, Box::new(42));\n    |                        +++++++++  +\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        initialized: bool,",
+                  "        value: Option<Box<i32>>,",
+                  "    }",
+                  "",
+                  "    impl TestCell {",
+                  "        pub fn new() -> Self {",
+                  "            Self {",
+                  "                initialized: false,",
+                  "                value: None,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn get_or_try_init<F>(&mut self, f: F) -> Result<&Box<i32>, &'static str>",
+                  "        where",
+                  "            F: FnOnce() -> Result<Box<i32>, ()>,",
+                  "        {",
+                  "            if self.initialized {",
+                  "                Ok(self.value.as_ref().unwrap())",
+                  "            } else {",
+                  "                let result = f();",
+                  "                match result {",
+                  "                    Ok(val) => {",
+                  "                        self.initialized = true;",
+                  "                        self.value = Some(val);",
+                  "                        Ok(self.value.as_ref().unwrap())",
+                  "                    },",
+                  "                    Err(_) => Err(\"Initialization failed\"),",
+                  "                }",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn get_or_init<F>(&mut self, f: F) -> &Box<i32>",
+                  "        where",
+                  "            F: FnOnce() -> Box<i32>,",
+                  "        {",
+                  "            match self.get_or_try_init(|| Ok::<Box<i32>, ()>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(_) => panic!(\"Initialization should not fail\"),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = TestCell::new();",
+                  "    let value1 = cell.get_or_init(|| Box::new(100));",
+                  "    let value2 = cell.get_or_init(|| Box::new(200)); // This should not call f again",
+                  "    assert_eq!(*value1, 100);",
+                  "    assert_eq!(*value2, 100);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:552:25\n    |\n552 |     assert_eq!(*value1, 100);\n    |                         ^^^ expected `Box<i32>`, found integer\n    |\n    = note: expected struct `std::boxed::Box<i32>`\n                 found type `{integer}`\n    = note: for more on the distinction between the stack and the heap, read https://doc.rust-lang.org/book/ch15-01-box.html, https://doc.rust-lang.org/rust-by-example/std/box.html, and https://doc.rust-lang.org/std/boxed/index.html\nhelp: store this in the heap by calling `Box::new`\n    |\n552 |     assert_eq!(*value1, Box::new(100));\n    |                         +++++++++   +\n\nerror[E0308]: mismatched types\n   --> src/race.rs:553:25\n    |\n553 |     assert_eq!(*value2, 100);\n    |                         ^^^ expected `Box<i32>`, found integer\n    |\n    = note: expected struct `std::boxed::Box<i32>`\n                 found type `{integer}`\n    = note: for more on the distinction between the stack and the heap, read https://doc.rust-lang.org/book/ch15-01-box.html, https://doc.rust-lang.org/rust-by-example/std/box.html, and https://doc.rust-lang.org/std/boxed/index.html\nhelp: store this in the heap by calling `Box::new`\n    |\n553 |     assert_eq!(*value2, Box::new(100));\n    |                         +++++++++   +\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

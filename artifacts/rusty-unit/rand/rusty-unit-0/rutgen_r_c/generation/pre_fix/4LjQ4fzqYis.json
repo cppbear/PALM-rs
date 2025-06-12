@@ -1,0 +1,122 @@
+{
+  "name": "rand_core::<UnwrapErr<R> as RngCore>::fill_bytes",
+  "name_with_impl": "rand_core::{impl#4}::fill_bytes",
+  "mod_info": {
+    "name": "",
+    "loc": "rand_core/src/lib.rs:10:1:772:2"
+  },
+  "visible": true,
+  "loc": "rand_core/src/lib.rs:313:5:315:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// may panic: self.0.try_fill_bytes(dst).unwrap() may panic in certain situations\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockRng {",
+                  "        data: &'static [u8],",
+                  "        index: usize,",
+                  "    }",
+                  "    ",
+                  "    impl TryRngCore for MockRng {",
+                  "        type Error = &'static str;",
+                  "        ",
+                  "        fn try_next_u32(&mut self) -> Result<u32, Self::Error> {",
+                  "            Ok(0) // Simplified mock response",
+                  "        }",
+                  "        ",
+                  "        fn try_next_u64(&mut self) -> Result<u64, Self::Error> {",
+                  "            Ok(0) // Simplified mock response",
+                  "        }",
+                  "        ",
+                  "        fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Self::Error> {",
+                  "            let to_copy = usize::min(dst.len(), self.data.len() - self.index);",
+                  "            dst[..to_copy].copy_from_slice(&self.data[self.index..self.index + to_copy]);",
+                  "            self.index += to_copy;",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut rng = MockRng { data: &[1, 2, 3, 4, 5], index: 0 };",
+                  "    let mut buffer = [0u8; 3];",
+                  "    let mut unwrap_err = UnwrapErr(rng);",
+                  "",
+                  "    unwrap_err.fill_bytes(&mut buffer);",
+                  "    ",
+                  "    assert_eq!(buffer, [1, 2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FailingRng;",
+                  "",
+                  "    impl TryRngCore for FailingRng {",
+                  "        type Error = &'static str;",
+                  "",
+                  "        fn try_next_u32(&mut self) -> Result<u32, Self::Error> {",
+                  "            Ok(0) // Simplified mock response",
+                  "        }",
+                  "",
+                  "        fn try_next_u64(&mut self) -> Result<u64, Self::Error> {",
+                  "            Ok(0) // Simplified mock response",
+                  "        }",
+                  "",
+                  "        fn try_fill_bytes(&mut self, _dst: &mut [u8]) -> Result<(), Self::Error> {",
+                  "            Err(\"mock error\") // Intentionally returning an error to trigger panic",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let failing_rng = FailingRng;",
+                  "    let mut unwrap_err = UnwrapErr(failing_rng);",
+                  "    let mut buffer = [0u8; 5];",
+                  "",
+                  "    unwrap_err.fill_bytes(&mut buffer); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

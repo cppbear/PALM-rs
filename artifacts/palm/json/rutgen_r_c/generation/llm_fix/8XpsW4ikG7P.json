@@ -1,0 +1,253 @@
+{
+  "name": "serde_json::value::de::value::de::<impl serde::Deserializer<'de> for &'de value::Value>::deserialize_seq",
+  "name_with_impl": "serde_json::value::de::{impl#13}::deserialize_seq",
+  "mod_info": {
+    "name": "value::de",
+    "loc": "src/value/mod.rs:927:1:927:8"
+  },
+  "visible": true,
+  "loc": "src/value/de.rs:963:5:971:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self matches _ is true\n",
+        "// constraint: self matches Value::Array(v) is false\n",
+        "// expected return value/type: Err(self.invalid_type(&visitor))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use serde::de::Visitor;",
+            "use serde::de::Deserializer;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use serde::de::{Deserializer, Visitor};",
+                  "",
+                  "    struct InvalidVisitor;",
+                  "",
+                  "    impl<'de> Visitor<'de> for InvalidVisitor {",
+                  "        type Value = ();",
+                  "",
+                  "        fn expecting(&self, formatter: &mut dyn fmt::Formatter) -> fmt::Result {",
+                  "            formatter.write_str(\"an array\")",
+                  "        }",
+                  "",
+                  "        fn visit_seq<V>(self, _seq: V) -> Result<Self::Value, Error>",
+                  "        where",
+                  "            V: serde::de::SeqAccess<'de>,",
+                  "        {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Create an instance of Value that is NOT an array",
+                  "    let value = Value::Bool(true); // Using a simple boolean as the non-array type",
+                  "    let visitor = InvalidVisitor;",
+                  "",
+                  "    // Call the deserialize_seq method and expect an error",
+                  "    let result: Result<(), Error> = value.deserialize_seq(visitor);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0404]: expected trait, found struct `fmt::Formatter`\n    --> src/value/de.rs:1518:49\n     |\n1518 |         fn expecting(&self, formatter: &mut dyn fmt::Formatter) -> fmt::Result {\n     |                                                 ^^^^^^^^^^^^^^ not a trait\n     |\nhelp: consider importing this trait instead\n     |\n1503 +    use crate::ser::Formatter;\n     |\nhelp: if you import `Formatter`, refer to it directly\n     |\n1518 -         fn expecting(&self, formatter: &mut dyn fmt::Formatter) -> fmt::Result {\n1518 +         fn expecting(&self, formatter: &mut dyn Formatter) -> fmt::Result {\n     |\n\nFor more information about this error, try `rustc --explain E0404`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self matches Value::Array(v) is true\n",
+        "// constraint: self matches Value::Array(v) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   use serde_json; // Declare the serde_json module",
+                  "    let value = serde_json::Value::Array(vec![",
+                  "        serde_json::Value::Number(serde_json::Number::from(1)),",
+                  "        serde_json::Value::Number(serde_json::Number::from(2)),",
+                  "        serde_json::Value::Number(serde_json::Number::from(3)),",
+                  "    ]);",
+                  "",
+                  "    struct TestVisitor {",
+                  "        values: Vec<i64>,",
+                  "    }",
+                  "",
+                  "    impl<'de> serde::de::Visitor<'de> for TestVisitor {",
+                  "        type Value = Vec<i64>;",
+                  "",
+                  "        fn visit_seq<V>(self, mut seq: V) -> Result<Self::Value, V::Error>",
+                  "        where",
+                  "            V: serde::de::SeqAccess<'de>,",
+                  "        {",
+                  "            let mut values = Vec::new();",
+                  "            while let Some(value) = seq.next_element::<serde_json::Value>()? {",
+                  "                if let serde_json::Value::Number(num) = value {",
+                  "                    if let Some(n) = num.as_i64() {",
+                  "                        values.push(n);",
+                  "                    }",
+                  "                }",
+                  "            }",
+                  "            Ok(values)",
+                  "        }",
+                  "",
+                  "        serde::forward_to_deserialize_any! {",
+                  "            <V: serde::de::Visitor<'de>> bytes byte_buf char map newtype_struct seq string struct tuple tuple_struct",
+                  "            unit unit_struct",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Act",
+                  "    let result: Result<Vec<i64>, serde_json::Error> = value.deserialize_seq(TestVisitor { values: Vec::new() });",
+                  "",
+                  "    // Assert",
+                  "    assert!(result.is_ok());",
+                  "    let values = result.unwrap();",
+                  "    assert_eq!(values, vec![1, 2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror: no rules expected the token `serde`\n    --> src/value/de.rs:1541:17\n     |\n1541 |             <V: serde::de::Visitor<'de>> bytes byte_buf char map newtype_struct seq string struct tuple tuple_struct\n     |                 ^^^^^ no rules expected this token in macro call\n     |\nnote: while trying to match `Visitor`\n    --> /home/abezbm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.219/src/macros.rs:112:23\n     |\n112  |     (<$visitor:ident: Visitor<$lifetime:tt>> $($func:ident)*) => {\n     |                       ^^^^^^^\n\nerror[E0432]: unresolved import `serde_json`\n    --> src/value/de.rs:1511:8\n     |\n1511 |    use serde_json; // Declare the serde_json module\n     |        ^^^^^^^^^^ no external crate `serde_json`\n\nerror[E0046]: not all trait items implemented, missing: `expecting`\n    --> src/value/de.rs:1522:5\n     |\n1522 |     impl<'de> serde::de::Visitor<'de> for TestVisitor {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `expecting` in implementation\n     |\n     = help: implement the missing item: `fn expecting(&self, _: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { todo!() }`\n\nSome errors have detailed explanations: E0046, E0432.\nFor more information about an error, try `rustc --explain E0046`.\nerror: could not compile `serde_json` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Arrange",
+                  "    let value = serde_json::Value::Bool(true);",
+                  "",
+                  "    struct TestVisitor;",
+                  "",
+                  "    impl<'de> serde::de::Visitor<'de> for TestVisitor {",
+                  "        type Value = ();",
+                  "",
+                  "        fn visit_seq<V>(self, _: V) -> Result<Self::Value, V::Error>",
+                  "        where",
+                  "            V: serde::de::SeqAccess<'de>,",
+                  "        {",
+                  "            Err(serde::de::Error::custom(\"should not be called\"))",
+                  "        }",
+                  "",
+                  "        serde::forward_to_deserialize_any! {  ",
+                  "            V: Visitor<'de>, bytes byte_buf map newtype_struct none seq string struct tuple tuple_struct  ",
+                  "            unit unit_struct  ",
+                  "        }  ",
+                  "    }",
+                  "",
+                  "    // Act",
+                  "    let result: Result<(), serde_json::Error> = value.deserialize_seq(TestVisitor);",
+                  "",
+                  "    // Assert",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror: no rules expected the token `:`\n    --> src/value/de.rs:1527:14\n     |\n1527 |             V: Visitor<'de>, bytes byte_buf map newtype_struct none seq string struct tuple tuple_struct  \n     |              ^ no rules expected this token in macro call\n     |\n     = note: while trying to match sequence end\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> src/value/de.rs:1512:17\n     |\n1512 |     let value = serde_json::Value::Bool(true);\n     |                 ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n     |\nhelp: consider importing this enum\n     |\n1503 +    use crate::value::Value;\n     |\nhelp: if you import `Value`, refer to it directly\n     |\n1512 -     let value = serde_json::Value::Bool(true);\n1512 +     let value = Value::Bool(true);\n     |\n\nerror[E0046]: not all trait items implemented, missing: `expecting`\n    --> src/value/de.rs:1516:5\n     |\n1516 |     impl<'de> serde::de::Visitor<'de> for TestVisitor {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `expecting` in implementation\n     |\n     = help: implement the missing item: `fn expecting(&self, _: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { todo!() }`\n\nwarning: unused import: `super`\n    --> src/value/de.rs:1503:8\n     |\n1503 |    use super::*;\n     |        ^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> src/value/de.rs:1533:28\n     |\n1533 |     let result: Result<(), serde_json::Error> = value.deserialize_seq(TestVisitor);\n     |                            ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nSome errors have detailed explanations: E0046, E0433.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 4 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Arrange",
+                  "    let value = serde_json::Value::Array(vec![]);",
+                  "",
+                  "   struct TestVisitor {",
+                  "       count: usize,",
+                  "   }",
+                  "   ",
+                  "   impl<'de> serde::de::Visitor<'de> for TestVisitor {",
+                  "       type Value = usize;",
+                  "   ",
+                  "       fn visit_seq<V>(self, mut seq: V) -> Result<Self::Value, V::Error>",
+                  "       where",
+                  "           V: serde::de::SeqAccess<'de>,",
+                  "       {",
+                  "           let mut count = 0;",
+                  "           while seq.next_element::<serde_json::Value>()?.is_some() {",
+                  "               count += 1;",
+                  "           }",
+                  "           Ok(count)",
+                  "       }",
+                  "   ",
+                  "       // Call to `serde::Deserializer` should be implemented",
+                  "       fn deserialize_any<V>(self, _: V) -> Result<Self::Value, V::Error>",
+                  "       where",
+                  "           V: serde::de::Visitor<'de>,",
+                  "    }",
+                  "",
+                  "    // Act",
+                  "    let result: Result<usize, serde_json::Error> = value.deserialize_seq(TestVisitor { count: 0 });",
+                  "",
+                  "    // Assert",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(result.unwrap(), 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror: expected one of `{`, lifetime, or type, found `}`\n    --> src/value/de.rs:1536:5\n     |\n1533 |        fn deserialize_any<V>(self, _: V) -> Result<Self::Value, V::Error>\n     |           --------------- while parsing this `fn`\n1534 |        where\n1535 |            V: serde::de::Visitor<'de>,\n     |                                       - expected one of `{`, lifetime, or type\n1536 |     }\n     |     ^ unexpected token\n\nerror: unexpected end of input, expected curly braces\n    --> src/value/de.rs:1536:5\n     |\n1536 |     }\n     |     ^\n\nwarning: unused import: `super::*`\n    --> src/value/de.rs:1503:8\n     |\n1503 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0425]: cannot find function `test_deserialize_seq_03` in this scope\n    --> src/value/de.rs:1509:1\n     |\n1509 | / fn test_deserialize_seq_03()\n1510 | | {\n1511 | |     // Arrange\n1512 | |     let value = serde_json::Value::Array(vec![]);\n...    |\n1543 | |     assert_eq!(result.unwrap(), 0);\n1544 | | }\n     | |_^ not found in this scope\n\nFor more information about this error, try `rustc --explain E0425`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 3 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

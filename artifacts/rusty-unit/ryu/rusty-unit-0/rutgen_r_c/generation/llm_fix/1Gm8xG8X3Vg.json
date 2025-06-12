@@ -1,0 +1,1299 @@
+{
+  "name": "ryu::pretty::format64",
+  "name_with_impl": "ryu::pretty::format64",
+  "mod_info": {
+    "name": "pretty",
+    "loc": "src/lib.rs:117:1:117:12"
+  },
+  "visible": true,
+  "loc": "src/pretty/mod.rs:52:1:118:2",
+  "fn_tests": [
+    {
+      "chain_id": 57,
+      "prompt_conds": [
+        "// constraint: sign is true\n",
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: k >= -324 is true, with bound k == -324\n",
+        "// constraint: 0 <= k is false\n",
+        "// constraint: 0 < kk is false, with bound 0 == kk\n",
+        "// constraint: -5 < kk is false, with bound -5 == kk\n",
+        "// constraint: length == 1 is false\n",
+        "// expected return value/type: index as usize + 2 + write_exponent3(kk - 1, result.offset(index + 2))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f = -0.0f64;",
+                  "    let mut buffer = [0u8; 24];",
+                  "    unsafe {",
+                  "        let len = format64(f, buffer.as_mut_ptr());",
+                  "        assert_eq!(len, 3);",
+                  "        assert_eq!(&buffer[..len], b\"-0.0\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f = -5.0e-324; // Smallest positive subnormal",
+                  "    let mut buffer = [0u8; 24];",
+                  "    unsafe {",
+                  "        let len = format64(f, buffer.as_mut_ptr());",
+                  "        assert_eq!(len, 6);",
+                  "        assert_eq!(&buffer[..len], b\"-0.000005\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f = -1.0e30; // A value with a large negative exponent",
+                  "    let mut buffer = [0u8; 24];",
+                  "    unsafe {",
+                  "        let len = format64(f, buffer.as_mut_ptr());",
+                  "        assert_eq!(len, 12);",
+                  "        assert_eq!(&buffer[..len], b\"-1.0e30\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f = -1.234e-6; // Negative small mantissa with a negative exponent",
+                  "    let mut buffer = [0u8; 24];",
+                  "    unsafe {",
+                  "        let len = format64(f, buffer.as_mut_ptr());",
+                  "        assert_eq!(len, 8);",
+                  "        assert_eq!(&buffer[..len], b\"-0.000001234\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f = -1.234e6; // Negative value with positive exponent",
+                  "    let mut buffer = [0u8; 24];",
+                  "    unsafe {",
+                  "        let len = format64(f, buffer.as_mut_ptr());",
+                  "        assert_eq!(len, 13);",
+                  "        assert_eq!(&buffer[..len], b\"-1.234000e6\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 60,
+      "prompt_conds": [
+        "// constraint: sign is false\n",
+        "// constraint: ieee_exponent == 0 is false\n",
+        "// constraint: ieee_mantissa == 0 is false\n",
+        "// expected return value/type: sign as usize + 3\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    let f: f64 = 3.141592653589793; // A positive normal float, not zero",
+                  "",
+                  "    unsafe {",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"3.141592653589793\"); // Check the expected output",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:239:19\n    |\n239 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    let f: f64 = 1.0e20; // A large positive number",
+                  "",
+                  "    unsafe {",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"1e20\"); // Check the expected output",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:239:19\n    |\n239 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    let f: f64 = 12345.6789; // A positive float with both mantissa and exponent",
+                  "",
+                  "    unsafe {",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"12345.6789\"); // Check the expected output",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:239:19\n    |\n239 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 67,
+      "prompt_conds": [
+        "// constraint: sign is false\n",
+        "// constraint: ieee_exponent == 0 is false\n",
+        "// constraint: ieee_mantissa == 0 is true\n",
+        "// constraint: k >= -324 is true, with bound k == -324\n",
+        "// constraint: 0 <= k is true, with bound 0 == k\n",
+        "// constraint: kk <= 16 is false\n",
+        "// constraint: 0 < kk is true\n",
+        "// constraint: kk <= 16 is false\n",
+        "// constraint: -5 < kk is true\n",
+        "// constraint: kk <= 0 is false\n",
+        "// constraint: length == 1 is true\n",
+        "// expected return value/type: index as usize\n            + length as usize\n            + 2\n            + write_exponent3(kk - 1, result.offset(index + length + 2))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::str;",
+            "use std::mem::MaybeUninit;",
+            "use std::slice;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::MaybeUninit;",
+                  "    use std::slice;",
+                  "    use std::str;",
+                  "",
+                  "    unsafe {",
+                  "        let f = 1.0f64; // IEEE: 0 01111111111 00000000000000000000000000000000000000000000000000000000000",
+                  "        let mut buffer = [MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"1.0\"); // Expects 1.0 format",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:242:19\n    |\n242 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::MaybeUninit;",
+                  "    use std::slice;",
+                  "    use std::str;",
+                  "",
+                  "    unsafe {",
+                  "        let f = 1.0e10; // IEEE: 0 10000111100 00000000000000000000000000000000000000000000000000000000000",
+                  "        let mut buffer = [MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"1.0e10\"); // Expects scientific notation",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:242:19\n    |\n242 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::MaybeUninit;",
+                  "    use std::slice;",
+                  "    use std::str;",
+                  "",
+                  "    unsafe {",
+                  "        let f = -1.0e10; // IEEE: 1 10000111100 00000000000000000000000000000000000000000000000000000000000",
+                  "        let mut buffer = [MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"-1.0e10\"); // Expects scientific notation with negative sign",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:242:19\n    |\n242 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::MaybeUninit;",
+                  "    use std::slice;",
+                  "    use std::str;",
+                  "",
+                  "    unsafe {",
+                  "        let f = 1.0e-15; // IEEE: 0 10000101010 00000000000000000000000000000000000000000000000000000000000",
+                  "        let mut buffer = [MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"0.000000000000001\"); // Expects detailed decimal representation",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:242:19\n    |\n242 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::MaybeUninit;",
+                  "    use std::slice;",
+                  "    use std::str;",
+                  "",
+                  "    unsafe {",
+                  "        let f = 1.0e-324; // IEEE for minimal positive normal value.",
+                  "        let mut buffer = [MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"0.0000000000000000000000000000000001\"); // Expects the minimum representation",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:242:19\n    |\n242 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 90,
+      "prompt_conds": [
+        "// constraint: sign is false\n",
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: k >= -324 is true, with bound k == -324\n",
+        "// constraint: 0 <= k is true, with bound 0 == k\n",
+        "// constraint: kk <= 16 is true, with bound kk == 16\n",
+        "// constraint: i in length..kk is true\n",
+        "// constraint: i in length..kk is false\n",
+        "// expected return value/type: index as usize + kk as usize + 2\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f: f64 = 0.0;",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    unsafe {",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let result = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(result, \"0.0\");",
+                  "        assert_eq!(len, 3);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f: f64 = -0.0;",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    unsafe {",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let result = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(result, \"-0.0\");",
+                  "        assert_eq!(len, 4);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f: f64 = -3.4e-324; // IEEE representation for k == -324",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    unsafe {",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let result = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(result, \"0.0000000000000000000000000000034\");",
+                  "        assert!(len <= 24);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f: f64 = 1.234e15; // Should stay within limits and show as large number",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    unsafe {",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let result = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(result, \"1.234e15\");",
+                  "        assert!(len <= 24);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f: f64 = 1.234e-5; // k < 0",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    unsafe {",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let result = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(result, \"0.00001234\");",
+                  "        assert!(len <= 24);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 91,
+      "prompt_conds": [
+        "// constraint: sign is false\n",
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: k >= -324 is true, with bound k == -324\n",
+        "// constraint: 0 <= k is true, with bound 0 == k\n",
+        "// constraint: kk <= 16 is true, with bound kk == 16\n",
+        "// constraint: i in length..kk is false\n",
+        "// expected return value/type: index as usize + kk as usize + 2\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f: f64 = 0.0;",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    let len = unsafe { ryu::format64(f, buffer.as_mut_ptr() as *mut u8) };",
+                  "    let slice = unsafe { std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len) };",
+                  "    let printed = unsafe { std::str::from_utf8_unchecked(slice) };",
+                  "    assert_eq!(printed, \"0.0\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:237:24\n    |\n237 |     let len = unsafe { ryu::format64(f, buffer.as_mut_ptr() as *mut u8) };\n    |                        ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f: f64 = 1e-16; // This value will create an output with exponent 0 and mantissa as a small number.",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    let len = unsafe { ryu::format64(f, buffer.as_mut_ptr() as *mut u8) };",
+                  "    let slice = unsafe { std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len) };",
+                  "    let printed = unsafe { std::str::from_utf8_unchecked(slice) };",
+                  "    assert_eq!(printed, \"0.0000000000000001\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:237:24\n    |\n237 |     let len = unsafe { ryu::format64(f, buffer.as_mut_ptr() as *mut u8) };\n    |                        ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let f: f64 = -1e-16; // This value will create an output with exponent 0 and negative small mantissa.",
+                  "   let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "   let len = unsafe { format64(f, buffer.as_mut_ptr() as *mut u8) }; ",
+                  "   let slice = unsafe { std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len) };",
+                  "   let printed = unsafe { std::str::from_utf8_unchecked(slice) };",
+                  "   assert_eq!(printed, \"-0.0000000000000001\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let f: f64 = 1e16; // This should return 10000000000000000.0",
+                  "    let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "    let len = unsafe { ryu::format64(f, buffer.as_mut_ptr() as *mut u8) };",
+                  "    let slice = unsafe { std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len) };",
+                  "    let printed = unsafe { std::str::from_utf8_unchecked(slice) };",
+                  "    assert_eq!(printed, \"10000000000000000.0\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:237:24\n    |\n237 |     let len = unsafe { ryu::format64(f, buffer.as_mut_ptr() as *mut u8) };\n    |                        ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 105,
+      "prompt_conds": [
+        "// constraint: sign is false\n",
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: k >= -324 is true, with bound k == -324\n",
+        "// constraint: 0 <= k is false\n",
+        "// constraint: 0 < kk is true\n",
+        "// constraint: kk <= 16 is true, with bound kk == 16\n",
+        "// expected return value/type: index as usize + length as usize + 1\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   unsafe {  ",
+                  "       let f: f64 = 1.234;  ",
+                  "       let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];  ",
+                  "       let len = crate::raw::format64(f, buffer.as_mut_ptr() as *mut u8);  ",
+                  "       let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);  ",
+                  "       let output = std::str::from_utf8_unchecked(slice);  ",
+                  "       assert_eq!(output, \"1.234\");  ",
+                  "   }  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f: f64 = 0.0;",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let output = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(output, \"0.0\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n    |\nhelp: consider importing this module\n    |\n227 +    use crate::raw;\n    |\nhelp: if you import `raw`, refer to it directly\n    |\n238 -         let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n238 +         let len = raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |\n\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f: f64 = -1.234;",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let output = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(output, \"-1.234\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n    |\nhelp: consider importing this module\n    |\n227 +    use crate::raw;\n    |\nhelp: if you import `raw`, refer to it directly\n    |\n238 -         let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n238 +         let len = raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |\n\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f: f64 = 1e15; // 10^15",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let output = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(output, \"1.0e15\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n    |\nhelp: consider importing this module\n    |\n227 +    use crate::raw;\n    |\nhelp: if you import `raw`, refer to it directly\n    |\n238 -         let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n238 +         let len = raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |\n\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f: f64 = 1e-5; // 0.00001",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let output = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(output, \"0.00001\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n    |\nhelp: consider importing this module\n    |\n227 +    use crate::raw;\n    |\nhelp: if you import `raw`, refer to it directly\n    |\n238 -         let len = ryu::raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n238 +         let len = raw::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |\n\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 112,
+      "prompt_conds": [
+        "// constraint: sign is false\n",
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: k >= -324 is true, with bound k == -324\n",
+        "// constraint: 0 <= k is false\n",
+        "// constraint: 0 < kk is false, with bound 0 == kk\n",
+        "// constraint: -5 < kk is true\n",
+        "// constraint: kk <= 0 is true, with bound kk == 0\n",
+        "// constraint: i in 2..offset is true\n",
+        "// constraint: i in 2..offset is false\n",
+        "// expected return value/type: index as usize + length as usize + offset as usize\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f = 0.0f64;",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"0.0\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f = -0.0f64;",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"-0.0\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f = -1e-324f64; // Very small negative number, edge case near denormalized numbers",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"-0.0000000000000000000000000001\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f = 1e-324f64; // Very small positive number, edge case near denormalized numbers",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);",
+                  "        let slice = std::slice::from_raw_parts(buffer.as_ptr() as *const u8, len);",
+                  "        let print = std::str::from_utf8_unchecked(slice);",
+                  "        assert_eq!(print, \"0.0000000000000000000000000001\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8);\n    |                   ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    unsafe {",
+                  "        let f = 1e300f64; // Value should cause overflow handling in output",
+                  "        let mut buffer = [std::mem::MaybeUninit::<u8>::uninit(); 24];",
+                  "        let _len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8); // Expecting this to panic or handle overflow",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:239:20\n    |\n239 |         let _len = ryu::format64(f, buffer.as_mut_ptr() as *mut u8); // Expecting this to panic or handle overflow\n    |                    ^^^ use of undeclared crate or module `ryu`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 113,
+      "prompt_conds": [
+        "// constraint: sign is false\n",
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: k >= -324 is true, with bound k == -324\n",
+        "// constraint: 0 <= k is false\n",
+        "// constraint: 0 < kk is false, with bound 0 == kk\n",
+        "// constraint: -5 < kk is true\n",
+        "// constraint: kk <= 0 is true, with bound kk == 0\n",
+        "// constraint: i in 2..offset is false\n",
+        "// expected return value/type: index as usize + length as usize + offset as usize\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [0u8; 24];",
+                  "    ",
+                  "    unsafe {",
+                  "        let len = ryu::raw::format64(0.0, buffer.as_mut_ptr());",
+                  "        let result = core::str::from_utf8_unchecked(&buffer[0..len]);",
+                  "        assert_eq!(result, \"0.0\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0433]: failed to resolve: use of undeclared crate or module `ryu`\n   --> src/pretty/mod.rs:238:19\n    |\n238 |         let len = ryu::raw::format64(0.0, buffer.as_mut_ptr());\n    |                   ^^^ use of undeclared crate or module `ryu`\n    |\nhelp: consider importing this module\n    |\n227 +    use crate::raw;\n    |\nhelp: if you import `raw`, refer to it directly\n    |\n238 -         let len = ryu::raw::format64(0.0, buffer.as_mut_ptr());\n238 +         let len = raw::format64(0.0, buffer.as_mut_ptr());\n    |\n\nwarning: unused import: `super::*`\n   --> src/pretty/mod.rs:227:8\n    |\n227 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let mut buffer = [0u8; 24];",
+                  "   ",
+                  "   unsafe {",
+                  "       let len = crate::raw::format64(-0.0, buffer.as_mut_ptr());",
+                  "       let result = core::str::from_utf8_unchecked(&buffer[0..len]);",
+                  "       assert_eq!(result, \"-0.0\");",
+                  "   }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let mut buffer = [0u8; 24];",
+                  "   ",
+                  "   unsafe {",
+                  "       let len = crate::raw::format64(-1e-324, buffer.as_mut_ptr());",
+                  "       let result = core::str::from_utf8_unchecked(&buffer[0..len]);",
+                  "       assert_eq!(result, \"-0.000000000000000000000000000001\");",
+                  "   }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buffer = [0u8; 24];",
+                  "    ",
+                  "   unsafe {  ",
+                  "       let len = crate::raw::format64(1e-324, buffer.as_mut_ptr());  ",
+                  "       let result = core::str::from_utf8_unchecked(&buffer[0..len]);  ",
+                  "       assert_eq!(result, \"0.000000000000000000000000000001\");  ",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 118,
+      "prompt_conds": [
+        "// constraint: sign is false\n",
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: k >= -324 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  use std::slice;  ",
+                  "  let mut buffer = [MaybeUninit::<u8>::uninit(); 24];  ",
+                  "  let result = unsafe { format64(0.0, buffer.as_mut_ptr() as *mut u8) };  ",
+                  "  let slice = unsafe { slice::from_raw_parts(buffer.as_ptr() as *const u8, result) };  ",
+                  "  let output = unsafe { std::str::from_utf8_unchecked(slice) };  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0433]: failed to resolve: use of undeclared type `MaybeUninit`\n   --> src/pretty/mod.rs:236:21\n    |\n236 |   let mut buffer = [MaybeUninit::<u8>::uninit(); 24];  \n    |                     ^^^^^^^^^^^ use of undeclared type `MaybeUninit`\n    |\nhelp: consider importing this union\n    |\n227 +    use std::mem::MaybeUninit;\n    |\n\nFor more information about this error, try `rustc --explain E0433`.\nerror: could not compile `ryu` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "fn test_format64_32()",
+                  "{",
+                  "   let mut buffer = [MaybeUninit::<u8>::uninit(); 24];",
+                  "   let result = unsafe { format64(-0.0001, buffer.as_mut_ptr() as *mut u8) };",
+                  "   let slice = unsafe { slice::from_raw_parts(buffer.as_ptr() as *const u8, result) };",
+                  "   let output = unsafe { str::from_utf8_unchecked(slice) };",
+                  "   assert_eq!(output, \"-0.0001\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror: expected one of `->`, `where`, or `{`, found keyword `fn`\n   --> src/pretty/mod.rs:234:1\n    |\n233 | fn test_format64_32()\n    |                      - expected one of `->`, `where`, or `{`\n234 | fn test_format64_32()\n    | ^^ unexpected token\n\nerror[E0432]: unresolved imports `crate::pretty::format32`, `crate::pretty::format64`\n   --> src/lib.rs:123:29\n    |\n123 |     pub use crate::pretty::{format32, format64};\n    |                             ^^^^^^^^  ^^^^^^^^ no `format64` in `pretty`\n    |                             |\n    |                             no `format32` in `pretty`\n\nFor more information about this error, try `rustc --explain E0432`.\nerror: could not compile `ryu` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   use std::mem::MaybeUninit;",
+                  "   let mut buffer = [MaybeUninit::<u8>::uninit(); 24];",
+                  "   let result = unsafe { format64(1e30, buffer.as_mut_ptr() as *mut u8) };",
+                  "   let slice = unsafe { slice::from_raw_parts(buffer.as_ptr() as *const u8, result) };",
+                  "       let output = unsafe { std::str::from_utf8_unchecked(slice) };  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0433]: failed to resolve: use of undeclared crate or module `slice`\n   --> src/pretty/mod.rs:238:25\n    |\n238 |    let slice = unsafe { slice::from_raw_parts(buffer.as_ptr() as *const u8, result) };\n    |                         ^^^^^ use of undeclared crate or module `slice`\n    |\nhelp: consider importing this module\n    |\n227 +    use std::slice;\n    |\n\nFor more information about this error, try `rustc --explain E0433`.\nerror: could not compile `ryu` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  use std::slice;",
+                  "  let mut buffer = [MaybeUninit::<u8>::uninit(); 24];",
+                  "  let result = unsafe { format64(123456789.0, buffer.as_mut_ptr() as *mut u8) };",
+                  "  let slice = unsafe { slice::from_raw_parts(buffer.as_ptr() as *const u8, result) };",
+                  "  let output = unsafe { std::str::from_utf8_unchecked(slice) };",
+                  "  assert_eq!(output, \"123456789\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0433]: failed to resolve: use of undeclared type `MaybeUninit`\n   --> src/pretty/mod.rs:236:21\n    |\n236 |   let mut buffer = [MaybeUninit::<u8>::uninit(); 24];\n    |                     ^^^^^^^^^^^ use of undeclared type `MaybeUninit`\n    |\nhelp: consider importing this union\n    |\n227 +    use std::mem::MaybeUninit;\n    |\n\nFor more information about this error, try `rustc --explain E0433`.\nerror: could not compile `ryu` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

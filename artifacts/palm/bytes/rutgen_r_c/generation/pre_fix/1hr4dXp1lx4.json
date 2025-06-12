@@ -1,0 +1,265 @@
+{
+  "name": "bytes::bytes_mut::bytes_mut::BytesMut::shallow_clone",
+  "name_with_impl": "bytes::bytes_mut::{impl#0}::shallow_clone",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1058:5:1066:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.kind() == KIND_ARC is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        data: *mut Shared,",
+                  "        kind: usize,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        unsafe fn shallow_clone(&mut self) -> TestBytesMut {",
+                  "            if self.kind == KIND_ARC {",
+                  "                increment_shared(self.data);",
+                  "                ptr::read(self)",
+                  "            } else {",
+                  "                self.promote_to_shared(2);",
+                  "                ptr::read(self)",
+                  "            }",
+                  "        }",
+                  "        ",
+                  "        fn kind(&self) -> usize {",
+                  "            self.kind",
+                  "        }",
+                  "",
+                  "        unsafe fn promote_to_shared(&mut self, ref_cnt: usize) {",
+                  "            // Dummy implementation for testing, in real it will build proper shared",
+                  "            self.kind = KIND_ARC; // Promoting to ARC for consistency with test",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let shared = Box::new(Shared {",
+                  "        vec: vec![1, 2, 3],",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    });",
+                  "    let shared_ptr = Box::into_raw(shared);",
+                  "    ",
+                  "    let mut bytes_mut = TestBytesMut {",
+                  "        data: shared_ptr,",
+                  "        kind: KIND_ARC,",
+                  "    };",
+                  "",
+                  "    let cloned_bytes_mut: TestBytesMut;",
+                  "",
+                  "    unsafe {",
+                  "        cloned_bytes_mut = bytes_mut.shallow_clone();",
+                  "    }",
+                  "",
+                  "    assert_eq!(bytes_mut.kind(), KIND_ARC);",
+                  "    assert_eq!(unsafe { (*cloned_bytes_mut.data).ref_count.load(Ordering::Relaxed) }, 2);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        data: *mut Shared,",
+                  "        kind: usize,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        unsafe fn shallow_clone(&mut self) -> TestBytesMut {",
+                  "            if self.kind == KIND_ARC {",
+                  "                increment_shared(self.data);",
+                  "                ptr::read(self)",
+                  "            } else {",
+                  "                self.promote_to_shared(2);",
+                  "                ptr::read(self)",
+                  "            }",
+                  "        }",
+                  "        ",
+                  "        fn kind(&self) -> usize {",
+                  "            self.kind",
+                  "        }",
+                  "",
+                  "        unsafe fn promote_to_shared(&mut self, _ref_cnt: usize) {",
+                  "            // Dummy implementation, no state modification to trigger panic",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let shared = Box::new(Shared {",
+                  "        vec: vec![1, 2, 3],",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    });",
+                  "    let shared_ptr = Box::into_raw(shared);",
+                  "",
+                  "    let mut bytes_mut = TestBytesMut {",
+                  "        data: shared_ptr,",
+                  "        kind: 0, // invalid kind",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.shallow_clone(); // This should trigger a panic due to invalid kind",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.kind() == KIND_ARC is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Defining a simple struct to initialize BytesMut",
+                  "    struct TestBytesMut {",
+                  "        bytes: BytesMut,",
+                  "    }",
+                  "",
+                  "    // Initialize with a specific capacity",
+                  "    let mut test_bytes = TestBytesMut {",
+                  "        bytes: BytesMut::with_capacity(16),",
+                  "    };",
+                  "",
+                  "    // Set the data field to indicate that it's a kind that's not ARC",
+                  "    // Manually setting it to KIND_VEC for the purpose of the test",
+                  "    unsafe {",
+                  "        let shared_ptr = Box::new(Shared {",
+                  "            vec: Vec::new(),",
+                  "            original_capacity_repr: 0,",
+                  "            ref_count: AtomicUsize::new(1),",
+                  "        });",
+                  "",
+                  "        test_bytes.bytes.data = Box::into_raw(shared_ptr);",
+                  "    }",
+                  "",
+                  "    // Perform the unsafe operation",
+                  "    unsafe {",
+                  "        let clone = test_bytes.bytes.shallow_clone();",
+                  "        // Validate the operation did not panic",
+                  "        assert!(clone.kind() != KIND_ARC);",
+                  "        // Check if the original and clone are distinct pointers and are in the right state",
+                  "        assert_ne!(test_bytes.bytes.data, clone.data);",
+                  "        assert_eq!(test_bytes.bytes.len(), clone.len());",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Defining a struct to check panic conditions",
+                  "    struct TestBytesMut {",
+                  "        bytes: BytesMut,",
+                  "    }",
+                  "",
+                  "    let mut test_bytes = TestBytesMut {",
+                  "        bytes: BytesMut::with_capacity(16),",
+                  "    };",
+                  "",
+                  "    // Set the data field to indicate it's an ARC kind",
+                  "    unsafe {",
+                  "        let shared_ptr = Box::new(Shared {",
+                  "            vec: Vec::new(),",
+                  "            original_capacity_repr: 0,",
+                  "            ref_count: AtomicUsize::new(usize::MAX), // Set to max to force a panic",
+                  "        });",
+                  "",
+                  "        test_bytes.bytes.data = Box::into_raw(shared_ptr);",
+                  "    }",
+                  "",
+                  "    // This will panic due to incrementing over the maximum value",
+                  "    unsafe {",
+                  "        test_bytes.bytes.shallow_clone();",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

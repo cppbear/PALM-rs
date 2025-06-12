@@ -1,0 +1,353 @@
+{
+  "name": "serde_json::value::de::value::de::<impl serde::Deserializer<'de> for value::Value>::deserialize_byte_buf",
+  "name_with_impl": "serde_json::value::de::{impl#3}::deserialize_byte_buf",
+  "mod_info": {
+    "name": "value::de",
+    "loc": "src/value/mod.rs:927:1:927:8"
+  },
+  "visible": true,
+  "loc": "src/value/de.rs:407:5:417:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self matches _ is true\n",
+        "// constraint: self matches Value::String(v) is false\n",
+        "// constraint: self matches Value::Array(v) is false\n",
+        "// expected return value/type: Err(self.invalid_type(&visitor))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockVisitor;",
+                  "",
+                  "    impl<'de> serde::de::Visitor<'de> for MockVisitor {",
+                  "        type Value = ();",
+                  "",
+                  "        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {",
+                  "            formatter.write_str(\"a string or array\")",
+                  "        }",
+                  "",
+                  "      fn visit_string<E: serde::de::Error>(self, _: String) -> Result<Self::Value, E> {  ",
+                  "          Err(E::custom(\"not supported\"))  ",
+                  "      }  ",
+                  "      ",
+                  "     fn visit_seq<E, V>(self, _: V) -> Result<Self::Value, E>  ",
+                  "     where  ",
+                  "         E: serde::de::Error,  ",
+                  "         V: serde::de::SeqAccess<'de>,  ",
+                  "     {",
+                  "          Err(E::custom(\"not supported\"))  ",
+                  "       }  ",
+                  "    }",
+                  "",
+                  "    let visitor = MockVisitor;",
+                  "    let invalid_value = Value::Bool(true); // This will not match Value::String or Value::Array",
+                  "",
+                  "    let result = invalid_value.deserialize_byte_buf(visitor);",
+                  "",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0049]: method `visit_seq` has 2 type parameters but its trait declaration has 1 type parameter\n    --> src/value/de.rs:1524:19\n     |\n1524 |        fn visit_seq<E, V>(self, _: V) -> Result<Self::Value, E>  \n     |                     ^  ^\n     |                     |\n     |                     found 2 type parameters\n     |\n    ::: /home/abezbm/.cargo/registry/src/index.crates.io-6f17d22bba15001f/serde-1.0.219/src/de/mod.rs:1649:5\n     |\n1649 | /     fn visit_seq<A>(self, seq: A) -> Result<Self::Value, A::Error>\n1650 | |     where\n1651 | |         A: SeqAccess<'de>,\n     | |__________________________- expected 1 type parameter\n\nFor more information about this error, try `rustc --explain E0049`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self matches Value::Array(v) is true\n",
+        "// constraint: self matches Value::Array(v) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use crate::error::Error;",
+            "use alloc::vec;",
+            "use crate::value::Value;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use crate::value::Value;",
+                  "    use crate::error::Error;",
+                  "    use alloc::vec;",
+                  "",
+                  "    struct VisitorImpl {",
+                  "        result: Option<Vec<u8>>,",
+                  "    }",
+                  "",
+                  "    impl<'de> Visitor<'de> for VisitorImpl {",
+                  "        type Value = Vec<u8>;",
+                  "",
+                  "        fn visit_string<E>(self, value: String) -> Result<Self::Value, E> {",
+                  "            Ok(value.into_bytes())",
+                  "        }",
+                  "",
+                  "        fn visit_seq<V>(self, _: V) -> Result<Self::Value, Error>",
+                  "        where",
+                  "            V: SeqAccess<'de>,",
+                  "        {",
+                  "            Ok(vec![])",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let value_array = Value::Array(vec![",
+                  "        Value::String(\"first\".to_string()),",
+                  "        Value::String(\"second\".to_string()),",
+                  "    ]);",
+                  "",
+                  "    let visitor = VisitorImpl { result: None };",
+                  "    let result = value_array.deserialize_byte_buf(visitor);",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "    assert!(result.unwrap().is_empty());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0053]: method `visit_seq` has an incompatible type for trait\n    --> src/value/de.rs:1526:40\n     |\n1526 |         fn visit_seq<V>(self, _: V) -> Result<Self::Value, Error>\n     |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected associated type, found `error::Error`\n     |\n     = note: expected signature `fn(VisitorImpl, _) -> std::result::Result<_, <V as serde::de::SeqAccess<'de>>::Error>`\n                found signature `fn(VisitorImpl, _) -> std::result::Result<_, error::Error>`\nhelp: change the output type to match the trait\n     |\n1526 |         fn visit_seq<V>(self, _: V) -> std::result::Result<std::vec::Vec<u8>, <V as serde::de::SeqAccess<'de>>::Error>\n     |                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0046]: not all trait items implemented, missing: `expecting`\n    --> src/value/de.rs:1519:5\n     |\n1519 |     impl<'de> Visitor<'de> for VisitorImpl {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `expecting` in implementation\n     |\n     = help: implement the missing item: `fn expecting(&self, _: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { todo!() }`\n\nSome errors have detailed explanations: E0046, E0053.\nFor more information about an error, try `rustc --explain E0046`.\nerror: could not compile `serde_json` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use crate::value::Value;",
+                  "    use crate::error::Error;",
+                  "    ",
+                  "    struct VisitorImpl;",
+                  "",
+                  "   impl<'de> Visitor<'de> for VisitorImpl {",
+                  "       type Value = Vec<u8>;",
+                  "       ",
+                  "       fn visit_string<E>(self, _: String) -> Result<Self::Value, E> {",
+                  "           panic!(\"visit_string should not be called in this case.\");",
+                  "       }",
+                  "       ",
+                  "       fn visit_seq<V>(self, _: V) -> Result<Self::Value, Error>",
+                  "       where",
+                  "           V: SeqAccess<'de>,",
+                  "       {",
+                  "           panic!(\"visit_seq should not be called in this case.\");",
+                  "       }",
+                  "       ",
+                  "       fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {",
+                  "           formatter.write_str(\"a byte buffer\")",
+                  "       }",
+                  "   }",
+                  "",
+                  "    let value_string = Value::String(\"a string\".to_string());",
+                  "    let visitor = VisitorImpl;",
+                  "    value_string.deserialize_byte_buf(visitor).unwrap();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0053]: method `visit_seq` has an incompatible type for trait\n    --> src/value/de.rs:1524:39\n     |\n1524 |        fn visit_seq<V>(self, _: V) -> Result<Self::Value, Error>\n     |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected associated type, found `error::Error`\n     |\n     = note: expected signature `fn(VisitorImpl, _) -> std::result::Result<_, <V as serde::de::SeqAccess<'de>>::Error>`\n                found signature `fn(VisitorImpl, _) -> std::result::Result<_, error::Error>`\nhelp: change the output type to match the trait\n     |\n1524 |        fn visit_seq<V>(self, _: V) -> std::result::Result<std::vec::Vec<u8>, <V as serde::de::SeqAccess<'de>>::Error>\n     |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nFor more information about this error, try `rustc --explain E0053`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self matches Value::String(v) is true\n",
+        "// constraint: self matches Value::String(v) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  struct TestVisitor {",
+                  "      result: Option<String>,",
+                  "  }",
+                  "  ",
+                  "  impl<'de> serde::de::Visitor<'de> for TestVisitor {",
+                  "      type Value = String;",
+                  "  ",
+                  "      fn visit_string<E>(self, value: String) -> Result<Self::Value, E> {",
+                  "          Ok(value)",
+                  "      }",
+                  "  ",
+                  "      fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {",
+                  "          Err(E::invalid_type(serde::de::Unexpected::Unit, &\"String\"))",
+                  "      }",
+                  "   }",
+                  "  ",
+                  "   let value = Value::String(\"test\".to_owned());",
+                  "   let visitor = TestVisitor { result: None };",
+                  "   ",
+                  "   let result = value.deserialize_byte_buf(visitor).unwrap();",
+                  "   assert_eq!(result, \"test\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0046]: not all trait items implemented, missing: `expecting`\n    --> src/value/de.rs:1515:3\n     |\n1515 |   impl<'de> serde::de::Visitor<'de> for TestVisitor {\n     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `expecting` in implementation\n     |\n     = help: implement the missing item: `fn expecting(&self, _: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> { todo!() }`\n\nFor more information about this error, try `rustc --explain E0046`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  struct TestVisitor {  ",
+                  "      result: Vec<String>,  ",
+                  "  }  ",
+                  " ",
+                  "  impl<'de> serde::de::Visitor<'de> for TestVisitor {  ",
+                  "      type Value = Vec<String>;  ",
+                  " ",
+                  "      fn visit_seq<V>(self, seq: V) -> Result<Self::Value, V::Error>  ",
+                  "      where  ",
+                  "          V: serde::de::SeqAccess<'de>,  ",
+                  "      {  ",
+                  "          let mut values = Vec::new();  ",
+                  "          let mut seq_access = seq;  ",
+                  " ",
+                  "          while let Some(value) = seq_access.next_element::<String>()? {  ",
+                  "              values.push(value);  ",
+                  "          }  ",
+                  " ",
+                  "          Ok(values)  ",
+                  "      }  ",
+                  " ",
+                  "      fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {  ",
+                  "          formatter.write_str(\"any type\")  ",
+                  "      }  ",
+                  "    }  ",
+                  " ",
+                  "   let value = Value::Array(vec![  ",
+                  "       Value::String(\"element1\".to_owned()),  ",
+                  "       Value::String(\"element2\".to_owned()),  ",
+                  "   ]);  ",
+                  "   let visitor = TestVisitor { result: Vec::new() };  ",
+                  " ",
+                  "   let result = value.deserialize_byte_buf(visitor).unwrap();  ",
+                  "   assert_eq!(result, vec![\"element1\".to_owned(), \"element2\".to_owned()]);  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"invalid type\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "  struct InvalidVisitor;",
+                  "  ",
+                  "  impl<'de> serde::de::Visitor<'de> for InvalidVisitor {",
+                  "      type Value = ();",
+                  "  ",
+                  "      fn visit_string<E>(self, _: String) -> Result<Self::Value, E> {",
+                  "          panic!(\"This should not be called\");",
+                  "      }",
+                  "  ",
+                  "      fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {",
+                  "          formatter.write_str(\"an invalid value\");",
+                  "      }",
+                  "   }",
+                  "",
+                  "   impl<'de> serde::Deserializer<'de> for InvalidVisitor {",
+                  "       type Error = serde::de::value::Error;",
+                  "       ",
+                  "    }",
+                  "",
+                  "    let value = Value::Null; // Invalid type for this case",
+                  "    let visitor = InvalidVisitor;",
+                  "",
+                  "    let _ = value.deserialize_byte_buf(visitor).unwrap();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0046]: not all trait items implemented, missing: `deserialize_any`, `deserialize_bool`, `deserialize_i8`, `deserialize_i16`, `deserialize_i32`, `deserialize_i64`, `deserialize_u8`, `deserialize_u16`, `deserialize_u32`, `deserialize_u64`, `deserialize_f32`, `deserialize_f64`, `deserialize_char`, `deserialize_str`, `deserialize_string`, `deserialize_bytes`, `deserialize_byte_buf`, `deserialize_option`, `deserialize_unit`, `deserialize_unit_struct`, `deserialize_newtype_struct`, `deserialize_seq`, `deserialize_tuple`, `deserialize_tuple_struct`, `deserialize_map`, `deserialize_struct`, `deserialize_enum`, `deserialize_identifier`, `deserialize_ignored_any`\n    --> src/value/de.rs:1526:4\n     |\n1526 |    impl<'de> serde::Deserializer<'de> for InvalidVisitor {\n     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `deserialize_any`, `deserialize_bool`, `deserialize_i8`, `deserialize_i16`, `deserialize_i32`, `deserialize_i64`, `deserialize_u8`, `deserialize_u16`, `deserialize_u32`, `deserialize_u64`, `deserialize_f32`, `deserialize_f64`, `deserialize_char`, `deserialize_str`, `deserialize_string`, `deserialize_bytes`, `deserialize_byte_buf`, `deserialize_option`, `deserialize_unit`, `deserialize_unit_struct`, `deserialize_newtype_struct`, `deserialize_seq`, `deserialize_tuple`, `deserialize_tuple_struct`, `deserialize_map`, `deserialize_struct`, `deserialize_enum`, `deserialize_identifier`, `deserialize_ignored_any` in implementation\n     |\n     = help: implement the missing item: `fn deserialize_any<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_bool<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_i8<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_i16<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_i32<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_i64<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_u8<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_u16<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_u32<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_u64<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_f32<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_f64<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_char<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_str<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_string<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_bytes<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_byte_buf<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_option<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_unit<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_unit_struct<V>(self, _: &'static str, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_newtype_struct<V>(self, _: &'static str, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_seq<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_tuple<V>(self, _: usize, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_tuple_struct<V>(self, _: &'static str, _: usize, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_map<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_struct<V>(self, _: &'static str, _: &'static [&'static str], _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_enum<V>(self, _: &'static str, _: &'static [&'static str], _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_identifier<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n     = help: implement the missing item: `fn deserialize_ignored_any<V>(self, _: V) -> std::result::Result<<V as serde::de::Visitor<'de>>::Value, <Self as serde::Deserializer<'de>>::Error> where V: serde::de::Visitor { todo!() }`\n\nerror[E0308]: mismatched types\n    --> src/value/de.rs:1521:71\n     |\n1521 |       fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {\n     |          ---------                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Result<(), Error>`, found `()`\n     |          |\n     |          implicitly returns `()` as its body has no tail or `return` expression\n1522 |           formatter.write_str(\"an invalid value\");\n     |                                                  - help: remove this semicolon to return this value\n     |\n     = note:   expected enum `std::result::Result<(), std::fmt::Error>`\n             found unit type `()`\n\nSome errors have detailed explanations: E0046, E0308.\nFor more information about an error, try `rustc --explain E0046`.\nerror: could not compile `serde_json` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

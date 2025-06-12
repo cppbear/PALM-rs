@@ -1,0 +1,333 @@
+{
+  "name": "http::header::value::header::value::HeaderValue::try_from_generic",
+  "name_with_impl": "http::header::value::{impl#0}::try_from_generic",
+  "mod_info": {
+    "name": "header::value",
+    "loc": "src/header/mod.rs:75:1:75:11"
+  },
+  "visible": false,
+  "loc": "src/header/value.rs:240:5:253:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: &b in src.as_ref() is true\n",
+        "// constraint: is_valid(b) is true\n",
+        "// constraint: &b in src.as_ref() is false\n",
+        "// expected return value/type: Ok(HeaderValue {\n            inner: into(src),\n            is_sensitive: false,\n        })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use bytes::Bytes;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use bytes::Bytes;",
+                  "",
+                  "    struct HeaderValue {",
+                  "        inner: Bytes,",
+                  "        is_sensitive: bool,",
+                  "    }",
+                  "",
+                  "    #[derive(Debug)]",
+                  "    struct InvalidHeaderValue {",
+                  "        _priv: (),",
+                  "    }",
+                  "",
+                  "    fn is_valid(b: u8) -> bool {",
+                  "        // For the purpose of the test, we assume valid bytes are ASCII printable",
+                  "        (b as char).is_ascii_alphanumeric() || b == b'-' || b == b'_'",
+                  "    }",
+                  "",
+                  "    fn try_from_generic<T: AsRef<[u8]>, F: FnOnce(T) -> Bytes>(",
+                  "        src: T,",
+                  "        into: F,",
+                  "    ) -> Result<HeaderValue, InvalidHeaderValue> {",
+                  "        for &b in src.as_ref() {",
+                  "            if !is_valid(b) {",
+                  "                return Err(InvalidHeaderValue { _priv: () });",
+                  "            }",
+                  "        }",
+                  "        Ok(HeaderValue {",
+                  "            inner: into(src),",
+                  "            is_sensitive: false,",
+                  "        })",
+                  "    }",
+                  "",
+                  "    let input = b\"ValidHeader123-\"; // Valid input",
+                  "    let result = try_from_generic(input, |src| Bytes::from(src.as_ref().to_vec()));",
+                  "    assert!(result.is_ok());",
+                  "    let header_value = result.unwrap();",
+                  "    assert_eq!(header_value.inner, Bytes::from(b\"ValidHeader123-\".to_vec()));",
+                  "    assert!(!header_value.is_sensitive);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use bytes::Bytes;",
+                  "",
+                  "    struct HeaderValue {",
+                  "        inner: Bytes,",
+                  "        is_sensitive: bool,",
+                  "    }",
+                  "",
+                  "    #[derive(Debug)]",
+                  "    struct InvalidHeaderValue {",
+                  "        _priv: (),",
+                  "    }",
+                  "",
+                  "    fn is_valid(b: u8) -> bool {",
+                  "        // For the purpose of the test, we assume valid bytes are ASCII printable",
+                  "        (b as char).is_ascii_alphanumeric() || b == b'-' || b == b'_'",
+                  "    }",
+                  "",
+                  "    fn try_from_generic<T: AsRef<[u8]>, F: FnOnce(T) -> Bytes>(",
+                  "        src: T,",
+                  "        into: F,",
+                  "    ) -> Result<HeaderValue, InvalidHeaderValue> {",
+                  "        for &b in src.as_ref() {",
+                  "            if !is_valid(b) {",
+                  "                return Err(InvalidHeaderValue { _priv: () });",
+                  "            }",
+                  "        }",
+                  "        Ok(HeaderValue {",
+                  "            inner: into(src),",
+                  "            is_sensitive: false,",
+                  "        })",
+                  "    }",
+                  "",
+                  "    let input = b\"InvalidHeader\\xFF\"; // Invalid byte (not valid ASCII)",
+                  "    let _result = try_from_generic(input, |src| Bytes::from(src.as_ref().to_vec()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: &b in src.as_ref() is true\n",
+        "// constraint: is_valid(b) is false\n",
+        "// expected return value/type: Err(InvalidHeaderValue { _priv: () })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Auxiliary struct to satisfy the FnOnce trait",
+                  "    struct Bytes(Vec<u8>);",
+                  "",
+                  "    // Function to transform input to Bytes",
+                  "    let into_bytes = |input: &[u8]| Bytes(input.to_vec());",
+                  "",
+                  "    // Preparing an input where `is_valid(b)` would return false",
+                  "    let invalid_input: &[u8] = &[0xFF]; // Example invalid byte (0xFF is often used as an invalid byte)",
+                  "",
+                  "    // Attempting to call the function with invalid input",
+                  "    let result: Result<HeaderValue, InvalidHeaderValue> = try_from_generic(invalid_input, into_bytes);",
+                  "",
+                  "    // Asserting that the result is an error",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/header/value.rs:802:8\n    |\n802 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0425]: cannot find function `try_from_generic` in this scope\n   --> src/header/value.rs:816:59\n    |\n816 |     let result: Result<HeaderValue, InvalidHeaderValue> = try_from_generic(invalid_input, into_bytes);\n    |                                                           ^^^^^^^^^^^^^^^^ not found in this scope\n\nFor more information about this error, try `rustc --explain E0425`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: &b in src.as_ref() is false\n",
+        "// expected return value/type: Ok(HeaderValue {\n            inner: into(src),\n            is_sensitive: false,\n        })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::convert::TryFrom;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::convert::TryFrom;",
+                  "",
+                  "    struct Bytes(Vec<u8>);",
+                  "    struct HeaderValue {",
+                  "        inner: Bytes,",
+                  "        is_sensitive: bool,",
+                  "    }",
+                  "    struct InvalidHeaderValue {",
+                  "        _priv: (),",
+                  "    }",
+                  "",
+                  "    fn is_valid(byte: u8) -> bool {",
+                  "        byte.is_ascii()  // Assuming valid bytes are ASCII for this context",
+                  "    }",
+                  "",
+                  "    fn try_from_generic<T: AsRef<[u8]>, F: FnOnce(T) -> Bytes>(",
+                  "        src: T,",
+                  "        into: F,",
+                  "    ) -> Result<HeaderValue, InvalidHeaderValue> {",
+                  "        for &b in src.as_ref() {",
+                  "            if !is_valid(b) {",
+                  "                return Err(InvalidHeaderValue { _priv: () });",
+                  "            }",
+                  "        }",
+                  "        Ok(HeaderValue {",
+                  "            inner: into(src),",
+                  "            is_sensitive: false,",
+                  "        })",
+                  "    }",
+                  "",
+                  "    let input = b\"valid_input\"; // All ASCII bytes",
+                  "    let result = try_from_generic(input, |data| Bytes(data.as_ref().to_vec()));",
+                  "",
+                  "    match result {",
+                  "        Ok(header_value) => {",
+                  "            assert_eq!(header_value.inner.0, input.to_vec());",
+                  "            assert!(!header_value.is_sensitive);",
+                  "        },",
+                  "        Err(_) => panic!(\"Expected Ok but got Err\"),",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::convert::TryFrom;",
+                  "",
+                  "    struct Bytes(Vec<u8>);",
+                  "    struct HeaderValue {",
+                  "        inner: Bytes,",
+                  "        is_sensitive: bool,",
+                  "    }",
+                  "    struct InvalidHeaderValue {",
+                  "        _priv: (),",
+                  "    }",
+                  "",
+                  "    fn is_valid(byte: u8) -> bool {",
+                  "        byte.is_ascii()  // Assuming valid bytes are ASCII for this context",
+                  "    }",
+                  "",
+                  "    fn try_from_generic<T: AsRef<[u8]>, F: FnOnce(T) -> Bytes>(",
+                  "        src: T,",
+                  "        into: F,",
+                  "    ) -> Result<HeaderValue, InvalidHeaderValue> {",
+                  "        for &b in src.as_ref() {",
+                  "            if !is_valid(b) {",
+                  "                return Err(InvalidHeaderValue { _priv: () });",
+                  "            }",
+                  "        }",
+                  "        Ok(HeaderValue {",
+                  "            inner: into(src),",
+                  "            is_sensitive: false,",
+                  "        })",
+                  "    }",
+                  "",
+                  "    let input: &[u8] = &[]; // Empty input",
+                  "    let result = try_from_generic(input, |data| Bytes(data.as_ref().to_vec()));",
+                  "",
+                  "    match result {",
+                  "        Ok(header_value) => {",
+                  "            assert_eq!(header_value.inner.0, input.to_vec());",
+                  "            assert!(!header_value.is_sensitive);",
+                  "        },",
+                  "        Err(_) => panic!(\"Expected Ok but got Err\"),",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

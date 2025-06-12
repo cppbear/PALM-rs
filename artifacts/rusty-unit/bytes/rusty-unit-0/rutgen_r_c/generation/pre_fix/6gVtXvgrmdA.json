@@ -1,0 +1,476 @@
+{
+  "name": "bytes::bytes_mut::bytes_mut::BytesMut::promote_to_shared",
+  "name_with_impl": "bytes::bytes_mut::{impl#0}::promote_to_shared",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1018:5:1049:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: ref_cnt == 1 is false\n",
+        "// constraint: (*left_val == *right_val) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::new();",
+                  "    // Setting initial state to directly meet constraints",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(2); // This should operate without panic",
+                  "    }",
+                  "    assert_eq!(bytes_mut.kind(), KIND_VEC);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"assertion failed\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::new();",
+                  "    // Setting ref_cnt to 1, which has to trigger a panic",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(1); // This should panic due to the `ref_cnt` constraint",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::with_capacity(10);",
+                  "    let ref_cnt = 2; // Choose a ref_cnt that satisfies the constraint",
+                  "    // Assuming we could manipulate state directly for this test",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(ref_cnt);",
+                  "    }",
+                  "    // Verify that state has transitioned correctly",
+                  "    assert_eq!(bytes_mut.kind(), KIND_VEC);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: ref_cnt == 1 is true\n",
+        "// constraint: ref_cnt == 2 is false\n",
+        "// constraint: (*left_val == *right_val) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(20) };",
+                  "    let ref_cnt = 2; // violating the constraint",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(ref_cnt);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(20) };",
+                  "    let ref_cnt = 1; // satisfying the constraint",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(ref_cnt);",
+                  "        // Verify that the pointer and values are as expected",
+                  "        assert_eq!(bytes_mut.kind(), KIND_ARC); // After promotion, kind should be KIND_ARC",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Setup BytesMut with unique content",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(20) };",
+                  "    let ref_cnt = 1; // satisfying the constraint",
+                  "",
+                  "    // Fill the BytesMut in a valid manner, ensuring it meets the constraints",
+                  "    unsafe {",
+                  "        bytes_mut.resize(10, 1);",
+                  "        bytes_mut.promote_to_shared(ref_cnt);",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        // Check if the contents are still the same after promotion",
+                  "        assert_eq!(bytes_mut.len(), 10);",
+                  "        let slice = bytes_mut.as_slice();",
+                  "        assert!(slice.iter().all(|&x| x == 1)); // contents should be `1`",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: ref_cnt == 1 is true\n",
+        "// constraint: ref_cnt == 2 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Helper structure to create a BytesMut instance",
+                  "    struct BytesMutTest {",
+                  "        bytes_mut: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl BytesMutTest {",
+                  "        fn new_with_capacity(capacity: usize) -> BytesMutTest {",
+                  "            let bytes_mut = unsafe { BytesMut::with_capacity(capacity) };",
+                  "            BytesMutTest { bytes_mut }",
+                  "        }",
+                  "",
+                  "        fn set_data(&mut self, data: &[u8]) {",
+                  "            unsafe {",
+                  "                self.bytes_mut.extend_from_slice(data);",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn promote(&mut self, ref_cnt: usize) {",
+                  "            unsafe {",
+                  "                self.bytes_mut.promote_to_shared(ref_cnt);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut bytes = BytesMutTest::new_with_capacity(10);",
+                  "    bytes.set_data(&[1, 2, 3, 4, 5]);",
+                  "",
+                  "    // Promote with ref_count = 1",
+                  "    bytes.promote(1);",
+                  "",
+                  "    // Check that the internal state is consistent",
+                  "    assert_eq!(bytes.bytes_mut.kind(), KIND_ARC);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Helper structure to create a BytesMut instance",
+                  "    struct BytesMutTest {",
+                  "        bytes_mut: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl BytesMutTest {",
+                  "        fn new_with_capacity(capacity: usize) -> BytesMutTest {",
+                  "            let bytes_mut = unsafe { BytesMut::with_capacity(capacity) };",
+                  "            BytesMutTest { bytes_mut }",
+                  "        }",
+                  "",
+                  "        fn set_data(&mut self, data: &[u8]) {",
+                  "            unsafe {",
+                  "                self.bytes_mut.extend_from_slice(data);",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn promote(&mut self, ref_cnt: usize) {",
+                  "            unsafe {",
+                  "                self.bytes_mut.promote_to_shared(ref_cnt);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut bytes = BytesMutTest::new_with_capacity(10);",
+                  "    bytes.set_data(&[6, 7, 8, 9, 10]);",
+                  "",
+                  "    // Promote with ref_count = 2",
+                  "    bytes.promote(2);",
+                  "",
+                  "    // Check that the internal state is consistent",
+                  "    assert_eq!(bytes.bytes_mut.kind(), KIND_ARC);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe {",
+                  "        bytes_mut.data = (KIND_VEC as *mut Shared).cast();",
+                  "        bytes_mut.len = 5;",
+                  "        bytes_mut.cap = 10;",
+                  "    }",
+                  "    ",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(1);",
+                  "    }",
+                  "",
+                  "    assert!(bytes_mut.data as usize & KIND_MASK == KIND_ARC);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"assertion failed: self.kind() == KIND_VEC\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe {",
+                  "        bytes_mut.data = (KIND_ARC as *mut Shared).cast();",
+                  "        bytes_mut.len = 5;",
+                  "        bytes_mut.cap = 10;",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(1);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"assertion failed: ref_cnt == 1 || ref_cnt == 2\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(10) };",
+                  "    unsafe {",
+                  "        bytes_mut.data = (KIND_VEC as *mut Shared).cast();",
+                  "        bytes_mut.len = 5;",
+                  "        bytes_mut.cap = 10;",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(3);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = unsafe { BytesMut::with_capacity(20) };",
+                  "    unsafe {",
+                  "        bytes_mut.data = (KIND_VEC as *mut Shared).cast();",
+                  "        bytes_mut.len = 10;",
+                  "        bytes_mut.cap = 20;",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.promote_to_shared(2);",
+                  "    }",
+                  "",
+                  "    assert!(bytes_mut.data as usize & KIND_MASK == KIND_ARC);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

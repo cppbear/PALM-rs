@@ -1,0 +1,119 @@
+// Answer 0
+
+#[test]
+fn test_fmt_with_split_instruction_case_1() {
+    let inst_ptr = 0;
+    let split_inst = Inst::Split(InstSplit { goto1: 1, goto2: 2 });
+    let program = Program {
+        insts: vec![split_inst.clone()],
+        matches: vec![0],
+        captures: vec![],
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: inst_ptr,
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: false,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher {
+            complete: false,
+            lcp: FreqyPacked::default(),
+            lcs: FreqyPacked::default(),
+            matcher: Matcher::default(),
+        },
+        dfa_size_limit: 0,
+    };
+    let _ = format!("{:?}", program);
+}
+
+#[test]
+fn test_fmt_with_split_instruction_case_2() {
+    let inst_ptr = 1;
+    let split_inst = Inst::Split(InstSplit { goto1: 3, goto2: 4 });
+    let program = Program {
+        insts: vec![split_inst.clone()],
+        matches: vec![0],
+        captures: vec![],
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: inst_ptr,
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: false,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher {
+            complete: false,
+            lcp: FreqyPacked::default(),
+            lcs: FreqyPacked::default(),
+            matcher: Matcher::default(),
+        },
+        dfa_size_limit: 0,
+    };
+    let _ = format!("{:?}", program);
+}
+
+#[test]
+fn test_fmt_with_split_instruction_case_3() {
+    let inst_ptr = 2;
+    let split_inst = Inst::Split(InstSplit { goto1: 5, goto2: 0 });
+    let program = Program {
+        insts: vec![split_inst.clone()],
+        matches: vec![0],
+        captures: vec![],
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: inst_ptr,
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: false,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher {
+            complete: false,
+            lcp: FreqyPacked::default(),
+            lcs: FreqyPacked::default(),
+            matcher: Matcher::default(),
+        },
+        dfa_size_limit: 0,
+    };
+    let _ = format!("{:?}", program);
+}
+
+#[test]
+#[should_panic]
+fn test_fmt_with_split_instruction_case_4() {
+    let inst_ptr = 3;
+    let split_inst = Inst::Split(InstSplit { goto1: 10, goto2: 11 });
+    let program = Program {
+        insts: vec![split_inst.clone()],
+        matches: vec![0],
+        captures: vec![],
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: inst_ptr,
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: false,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher {
+            complete: false,
+            lcp: FreqyPacked::default(),
+            lcs: FreqyPacked::default(),
+            matcher: Matcher::default(),
+        },
+        dfa_size_limit: 0,
+    };
+    let _ = format!("{:?}", program);
+}
+

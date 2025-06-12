@@ -1,0 +1,2 @@
+cd /home/rumono/strsim-rs
+fuzz-target-generator --edition=2021 --crate-type lib --crate-name strsim src/lib.rs -o /home/rumono/strsim-rs/target/doc --check-cfg 'cfg(docsrs)' --check-cfg 'cfg(feature, values())' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat -C metadata=64a816c8ea0c84b9 -L dependency=/home/rumono/strsim-rs/target/debug/deps --crate-version 0.11.1

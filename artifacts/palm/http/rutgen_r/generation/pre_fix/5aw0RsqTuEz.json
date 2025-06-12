@@ -1,0 +1,1070 @@
+{
+  "name": "http::header::map::header::map::HeaderMap<T>::try_reserve",
+  "name_with_impl": "http::header::map::{impl#1}::try_reserve",
+  "mod_info": {
+    "name": "header::map",
+    "loc": "src/header/mod.rs:73:1:73:9"
+  },
+  "visible": true,
+  "loc": "src/header/map.rs:701:5:730:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct HeaderMap {",
+            "    entries: Vec<u8>,",
+            "    indices: Box<[u8; 16]>, // Assuming a fixed size for simplicity",
+            "    mask: usize,",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "struct MaxSizeReached;",
+            "",
+            "impl MaxSizeReached {",
+            "    fn new() -> Self {",
+            "        MaxSizeReached",
+            "    }",
+            "}",
+            "",
+            "impl HeaderMap {",
+            "    pub fn new() -> Self {",
+            "        HeaderMap {",
+            "            entries: Vec::new(),",
+            "            indices: Box::new([0; 16]), // Assuming default initialization",
+            "            mask: 0,",
+            "        }",
+            "    }",
+            "",
+            "    pub fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+            "        let cap = self",
+            "            .entries",
+            "            .len()",
+            "            .checked_add(additional)",
+            "            .ok_or_else(MaxSizeReached::new)?;",
+            "",
+            "        // Simulated logic",
+            "        if cap > 16 {",
+            "            return Err(MaxSizeReached::new());",
+            "        }",
+            "",
+            "        Ok(())",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    let result = map.try_reserve(10);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    let _ = map.try_reserve(16); // fill to capacity",
+                  "    let result = map.try_reserve(1); // trying to exceed capacity",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    let result = map.try_reserve(0);",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    let result = map.try_reserve(usize::MAX); // Testing the edge case",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.entries.resize(usize::MAX - 1, 0); // fill nearly to max",
+                  "    let result = map.try_reserve(2); // this should cause an overflow",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > self.indices.len() is true\n",
+        "// constraint: raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct HeaderMap {",
+            "    entries: Vec<u8>, // Example representation of entries",
+            "    indices: Vec<u8>, // Example representation of indices",
+            "    mask: usize,",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "struct MaxSizeReached {",
+            "    // Add fields if needed",
+            "}",
+            "",
+            "impl MaxSizeReached {",
+            "    fn new() -> Self {",
+            "        MaxSizeReached {}",
+            "    }",
+            "}",
+            "",
+            "impl HeaderMap {",
+            "    pub fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+            "        let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+            "",
+            "        let raw_cap = cap.next_power_of_two(); // Placeholder for to_raw_capacity",
+            "",
+            "        if raw_cap > self.indices.len() {",
+            "            let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+            "            if raw_cap > usize::MAX {",
+            "                return Err(MaxSizeReached::new());",
+            "            }",
+            "",
+            "            if self.entries.is_empty() {",
+            "                self.mask = raw_cap - 1;",
+            "                self.indices = vec![0; raw_cap]; // Placeholder for Pos::none()",
+            "                self.entries = Vec::with_capacity(raw_cap);",
+            "            } else {",
+            "                self.entries.resize(raw_cap, 0); // Placeholder for try_grow",
+            "            }",
+            "        }",
+            "",
+            "        Ok(())",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::default();",
+                  "    map.indices = vec![0; 64]; // Preallocate indices to meet the condition",
+                  "    assert!(map.try_reserve(10).is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::default();",
+                  "    map.indices = vec![0; 64]; // Preallocate to allow for growth",
+                  "    map.entries = vec![0; 60]; // Fill entries close to the limit",
+                  "    let result = map.try_reserve(5);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::default();",
+                  "    map.indices = vec![0; 32];",
+                  "    map.entries = vec![0; 30];",
+                  "    assert!(map.try_reserve(0).is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::default();",
+                  "    map.indices = vec![0; 64];",
+                  "    map.entries = vec![0; 60];",
+                  "    let result = map.try_reserve(usize::MAX);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > self.indices.len() is true\n",
+        "// constraint: raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > MAX_SIZE is true\n",
+        "// expected return value/type: Err(MaxSizeReached::new())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct HeaderMap {",
+            "    entries: Vec<u8>, // Simulating entry storage",
+            "    indices: Vec<u8>, // Simulating index storage",
+            "    mask: usize,",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "struct MaxSizeReached;",
+            "",
+            "impl MaxSizeReached {",
+            "    fn new() -> Self {",
+            "        MaxSizeReached",
+            "    }",
+            "}",
+            "",
+            "impl HeaderMap {",
+            "    fn new() -> Self {",
+            "        HeaderMap {",
+            "            entries: Vec::new(),",
+            "            indices: Vec::new(),",
+            "            mask: 0,",
+            "        }",
+            "    }",
+            "",
+            "    pub fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+            "        let cap = self",
+            "            .entries",
+            "            .len()",
+            "            .checked_add(additional)",
+            "            .ok_or_else(MaxSizeReached::new)?;",
+            "",
+            "        let raw_cap = to_raw_capacity(cap);",
+            "",
+            "        if raw_cap > self.indices.len() {",
+            "            let raw_cap = raw_cap",
+            "                .checked_next_power_of_two()",
+            "                .ok_or_else(MaxSizeReached::new)?;",
+            "            if raw_cap > MAX_SIZE {",
+            "                return Err(MaxSizeReached::new());",
+            "            }",
+            "",
+            "            if self.entries.is_empty() {",
+            "                self.mask = raw_cap as usize - 1;",
+            "                self.indices = vec![0; raw_cap].into_boxed_slice();",
+            "                self.entries = Vec::with_capacity(usable_capacity(raw_cap));",
+            "            } else {",
+            "                self.try_grow(raw_cap)?;",
+            "            }",
+            "        }",
+            "",
+            "        Ok(())",
+            "    }",
+            "}",
+            "",
+            "const MAX_SIZE: usize = 1 << 30; // For example, limit to 1 billion",
+            "fn to_raw_capacity(cap: usize) -> usize {",
+            "    cap // Directly simulating capacity function",
+            "}",
+            "",
+            "fn usable_capacity(raw_cap: usize) -> usize {",
+            "    raw_cap // Directly simulating usable capacity function",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.indices = vec![0; 1024]; // Simulating some initial capacity",
+                  "    map.entries = Vec::with_capacity(512); // Simulating some entries",
+                  "",
+                  "    // Calculating an additional amount that will exceed MAX_SIZE",
+                  "    let additional = (MAX_SIZE - map.entries.len()) + 1; ",
+                  "",
+                  "    // Expect an Err(MaxSizeReached) since we exceed MAX_SIZE",
+                  "    assert_eq!(map.try_reserve(additional), Err(MaxSizeReached::new()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/header/map.rs:3952:32\n     |\n3952 |                 self.indices = vec![0; raw_cap].into_boxed_slice();\n     |                 ------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^- help: try using a conversion method: `.to_vec()`\n     |                 |              |\n     |                 |              expected `Vec<u8>`, found `Box<[{integer}]>`\n     |                 expected due to the type of this binding\n     |\n     = note: expected struct `Vec<u8>`\n                found struct `Box<[{integer}]>`\n\nerror[E0599]: no method named `try_grow` found for mutable reference `&mut llmtests::HeaderMap` in the current scope\n    --> src/header/map.rs:3955:22\n     |\n3955 |                 self.try_grow(raw_cap)?;\n     |                      ^^^^^^^^ method not found in `&mut HeaderMap`\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<(), llmtests::MaxSizeReached>`\n    --> src/header/map.rs:3983:5\n     |\n3983 |     assert_eq!(map.try_reserve(additional), Err(MaxSizeReached::new()));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::MaxSizeReached`\n    --> src/header/map.rs:3916:1\n     |\n3916 | struct MaxSizeReached;\n     | ^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::MaxSizeReached` with `#[derive(PartialEq)]`\n     |\n3916 + #[derive(PartialEq)]\n3917 | struct MaxSizeReached;\n     |\n\nSome errors have detailed explanations: E0308, E0369, E0599.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 3 previous errors; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.indices = vec![0; 15]; // Simulating indices of length 15",
+                  "    map.entries = vec![0; 10]; // Simulating 10 entries",
+                  "",
+                  "    // Additional capacity that forces raw_cap to next power of two",
+                  "    let additional = 6; ",
+                  "",
+                  "    // Expect an Err(MaxSizeReached) since raw_cap will need to be > MAX_SIZE",
+                  "    assert_eq!(map.try_reserve(additional), Err(MaxSizeReached::new()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/header/map.rs:3952:32\n     |\n3952 |                 self.indices = vec![0; raw_cap].into_boxed_slice();\n     |                 ------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^- help: try using a conversion method: `.to_vec()`\n     |                 |              |\n     |                 |              expected `Vec<u8>`, found `Box<[{integer}]>`\n     |                 expected due to the type of this binding\n     |\n     = note: expected struct `Vec<u8>`\n                found struct `Box<[{integer}]>`\n\nerror[E0599]: no method named `try_grow` found for mutable reference `&mut llmtests::HeaderMap` in the current scope\n    --> src/header/map.rs:3955:22\n     |\n3955 |                 self.try_grow(raw_cap)?;\n     |                      ^^^^^^^^ method not found in `&mut HeaderMap`\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<(), llmtests::MaxSizeReached>`\n    --> src/header/map.rs:3983:5\n     |\n3983 |     assert_eq!(map.try_reserve(additional), Err(MaxSizeReached::new()));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::MaxSizeReached`\n    --> src/header/map.rs:3916:1\n     |\n3916 | struct MaxSizeReached;\n     | ^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::MaxSizeReached` with `#[derive(PartialEq)]`\n     |\n3916 + #[derive(PartialEq)]\n3917 | struct MaxSizeReached;\n     |\n\nSome errors have detailed explanations: E0308, E0369, E0599.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 3 previous errors; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > self.indices.len() is true\n",
+        "// constraint: raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > MAX_SIZE is false, with bound raw_cap == MAX_SIZE\n",
+        "// constraint: self.entries.is_empty() is true\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockHeaderMap {",
+                  "        entries: Vec<u8>, // Dummy data type",
+                  "        indices: Vec<usize>, // Dummy data type",
+                  "        mask: usize,",
+                  "    }",
+                  "",
+                  "    impl MockHeaderMap {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                entries: Vec::new(),",
+                  "                indices: Vec::new(),",
+                  "                mask: 0,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn try_reserve(&mut self, additional: usize) -> Result<(), String> {",
+                  "            let cap = self.entries.len().checked_add(additional).ok_or(\"MaxSizeReached\")?;",
+                  "",
+                  "            let raw_cap = cap.next_power_of_two(); // assuming this function works as to_raw_capacity",
+                  "            const MAX_SIZE: usize = 65536; // hypothetical max size",
+                  "            ",
+                  "            if raw_cap > self.indices.len() {",
+                  "                if raw_cap > MAX_SIZE {",
+                  "                    return Err(\"MaxSizeReached\".into());",
+                  "                }",
+                  "",
+                  "                if self.entries.is_empty() {",
+                  "                    self.mask = raw_cap - 1;",
+                  "                    self.indices = vec![0; raw_cap];",
+                  "                    self.entries = Vec::with_capacity(raw_cap);",
+                  "                }",
+                  "",
+                  "                return Ok(());",
+                  "            }",
+                  "",
+                  "            Err(\"Capacity not increased\".into())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut map = MockHeaderMap::new();",
+                  "    let result = map.try_reserve(1);",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"MaxSizeReached\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockHeaderMap {",
+                  "        entries: Vec<u8>, // Dummy data type",
+                  "        indices: Vec<usize>, // Dummy data type",
+                  "        mask: usize,",
+                  "    }",
+                  "",
+                  "    impl MockHeaderMap {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                entries: Vec::new(),",
+                  "                indices: Vec::new(),",
+                  "                mask: 0,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn try_reserve(&mut self, additional: usize) -> Result<(), String> {",
+                  "            let cap = self.entries.len().checked_add(additional).ok_or(\"MaxSizeReached\")?;",
+                  "",
+                  "            let raw_cap = cap.next_power_of_two(); // assuming this function works as to_raw_capacity",
+                  "            const MAX_SIZE: usize = 65536; // hypothetical max size",
+                  "            ",
+                  "            if raw_cap > self.indices.len() {",
+                  "                if raw_cap > MAX_SIZE {",
+                  "                    return Err(\"MaxSizeReached\".into());",
+                  "                }",
+                  "",
+                  "                if self.entries.is_empty() {",
+                  "                    self.mask = raw_cap - 1;",
+                  "                    self.indices = vec![0; raw_cap];",
+                  "                    self.entries = Vec::with_capacity(raw_cap);",
+                  "                }",
+                  "",
+                  "                return Ok(());",
+                  "            }",
+                  "",
+                  "            Err(\"Capacity not increased\".into())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut map = MockHeaderMap::new();",
+                  "    map.try_reserve(65536); // Fill map to its MAX_SIZE",
+                  "    let _ = map.try_reserve(1); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "// constraint: self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > self.indices.len() is true\n",
+        "// constraint: raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > MAX_SIZE is false, with bound raw_cap == MAX_SIZE\n",
+        "// constraint: self.entries.is_empty() is false\n",
+        "// constraint: self.try_grow(raw_cap)? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct HeaderMap {",
+                  "        entries: Vec<u8>,",
+                  "        indices: Vec<usize>,",
+                  "        mask: usize,",
+                  "    }",
+                  "",
+                  "    struct MaxSizeReached;",
+                  "",
+                  "    impl MaxSizeReached {",
+                  "        fn new() -> Self {",
+                  "            MaxSizeReached",
+                  "        }",
+                  "    }",
+                  "",
+                  "    const MAX_SIZE: usize = 1024;",
+                  "",
+                  "    impl HeaderMap {",
+                  "        fn new() -> Self {",
+                  "            HeaderMap {",
+                  "                entries: Vec::new(),",
+                  "                indices: Vec::new(),",
+                  "                mask: 0,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                  "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                  "            let raw_cap = cap.next_power_of_two();",
+                  "",
+                  "            if raw_cap > self.indices.len() {",
+                  "                let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+                  "                if raw_cap > MAX_SIZE {",
+                  "                    return Err(MaxSizeReached::new());",
+                  "                }",
+                  "",
+                  "                if self.entries.is_empty() {",
+                  "                    self.mask = raw_cap - 1;",
+                  "                    self.indices = vec![0; raw_cap];",
+                  "                    self.entries = Vec::with_capacity(raw_cap);",
+                  "                } else {",
+                  "                    return Err(MaxSizeReached::new());",
+                  "                }",
+                  "            }",
+                  "",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn fill_entries(&mut self, count: usize) {",
+                  "            self.entries = (0..count).map(|i| i as u8).collect();",
+                  "            self.indices = vec![0; self.entries.len().next_power_of_two()];",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.fill_entries(5); // Entries count is 5, not empty",
+                  "",
+                  "    // Try reserving additional space",
+                  "    let result = map.try_reserve(10);",
+                  "    assert_eq!(result, Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<(), llmtests::test_try_reserve_13::MaxSizeReached>`\n    --> src/header/map.rs:3969:5\n     |\n3969 |     assert_eq!(result, Ok(()));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<(), llmtests::test_try_reserve_13::MaxSizeReached>\n     |     std::result::Result<(), llmtests::test_try_reserve_13::MaxSizeReached>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::test_try_reserve_13::MaxSizeReached`\n    --> src/header/map.rs:3917:5\n     |\n3917 |     struct MaxSizeReached;\n     |     ^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::test_try_reserve_13::MaxSizeReached` with `#[derive(PartialEq)]`\n     |\n3917 +     #[derive(PartialEq)]\n3918 |     struct MaxSizeReached;\n     |\n\nerror[E0277]: `llmtests::test_try_reserve_13::MaxSizeReached` doesn't implement `Debug`\n    --> src/header/map.rs:3969:5\n     |\n3969 |     assert_eq!(result, Ok(()));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^ `llmtests::test_try_reserve_13::MaxSizeReached` cannot be formatted using `{:?}`\n     |\n     = help: the trait `Debug` is not implemented for `llmtests::test_try_reserve_13::MaxSizeReached`, which is required by `std::result::Result<(), llmtests::test_try_reserve_13::MaxSizeReached>: Debug`\n     = note: add `#[derive(Debug)]` to `llmtests::test_try_reserve_13::MaxSizeReached` or manually `impl Debug for llmtests::test_try_reserve_13::MaxSizeReached`\n     = help: the trait `Debug` is implemented for `std::result::Result<T, E>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::test_try_reserve_13::MaxSizeReached` with `#[derive(Debug)]`\n     |\n3917 +     #[derive(Debug)]\n3918 |     struct MaxSizeReached;\n     |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 3 previous errors; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "// constraint: self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > self.indices.len() is true\n",
+        "// constraint: raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > MAX_SIZE is false, with bound raw_cap == MAX_SIZE\n",
+        "// constraint: self.entries.is_empty() is false\n",
+        "// constraint: self.try_grow(raw_cap)? is Ok/Some\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct MaxSizeReached;",
+            "",
+            "impl MaxSizeReached {",
+            "    fn new() -> Self {",
+            "        MaxSizeReached",
+            "    }",
+            "}",
+            "",
+            "struct HeaderMap {",
+            "    entries: Vec<u8>,",
+            "    indices: Vec<u8>,",
+            "    mask: usize,",
+            "}",
+            "",
+            "impl HeaderMap {",
+            "    pub fn new() -> Self {",
+            "        HeaderMap {",
+            "            entries: Vec::new(),",
+            "            indices: Vec::new(),",
+            "            mask: 0,",
+            "        }",
+            "    }",
+            "    ",
+            "    pub fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+            "        let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+            "        let raw_cap = cap.next_power_of_two();",
+            "",
+            "        if raw_cap > self.indices.len() {",
+            "            let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+            "            if raw_cap > 1024 { // Assuming 1024 is MAX_SIZE",
+            "                return Err(MaxSizeReached::new());",
+            "            }",
+            "",
+            "            if self.entries.is_empty() {",
+            "                self.mask = raw_cap - 1;",
+            "                self.indices = vec![0; raw_cap];",
+            "                self.entries = Vec::with_capacity(raw_cap);",
+            "            } else {",
+            "                self.try_grow(raw_cap)?;",
+            "            }",
+            "        }",
+            "",
+            "        Ok(())",
+            "    }",
+            "",
+            "    fn try_grow(&mut self, raw_cap: usize) -> Result<(), MaxSizeReached> {",
+            "        // Simulating growth logic for test purposes",
+            "        if raw_cap == 0 {",
+            "            return Err(MaxSizeReached::new());",
+            "        }",
+            "        self.indices.resize(raw_cap, 0);",
+            "        Ok(())",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.entries.push(1); // Simulate existing entry",
+                  "    map.indices.resize(16, 0); // Predefine the size for indices",
+                  "",
+                  "    let result = map.try_reserve(8); // Request more capacity",
+                  "    assert_eq!(result, Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<(), llmtests::MaxSizeReached>`\n    --> src/header/map.rs:3972:5\n     |\n3972 |     assert_eq!(result, Ok(()));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::MaxSizeReached`\n    --> src/header/map.rs:3909:1\n     |\n3909 | struct MaxSizeReached;\n     | ^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::MaxSizeReached` with `#[derive(PartialEq)]`\n     |\n3909 + #[derive(PartialEq)]\n3910 | struct MaxSizeReached;\n     |\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.entries.push(1); // Simulate existing entry",
+                  "    map.indices.resize(512, 0); // Predefine larger size for indices",
+                  "",
+                  "    let result = map.try_reserve(600); // This should succeed, assuming next power of two logic allows growth",
+                  "    assert_eq!(result, Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<(), llmtests::MaxSizeReached>`\n    --> src/header/map.rs:3972:5\n     |\n3972 |     assert_eq!(result, Ok(()));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::MaxSizeReached`\n    --> src/header/map.rs:3909:1\n     |\n3909 | struct MaxSizeReached;\n     | ^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::MaxSizeReached` with `#[derive(PartialEq)]`\n     |\n3909 + #[derive(PartialEq)]\n3910 | struct MaxSizeReached;\n     |\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.entries.push(1); // Simulate existing entry",
+                  "    map.indices.resize(512, 0); // Predefine size",
+                  "",
+                  "    let result = map.try_reserve(600); // This should fail,",
+                  "    // Note: Adjust MAX_SIZE as necessary to trigger error in the condition",
+                  "    assert_eq!(result, Ok(())); // or assert Err according to the mocked MAX_SIZE",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<(), llmtests::MaxSizeReached>`\n    --> src/header/map.rs:3973:5\n     |\n3973 |     assert_eq!(result, Ok(())); // or assert Err according to the mocked MAX_SIZE\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::MaxSizeReached`\n    --> src/header/map.rs:3909:1\n     |\n3909 | struct MaxSizeReached;\n     | ^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::MaxSizeReached` with `#[derive(PartialEq)]`\n     |\n3909 + #[derive(PartialEq)]\n3910 | struct MaxSizeReached;\n     |\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut map = HeaderMap::new();",
+                  "    let result = map.try_reserve(1); // This should succeed, since it can initialize a new map",
+                  "    assert_eq!(result, Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<(), llmtests::MaxSizeReached>`\n    --> src/header/map.rs:3969:5\n     |\n3969 |     assert_eq!(result, Ok(()));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |     std::result::Result<(), llmtests::MaxSizeReached>\n     |\nnote: an implementation of `PartialEq` might be missing for `llmtests::MaxSizeReached`\n    --> src/header/map.rs:3909:1\n     |\n3909 | struct MaxSizeReached;\n     | ^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `llmtests::MaxSizeReached` with `#[derive(PartialEq)]`\n     |\n3909 + #[derive(PartialEq)]\n3910 | struct MaxSizeReached;\n     |\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "// constraint: self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)? is Ok/Some\n",
+        "// constraint: raw_cap > self.indices.len() is false, with bound raw_cap == self.indices.len()\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct HeaderMap {",
+                  "        entries: Vec<u8>,",
+                  "        indices: Box<[u8]>,",
+                  "        mask: usize,",
+                  "    }",
+                  "",
+                  "    impl HeaderMap {",
+                  "        fn new() -> Self {",
+                  "            HeaderMap {",
+                  "                entries: Vec::new(),",
+                  "                indices: Box::new([]),",
+                  "                mask: 0,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                  "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                  "",
+                  "            let raw_cap = to_raw_capacity(cap);",
+                  "",
+                  "            if raw_cap > self.indices.len() {",
+                  "                let raw_cap = raw_cap",
+                  "                    .checked_next_power_of_two()",
+                  "                    .ok_or_else(MaxSizeReached::new)?;",
+                  "                if raw_cap > MAX_SIZE {",
+                  "                    return Err(MaxSizeReached::new());",
+                  "                }",
+                  "",
+                  "                if self.entries.is_empty() {",
+                  "                    self.mask = raw_cap as Size - 1;",
+                  "                    self.indices = vec![0; raw_cap].into_boxed_slice();",
+                  "                    self.entries = Vec::with_capacity(usable_capacity(raw_cap));",
+                  "                } else {",
+                  "                    self.try_grow(raw_cap)?;",
+                  "                }",
+                  "            }",
+                  "",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MaxSizeReached;",
+                  "",
+                  "    impl MaxSizeReached {",
+                  "        fn new() -> Self {",
+                  "            MaxSizeReached",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn to_raw_capacity(cap: usize) -> usize {",
+                  "        cap",
+                  "    }",
+                  "",
+                  "    const MAX_SIZE: usize = 1024;",
+                  "    type Size = usize;",
+                  "",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.indices = vec![0; 8].into_boxed_slice(); // initial length of indices",
+                  "    assert!(map.try_reserve(8).is_ok()); // Test with additional that does not exceed capacity",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling serde_json v1.0.140\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: no method named `try_grow` found for mutable reference `&mut llmtests::test_try_reserve_18::HeaderMap` in the current scope\n    --> src/header/map.rs:3944:26\n     |\n3944 |                     self.try_grow(raw_cap)?;\n     |                          ^^^^^^^^ method not found in `&mut HeaderMap`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct HeaderMap {",
+                  "        entries: Vec<u8>,",
+                  "        indices: Box<[u8]>,",
+                  "        mask: usize,",
+                  "    }",
+                  "",
+                  "    impl HeaderMap {",
+                  "        fn new() -> Self {",
+                  "            HeaderMap {",
+                  "                entries: Vec::new(),",
+                  "                indices: Box::new([]),",
+                  "                mask: 0,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                  "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                  "",
+                  "            let raw_cap = to_raw_capacity(cap);",
+                  "",
+                  "            if raw_cap > self.indices.len() {",
+                  "                let raw_cap = raw_cap",
+                  "                    .checked_next_power_of_two()",
+                  "                    .ok_or_else(MaxSizeReached::new)?;",
+                  "                if raw_cap > MAX_SIZE {",
+                  "                    return Err(MaxSizeReached::new());",
+                  "                }",
+                  "",
+                  "                if self.entries.is_empty() {",
+                  "                    self.mask = raw_cap as Size - 1;",
+                  "                    self.indices = vec![0; raw_cap].into_boxed_slice();",
+                  "                    self.entries = Vec::with_capacity(usable_capacity(raw_cap));",
+                  "                } else {",
+                  "                    self.try_grow(raw_cap)?;",
+                  "                }",
+                  "            }",
+                  "",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MaxSizeReached;",
+                  "",
+                  "    impl MaxSizeReached {",
+                  "        fn new() -> Self {",
+                  "            MaxSizeReached",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn to_raw_capacity(cap: usize) -> usize {",
+                  "        cap",
+                  "    }",
+                  "",
+                  "    const MAX_SIZE: usize = 1024;",
+                  "    type Size = usize;",
+                  "",
+                  "    let mut map = HeaderMap::new();",
+                  "    map.indices = vec![0; 8].into_boxed_slice(); // initial length of indices",
+                  "    assert!(map.try_reserve(16).is_err()); // This should exceed capacity and return an error",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling zerocopy v0.8.25\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling serde_json v1.0.140\n   Compiling doc-comment v0.3.3\n   Compiling quote v1.0.40\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `ntest::timeout`\n    --> src/header/map.rs:3907:8\n     |\n3907 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: no method named `try_grow` found for mutable reference `&mut llmtests::test_try_reserve_19::HeaderMap` in the current scope\n    --> src/header/map.rs:3944:26\n     |\n3944 |                     self.try_grow(raw_cap)?;\n     |                          ^^^^^^^^ method not found in `&mut HeaderMap`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `http` (lib test) generated 15 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 15 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

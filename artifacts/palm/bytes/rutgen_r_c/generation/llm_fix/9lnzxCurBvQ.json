@@ -1,0 +1,288 @@
+{
+  "name": "bytes::buf::chain::<buf::chain::Chain<T, U> as buf::buf_mut::BufMut>::chunk_mut",
+  "name_with_impl": "bytes::buf::chain::{impl#2}::chunk_mut",
+  "mod_info": {
+    "name": "buf::chain",
+    "loc": "src/buf/mod.rs:19:1:19:11"
+  },
+  "visible": true,
+  "loc": "src/buf/chain.rs:202:5:208:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.a.has_remaining_mut() is true\n",
+        "// expected return value/type: if self.a.has_remaining_mut() {\n            self.a.chunk_mut()\n        } else {\n            self.b.chunk_mut()\n        }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestBufMut {",
+                  "       remaining: usize,",
+                  "       chunk: [std::mem::MaybeUninit<u8>; 10],",
+                  "   }",
+                  "",
+                  "   impl TestBufMut {",
+                  "       fn new(remaining: usize) -> Self {",
+                  "           let chunk = [std::mem::MaybeUninit::new(0); 10];",
+                  "           Self { remaining, chunk }",
+                  "       }",
+                  "   }",
+                  "",
+                  "   unsafe impl BufMut for TestBufMut {",
+                  "       fn remaining_mut(&self) -> usize {",
+                  "           self.remaining",
+                  "       }",
+                  "",
+                  "      fn chunk_mut(&mut self) -> &mut UninitSlice {  ",
+                  "          UninitSlice::uninit(&mut self.chunk)  ",
+                  "      }  ",
+                  "",
+                  "       unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "           self.remaining = self.remaining.saturating_sub(cnt);",
+                  "       }",
+                  "   }",
+                  "",
+                  "   let mut buf_a = TestBufMut::new(5);",
+                  "   let buf_b = TestBufMut::new(0);",
+                  "",
+                  "   let mut chain = Chain {",
+                  "       a: buf_a,",
+                  "       b: buf_b,",
+                  "   };",
+                  "",
+                  "   let chunk = chain.chunk_mut();",
+                  "   assert_eq!(chunk.0.len(), 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0616]: field `0` of struct `uninit_slice::UninitSlice` is private\n   --> src/buf/chain.rs:286:21\n    |\n286 |    assert_eq!(chunk.0.len(), 10);\n    |                     ^ private field\n\nFor more information about this error, try `rustc --explain E0616`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "fn test_chunk_mut_01() {  ",
+                  "    struct TestBufMut {",
+                  "        remaining: usize,",
+                  "       chunk: UninitSlice(pub [std::mem::MaybeUninit<u8>; 10]),  ",
+                  "   }  ",
+                  " ",
+                  "   impl TestBufMut {  ",
+                  "       fn new(remaining: usize) -> Self {  ",
+                  "           let chunk = UninitSlice([std::mem::MaybeUninit::new(0); 10]);  ",
+                  "           Self { remaining, chunk }  ",
+                  "       }  ",
+                  "    }",
+                  "",
+                  "    unsafe impl BufMut for TestBufMut {",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "",
+                  "        fn chunk_mut(&mut self) -> &mut UninitSlice {",
+                  "            &mut self.chunk",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            self.remaining = self.remaining.saturating_sub(cnt);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let buf_a = TestBufMut::new(0);",
+                  "    let mut buf_b = TestBufMut::new(5);",
+                  "",
+                  "    let mut chain = Chain {",
+                  "        a: buf_a,",
+                  "        b: buf_b,",
+                  "    };",
+                  "",
+                  "    let chunk = chain.chunk_mut();",
+                  "    assert_eq!(chunk.0.len(), 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror: expected one of `->`, `where`, or `{`, found keyword `fn`\n   --> src/buf/chain.rs:250:1\n    |\n249 | fn test_chunk_mut_01()\n    |                       - expected one of `->`, `where`, or `{`\n250 | fn test_chunk_mut_01() {  \n    | ^^ unexpected token\n\nerror[E0432]: unresolved import `self::chain::Chain`\n  --> src/buf/mod.rs:32:9\n   |\n32 | pub use self::chain::Chain;\n   |         ^^^^^^^^^^^^^^^^^^ no `Chain` in `buf::chain`\n   |\nhelp: consider importing one of these structs instead\n   |\n32 | pub use std::io::Chain;\n   |         ~~~~~~~~~~~~~~\n32 | pub use std::iter::Chain;\n   |         ~~~~~~~~~~~~~~~~\n32 | pub use core::iter::Chain;\n   |         ~~~~~~~~~~~~~~~~~\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0432`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.a.has_remaining_mut() is false\n",
+        "// expected return value/type: if self.a.has_remaining_mut() {\n            self.a.chunk_mut()\n        } else {\n            self.b.chunk_mut()\n        }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "  fn test_chunk_mut_02()  ",
+                  "  {  ",
+                  "      struct TestBufMutA {  ",
+                  "          remaining: usize,  ",
+                  "      }  ",
+                  " ",
+                  "     unsafe impl BufMut for TestBufMutA {  ",
+                  "          fn remaining_mut(&self) -> usize {  ",
+                  "              self.remaining  ",
+                  "          }  ",
+                  " ",
+                  "          unsafe fn advance_mut(&mut self, _cnt: usize) {  ",
+                  "              // Not needed for this test  ",
+                  "          }  ",
+                  " ",
+                  "          fn chunk_mut(&mut self) -> &mut UninitSlice {  ",
+                  "              // Return a dummy UninitSlice since we don't need real data here  ",
+                  "             unsafe { UninitSlice::uninit(&mut [MaybeUninit::uninit(); 1]) }  ",
+                  "       }  ",
+                  "   }  ",
+                  " ",
+                  "   struct TestBufMutB {  ",
+                  "       remaining: usize,  ",
+                  "   }  ",
+                  " ",
+                  "  unsafe impl BufMut for TestBufMutB {  ",
+                  "       fn remaining_mut(&self) -> usize {  ",
+                  "           self.remaining  ",
+                  "       }  ",
+                  " ",
+                  "       unsafe fn advance_mut(&mut self, _cnt: usize) {  ",
+                  "           // Not needed for this test  ",
+                  "       }  ",
+                  " ",
+                  "       fn chunk_mut(&mut self) -> &mut UninitSlice {  ",
+                  "           // Return a dummy UninitSlice  ",
+                  "           unsafe { UninitSlice::uninit(&mut [MaybeUninit::uninit(); 1]) }  ",
+                  "       }  ",
+                  "    }",
+                  "",
+                  "    let a = TestBufMutA { remaining: 0 };",
+                  "    let b = TestBufMutB { remaining: 10 };",
+                  "    let mut chain = Chain { a, b };",
+                  "",
+                  "    let chunk = chain.chunk_mut();",
+                  "    assert!(chunk.0.len() > 0); // Since we expect to access b's chunk_mut",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "    Blocking waiting for file lock on package cache\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror: expected one of `->`, `where`, or `{`, found keyword `fn`\n   --> src/buf/chain.rs:250:3\n    |\n249 | fn test_chunk_mut_02()\n    |                       - expected one of `->`, `where`, or `{`\n250 |   fn test_chunk_mut_02()  \n    |   ^^ unexpected token\n\nerror[E0432]: unresolved import `self::chain::Chain`\n  --> src/buf/mod.rs:32:9\n   |\n32 | pub use self::chain::Chain;\n   |         ^^^^^^^^^^^^^^^^^^ no `Chain` in `buf::chain`\n   |\nhelp: consider importing one of these structs instead\n   |\n32 | pub use std::io::Chain;\n   |         ~~~~~~~~~~~~~~\n32 | pub use std::iter::Chain;\n   |         ~~~~~~~~~~~~~~~~\n32 | pub use core::iter::Chain;\n   |         ~~~~~~~~~~~~~~~~~\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0432`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBufMutA {",
+                  "        remaining: usize,",
+                  "    }",
+                  "",
+                  "   unsafe impl BufMut for TestBufMutA {  ",
+                  "       fn remaining_mut(&self) -> usize {  ",
+                  "            self.remaining",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, _cnt: usize) {",
+                  "            // Artificial panic condition",
+                  "            panic!(\"Advance called\");",
+                  "        }",
+                  "",
+                  "      fn chunk_mut(&mut self) -> &mut UninitSlice {  ",
+                  "          // Return a dummy UninitSlice  ",
+                  "          unsafe { UninitSlice::uninit(&mut [MaybeUninit::uninit(); 1]) }  ",
+                  "       }  ",
+                  "   }  ",
+                  " ",
+                  "   struct TestBufMutB {  ",
+                  "       remaining: usize,  ",
+                  "   }  ",
+                  " ",
+                  "  unsafe impl BufMut for TestBufMutB {  ",
+                  "      fn remaining_mut(&self) -> usize {  ",
+                  "           self.remaining  ",
+                  "       }  ",
+                  " ",
+                  "       unsafe fn advance_mut(&mut self, _cnt: usize) {  ",
+                  "           // Not needed for this test  ",
+                  "       }  ",
+                  " ",
+                  "       fn chunk_mut(&mut self) -> &mut UninitSlice {  ",
+                  "           // Return a dummy UninitSlice  ",
+                  "           unsafe { UninitSlice::uninit(&mut [MaybeUninit::uninit(); 1]) }  ",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let a = TestBufMutA { remaining: 0 };",
+                  "    let b = TestBufMutB { remaining: 10 };",
+                  "    let mut chain = Chain { a, b };",
+                  "",
+                  "    // This will panic on attempting to advance",
+                  "    unsafe {",
+                  "        chain.a.advance_mut(1);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0433]: failed to resolve: use of undeclared type `MaybeUninit`\n   --> src/buf/chain.rs:268:46\n    |\n268 |           unsafe { UninitSlice::uninit(&mut [MaybeUninit::uninit(); 1]) }  \n    |                                              ^^^^^^^^^^^ use of undeclared type `MaybeUninit`\n    |\nhelp: consider importing this union\n    |\n243 +    use std::mem::MaybeUninit;\n    |\n\nerror[E0433]: failed to resolve: use of undeclared type `MaybeUninit`\n   --> src/buf/chain.rs:287:47\n    |\n287 |            unsafe { UninitSlice::uninit(&mut [MaybeUninit::uninit(); 1]) }  \n    |                                               ^^^^^^^^^^^ use of undeclared type `MaybeUninit`\n    |\nhelp: consider importing this union\n    |\n243 +    use std::mem::MaybeUninit;\n    |\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

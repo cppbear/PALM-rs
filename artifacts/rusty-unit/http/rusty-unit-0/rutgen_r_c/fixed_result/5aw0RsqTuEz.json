@@ -1,0 +1,750 @@
+{
+    "function_name": "http::header::map::header::map::HeaderMap<T>::try_reserve",
+    "tests": 26,
+    "tests_lines": [
+        42,
+        33,
+        33,
+        5,
+        5,
+        4,
+        4,
+        5,
+        8,
+        12,
+        18,
+        16,
+        23,
+        11,
+        18,
+        23,
+        24,
+        25,
+        17,
+        14,
+        10,
+        12,
+        19,
+        7,
+        14,
+        15
+    ],
+    "oracles": 26,
+    "oracles_compiled": 8,
+    "oracles_compiled_rate": 30.76923076923077,
+    "tests_compiled": 8,
+    "tests_compiled_rate": 30.76923076923077,
+    "oracles_run": 8,
+    "oracles_passed": 3,
+    "oracles_passed_rate": 37.5,
+    "tests_run": 8,
+    "tests_passed": 3,
+    "tests_passed_rate": 37.5,
+    "lines": 25,
+    "lines_covered": 12,
+    "lines_coveraged_rate": 48.0,
+    "branches": 6,
+    "branches_covered": 1,
+    "branches_coverage_rate": 16.666666666666664,
+    "codes_lines": [
+        701,
+        704,
+        705,
+        706,
+        707,
+        708,
+        710,
+        711,
+        712,
+        713,
+        714,
+        715,
+        716,
+        717,
+        718,
+        719,
+        720,
+        721,
+        722,
+        723,
+        724,
+        725,
+        727,
+        729,
+        730
+    ],
+    "codes_lines_covered": [
+        [
+            [
+                "{",
+                "    struct TestHeaderMap {",
+                "        entries: Vec<u8>, // Dummy type to fulfill the HeaderMap requirement",
+                "        indices: Box<[Pos]>,",
+                "        mask: Size,",
+                "    }",
+                "",
+                "    impl TestHeaderMap {",
+                "        fn new() -> Self {",
+                "            TestHeaderMap {",
+                "                entries: Vec::with_capacity(0),",
+                "                indices: vec![Pos::none(); 2].into_boxed_slice(),",
+                "                mask: 1, // Initial mask for capacity of 2",
+                "            }",
+                "        }",
+                "    ",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                "            let raw_cap = to_raw_capacity(cap);",
+                "    ",
+                "            if raw_cap > self.indices.len() {",
+                "                let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(MaxSizeReached::new());",
+                "                }",
+                "    ",
+                "                if self.entries.is_empty() {",
+                "                    self.mask = raw_cap as Size - 1;",
+                "                    self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();",
+                "                    self.entries = Vec::with_capacity(usable_capacity(raw_cap));",
+                "                } else {",
+                "                    // Simulating growth, normally calling `try_grow`",
+                "                    self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();",
+                "                }",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = TestHeaderMap::new();",
+                "    map.try_reserve(10).unwrap();",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderMap {",
+                "        entries: Vec<u8>, // Dummy type to fulfill the HeaderMap requirement",
+                "        indices: Box<[Pos]>,",
+                "        mask: Size,",
+                "    }",
+                "",
+                "    impl TestHeaderMap {",
+                "        fn new() -> Self {",
+                "            TestHeaderMap {",
+                "                entries: Vec::with_capacity(usize::MAX), // Intentionally max to cause overflow",
+                "                indices: vec![Pos::none(); 1].into_boxed_slice(),",
+                "                mask: 0,",
+                "            }",
+                "        }",
+                "    ",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                "            let raw_cap = to_raw_capacity(cap);",
+                "",
+                "            if raw_cap > self.indices.len() {",
+                "                let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(MaxSizeReached::new());",
+                "                }",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = TestHeaderMap::new();",
+                "    let _ = map.try_reserve(1); // Should panic due to overflow",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderMap {",
+                "        entries: Vec<u8>, // Dummy type to fulfill the HeaderMap requirement",
+                "        indices: Box<[Pos]>,",
+                "        mask: Size,",
+                "    }",
+                "",
+                "    impl TestHeaderMap {",
+                "        fn new() -> Self {",
+                "            TestHeaderMap {",
+                "                entries: Vec::with_capacity(0),",
+                "                indices: vec![Pos::none(); 1].into_boxed_slice(),",
+                "                mask: 0,",
+                "            }",
+                "        }",
+                "",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                "            let raw_cap = to_raw_capacity(cap);",
+                "    ",
+                "            if raw_cap > self.indices.len() {",
+                "                let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(MaxSizeReached::new());",
+                "                }",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = TestHeaderMap::new();",
+                "    let _ = map.try_reserve(MAX_SIZE as usize); // Should not panic or return error",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(1);",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(0),",
+                "        key: HeaderName::from_static(\"Test-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    assert!(map.try_reserve(1).is_ok());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(1);",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(0),",
+                "        key: HeaderName::from_static(\"Test-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(1),",
+                "        key: HeaderName::from_static(\"Another-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    let result = map.try_reserve(u16::MAX as usize - 1);",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(4);",
+                "    assert!(map.try_reserve(2).is_ok());",
+                "    assert_eq!(map.capacity(), 4);  // Ensure capacity hasn't changed",
+                "}"
+            ],
+            [
+                701,
+                704,
+                705,
+                706,
+                707,
+                708,
+                710,
+                711,
+                712,
+                727,
+                729,
+                730
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(1);",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(0),",
+                "        key: HeaderName::from_static(\"Test-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    ",
+                "    let result = map.try_reserve(MAX_SIZE as usize);",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            []
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(1);",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(0),",
+                "        key: HeaderName::from_static(\"Test-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    ",
+                "    let cap_before = map.capacity();",
+                "    assert!(map.try_reserve(cap_before).is_ok());",
+                "    assert_eq!(map.capacity(), cap_before);",
+                "}"
+            ],
+            []
+        ]
+    ],
+    "codes_branches": [
+        {
+            "start_line": 712,
+            "start_column": 12,
+            "end_line": 712,
+            "end_column": 40,
+            "positive": false,
+            "negative": true
+        },
+        {
+            "start_line": 716,
+            "start_column": 16,
+            "end_line": 716,
+            "end_column": 34,
+            "positive": false,
+            "negative": false
+        },
+        {
+            "start_line": 720,
+            "start_column": 16,
+            "end_line": 720,
+            "end_column": 39,
+            "positive": false,
+            "negative": false
+        }
+    ],
+    "codes_branches_covered": [
+        [
+            [
+                "{",
+                "    struct TestHeaderMap {",
+                "        entries: Vec<u8>, // Dummy type to fulfill the HeaderMap requirement",
+                "        indices: Box<[Pos]>,",
+                "        mask: Size,",
+                "    }",
+                "",
+                "    impl TestHeaderMap {",
+                "        fn new() -> Self {",
+                "            TestHeaderMap {",
+                "                entries: Vec::with_capacity(0),",
+                "                indices: vec![Pos::none(); 2].into_boxed_slice(),",
+                "                mask: 1, // Initial mask for capacity of 2",
+                "            }",
+                "        }",
+                "    ",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                "            let raw_cap = to_raw_capacity(cap);",
+                "    ",
+                "            if raw_cap > self.indices.len() {",
+                "                let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(MaxSizeReached::new());",
+                "                }",
+                "    ",
+                "                if self.entries.is_empty() {",
+                "                    self.mask = raw_cap as Size - 1;",
+                "                    self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();",
+                "                    self.entries = Vec::with_capacity(usable_capacity(raw_cap));",
+                "                } else {",
+                "                    // Simulating growth, normally calling `try_grow`",
+                "                    self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();",
+                "                }",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = TestHeaderMap::new();",
+                "    map.try_reserve(10).unwrap();",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderMap {",
+                "        entries: Vec<u8>, // Dummy type to fulfill the HeaderMap requirement",
+                "        indices: Box<[Pos]>,",
+                "        mask: Size,",
+                "    }",
+                "",
+                "    impl TestHeaderMap {",
+                "        fn new() -> Self {",
+                "            TestHeaderMap {",
+                "                entries: Vec::with_capacity(usize::MAX), // Intentionally max to cause overflow",
+                "                indices: vec![Pos::none(); 1].into_boxed_slice(),",
+                "                mask: 0,",
+                "            }",
+                "        }",
+                "    ",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                "            let raw_cap = to_raw_capacity(cap);",
+                "",
+                "            if raw_cap > self.indices.len() {",
+                "                let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(MaxSizeReached::new());",
+                "                }",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = TestHeaderMap::new();",
+                "    let _ = map.try_reserve(1); // Should panic due to overflow",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderMap {",
+                "        entries: Vec<u8>, // Dummy type to fulfill the HeaderMap requirement",
+                "        indices: Box<[Pos]>,",
+                "        mask: Size,",
+                "    }",
+                "",
+                "    impl TestHeaderMap {",
+                "        fn new() -> Self {",
+                "            TestHeaderMap {",
+                "                entries: Vec::with_capacity(0),",
+                "                indices: vec![Pos::none(); 1].into_boxed_slice(),",
+                "                mask: 0,",
+                "            }",
+                "        }",
+                "",
+                "        fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+                "            let cap = self.entries.len().checked_add(additional).ok_or_else(MaxSizeReached::new)?;",
+                "            let raw_cap = to_raw_capacity(cap);",
+                "    ",
+                "            if raw_cap > self.indices.len() {",
+                "                let raw_cap = raw_cap.checked_next_power_of_two().ok_or_else(MaxSizeReached::new)?;",
+                "                if raw_cap > MAX_SIZE {",
+                "                    return Err(MaxSizeReached::new());",
+                "                }",
+                "            }",
+                "            Ok(())",
+                "        }",
+                "    }",
+                "",
+                "    let mut map = TestHeaderMap::new();",
+                "    let _ = map.try_reserve(MAX_SIZE as usize); // Should not panic or return error",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(1);",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(0),",
+                "        key: HeaderName::from_static(\"Test-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    assert!(map.try_reserve(1).is_ok());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(1);",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(0),",
+                "        key: HeaderName::from_static(\"Test-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(1),",
+                "        key: HeaderName::from_static(\"Another-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    let result = map.try_reserve(u16::MAX as usize - 1);",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(4);",
+                "    assert!(map.try_reserve(2).is_ok());",
+                "    assert_eq!(map.capacity(), 4);  // Ensure capacity hasn't changed",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": true
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(1);",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(0),",
+                "        key: HeaderName::from_static(\"Test-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    ",
+                "    let result = map.try_reserve(MAX_SIZE as usize);",
+                "    assert!(result.is_err());",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ],
+        [
+            [
+                "{",
+                "    struct TestHeaderValue;",
+                "",
+                "    let mut map: HeaderMap<TestHeaderValue> = HeaderMap::with_capacity(1);",
+                "    map.entries.push(Bucket {",
+                "        hash: HashValue(0),",
+                "        key: HeaderName::from_static(\"Test-Header\"),",
+                "        value: TestHeaderValue,",
+                "        links: None,",
+                "    });",
+                "    ",
+                "    let cap_before = map.capacity();",
+                "    assert!(map.try_reserve(cap_before).is_ok());",
+                "    assert_eq!(map.capacity(), cap_before);",
+                "}"
+            ],
+            [
+                {
+                    "start_line": 712,
+                    "start_column": 12,
+                    "end_line": 712,
+                    "end_column": 40,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 716,
+                    "start_column": 16,
+                    "end_line": 716,
+                    "end_column": 34,
+                    "positive": false,
+                    "negative": false
+                },
+                {
+                    "start_line": 720,
+                    "start_column": 16,
+                    "end_line": 720,
+                    "end_column": 39,
+                    "positive": false,
+                    "negative": false
+                }
+            ]
+        ]
+    ],
+    "file_path": "/home/abezbm/rusty-unit/evaluation/http/rusty-unit-0/src/header/map.rs"
+}

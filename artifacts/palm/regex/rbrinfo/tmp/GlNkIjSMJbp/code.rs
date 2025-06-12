@@ -1,0 +1,1 @@
+fn is_eof(&self) -> bool { self.0 == 256 }

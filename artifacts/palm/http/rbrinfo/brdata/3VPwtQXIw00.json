@@ -1,0 +1,389 @@
+{
+  "name": "http::header::name::header::name::HeaderName::from_static",
+  "name_with_impl": "http::header::name::{impl#1}::from_static",
+  "mod_info": {
+    "name": "header::name",
+    "loc": "src/header/mod.rs:74:1:74:10"
+  },
+  "visible": true,
+  "loc": "src/header/name.rs:1256:5:1287:6",
+  "doc": "/// Converts a static string to a HTTP header name.\n///\n/// This function requires the static string to only contain lowercase\n/// characters, numerals and symbols, as per the HTTP/2.0 specification\n/// and header names internal representation within this library.\n///\n/// # Panics\n///\n/// This function panics when the static string is a invalid header.\n///\n/// Until [Allow panicking in constants](https://github.com/rust-lang/rfcs/pull/2345)\n/// makes its way into stable, the panic message at compile-time is\n/// going to look cryptic, but should at least point at your header value:\n///\n/// ```text\n/// error: any use of this value will cause an error\n///     --> http/src/header/name.rs:1241:13\n///      |\n/// 1241 |             ([] as [u8; 0])[0]; // Invalid header name\n///      |             ^^^^^^^^^^^^^^^^^^\n///      |             |\n///      |             index out of bounds: the length is 0 but the index is 0\n///      |             inside `http::HeaderName::from_static` at http/src/header/name.rs:1241:13\n///      |             inside `INVALID_NAME` at src/main.rs:3:34\n///      |\n///     ::: src/main.rs:3:1\n///      |\n/// 3    | const INVALID_NAME: HeaderName = HeaderName::from_static(\"Capitalized\");\n///      | ------------------------------------------------------------------------\n/// ```\n///\n/// # Examples\n///\n/// ```\n/// # use http::header::*;\n/// // Parsing a standard header\n/// let hdr = HeaderName::from_static(\"content-length\");\n/// assert_eq!(CONTENT_LENGTH, hdr);\n///\n/// // Parsing a custom header\n/// let CUSTOM_HEADER: &'static str = \"custom-header\";\n///\n/// let a = HeaderName::from_lowercase(b\"custom-header\").unwrap();\n/// let b = HeaderName::from_static(CUSTOM_HEADER);\n/// assert_eq!(a, b);\n/// ```\n///\n/// ```should_panic\n/// # use http::header::*;\n/// #\n/// // Parsing a header that contains invalid symbols(s):\n/// HeaderName::from_static(\"content{}{}length\"); // This line panics!\n///\n/// // Parsing a header that contains invalid uppercase characters.\n/// let a = HeaderName::from_static(\"foobar\");\n/// let b = HeaderName::from_static(\"FOOBAR\"); // This line panics!\n/// ```\n",
+  "code": [
+    "pub const fn from_static(src: &'static str) -> HeaderName {",
+    "    let name_bytes = src.as_bytes();",
+    "    if let Some(standard) = StandardHeader::from_bytes(name_bytes) {",
+    "        return HeaderName {",
+    "            inner: Repr::Standard(standard),",
+    "        };",
+    "    }",
+    "",
+    "    if name_bytes.is_empty() || name_bytes.len() > super::MAX_HEADER_NAME_LEN || {",
+    "        let mut i = 0;",
+    "        loop {",
+    "            if i >= name_bytes.len() {",
+    "                break false;",
+    "            } else if HEADER_CHARS_H2[name_bytes[i] as usize] == 0 {",
+    "                break true;",
+    "            }",
+    "            i += 1;",
+    "        }",
+    "    } {",
+    "        // TODO: When msrv is bumped to larger than 1.57, this should be",
+    "        // replaced with `panic!` macro.",
+    "        // https://blog.rust-lang.org/2021/12/02/Rust-1.57.0.html#panic-in-const-contexts",
+    "        //",
+    "        // See the panics section of this method's document for details.",
+    "        #[allow(clippy::no_effect, clippy::out_of_bounds_indexing)]",
+    "        ([] as [u8; 0])[0]; // Invalid header name",
+    "    }",
+    "",
+    "    HeaderName {",
+    "        inner: Repr::Custom(Custom(ByteStr::from_static(src))),",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 6,
+    "contra": 1,
+    "min_set": 5
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "let Some(standard) = StandardHeader::from_bytes(name_bytes)",
+          "norm": null,
+          "value": "true",
+          "line": 1258,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1264,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "HeaderName {\n            inner: Repr::Custom(Custom(ByteStr::from_static(src))),\n        }",
+      "path": [
+        0,
+        1,
+        2,
+        6,
+        7,
+        8,
+        24,
+        25,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "let Some(standard) = StandardHeader::from_bytes(name_bytes)",
+          "norm": null,
+          "value": "true",
+          "line": 1258,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1264,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.len() > super::MAX_HEADER_NAME_LEN",
+          "norm": null,
+          "value": "true",
+          "line": 1264,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "HeaderName {\n            inner: Repr::Custom(Custom(ByteStr::from_static(src))),\n        }",
+      "path": [
+        0,
+        1,
+        2,
+        6,
+        7,
+        9,
+        10,
+        11,
+        24,
+        25,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "let Some(standard) = StandardHeader::from_bytes(name_bytes)",
+          "norm": null,
+          "value": "true",
+          "line": 1258,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1264,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.len() > super::MAX_HEADER_NAME_LEN",
+          "norm": null,
+          "value": "false",
+          "line": 1264,
+          "bound": "name_bytes.len() == super::MAX_HEADER_NAME_LEN",
+          "may_panic": false
+        },
+        {
+          "cond": "i >= name_bytes.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1267,
+          "bound": "i == name_bytes.len()",
+          "may_panic": false
+        }
+      ],
+      "ret": "HeaderName {\n            inner: Repr::Custom(Custom(ByteStr::from_static(src))),\n        }",
+      "path": [
+        0,
+        1,
+        2,
+        6,
+        7,
+        9,
+        10,
+        12,
+        13,
+        14,
+        15,
+        16,
+        23,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "let Some(standard) = StandardHeader::from_bytes(name_bytes)",
+          "norm": null,
+          "value": "true",
+          "line": 1258,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1264,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.len() > super::MAX_HEADER_NAME_LEN",
+          "norm": null,
+          "value": "false",
+          "line": 1264,
+          "bound": "name_bytes.len() == super::MAX_HEADER_NAME_LEN",
+          "may_panic": false
+        },
+        {
+          "cond": "i >= name_bytes.len()",
+          "norm": null,
+          "value": "false",
+          "line": 1267,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "HEADER_CHARS_H2[name_bytes[i] as usize] == 0",
+          "norm": "0 == HEADER_CHARS_H2[name_bytes[i] as usize]",
+          "value": "false",
+          "line": 1269,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "HeaderName {\n            inner: Repr::Custom(Custom(ByteStr::from_static(src))),\n        }",
+      "path": [
+        0,
+        1,
+        2,
+        6,
+        7,
+        9,
+        10,
+        12,
+        13,
+        14,
+        15,
+        17,
+        18,
+        19,
+        20,
+        23,
+        24,
+        25,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "let Some(standard) = StandardHeader::from_bytes(name_bytes)",
+          "norm": null,
+          "value": "true",
+          "line": 1258,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1264,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "name_bytes.len() > super::MAX_HEADER_NAME_LEN",
+          "norm": null,
+          "value": "false",
+          "line": 1264,
+          "bound": "name_bytes.len() == super::MAX_HEADER_NAME_LEN",
+          "may_panic": false
+        },
+        {
+          "cond": "i >= name_bytes.len()",
+          "norm": null,
+          "value": "false",
+          "line": 1267,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "HEADER_CHARS_H2[name_bytes[i] as usize] == 0",
+          "norm": "0 == HEADER_CHARS_H2[name_bytes[i] as usize]",
+          "value": "true",
+          "line": 1269,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "i >= name_bytes.len()",
+          "norm": null,
+          "value": "true",
+          "line": 1267,
+          "bound": "i == name_bytes.len()",
+          "may_panic": false
+        }
+      ],
+      "ret": "HeaderName {\n            inner: Repr::Custom(Custom(ByteStr::from_static(src))),\n        }",
+      "path": [
+        0,
+        1,
+        2,
+        6,
+        7,
+        9,
+        10,
+        12,
+        13,
+        14,
+        15,
+        17,
+        18,
+        19,
+        21,
+        22,
+        13,
+        14,
+        15,
+        16,
+        23,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "let Some(standard) = StandardHeader::from_bytes(name_bytes)",
+          "norm": null,
+          "value": "true",
+          "line": 1258,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "HeaderName {\n                inner: Repr::Standard(standard),\n            }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        32
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

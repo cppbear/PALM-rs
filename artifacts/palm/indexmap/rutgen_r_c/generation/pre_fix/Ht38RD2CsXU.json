@@ -1,0 +1,201 @@
+{
+  "name": "indexmap::map::core::raw_entry_v1::map::core::raw_entry_v1::RawEntryBuilderMut<'a, K, V, S>::from_hash",
+  "name_with_impl": "indexmap::map::core::raw_entry_v1::{impl#4}::from_hash",
+  "mod_info": {
+    "name": "map::core::raw_entry_v1",
+    "loc": "src/map/core.rs:12:1:12:22"
+  },
+  "visible": true,
+  "loc": "src/map/core/raw_entry_v1.rs:286:5:303:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.map.core.indices.find_entry(hash, eq) matches Err(absent) is true\n",
+        "// expected return value/type: RawEntryMut::Vacant(RawVacantEntryMut {\n                map: RefMut::new(absent.into_table(), &mut self.map.core.entries),\n                hash_builder: &self.map.hash_builder,\n            })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn test_from_hash_vacant_entry() {",
+            "    struct DummyHashBuilder;",
+            "    struct DummyKey;",
+            "    struct DummyValue;",
+            "",
+            "    let mut entries = Entries::new();",
+            "    let mut indices = Indices::new();",
+            "    let mut map = IndexMap {",
+            "        core: IndexMapCore {",
+            "            entries: &mut entries,",
+            "            indices: &mut indices,",
+            "        },",
+            "        hash_builder: DummyHashBuilder,",
+            "    };",
+            "",
+            "    let builder = RawEntryBuilderMut { map: &mut map };",
+            "    ",
+            "    let hash: u64 = 1234; // Example hash value",
+            "    let is_match = |key: &DummyKey| false; // Always returns false for testing vacant entry",
+            "",
+            "    let result = builder.from_hash(hash, is_match);",
+            "    ",
+            "    match result {",
+            "        RawEntryMut::Vacant(vacant) => {",
+            "            assert_eq!(vacant.map.entries, &mut entries);",
+            "            // Additional assertions can be added as needed",
+            "        }",
+            "        _ => panic!(\"Expected a Vacant entry\"),",
+            "    }",
+            "}",
+            "",
+            "fn test_from_hash_occupied_entry() {",
+            "    struct DummyHashBuilder;",
+            "    struct DummyKey(u64);",
+            "    struct DummyValue;",
+            "",
+            "    let mut entries = Entries::new();",
+            "    let mut indices = Indices::new();",
+            "",
+            "    // Simulate an occupied entry",
+            "    entries.insert(DummyKey(1), DummyValue);",
+            "    indices.insert(1, 0); // Assuming this maps the hash to the index of the entry",
+            "",
+            "    let mut map = IndexMap {",
+            "        core: IndexMapCore {",
+            "            entries: &mut entries,",
+            "            indices: &mut indices,",
+            "        },",
+            "        hash_builder: DummyHashBuilder,",
+            "    };",
+            "",
+            "    let builder = RawEntryBuilderMut { map: &mut map };",
+            "    ",
+            "    let hash: u64 = 1; // Assuming this corresponds to the inserted key",
+            "    let is_match = |key: &DummyKey| key.0 == 1; // Matches the existing key",
+            "",
+            "    let result = builder.from_hash(hash, is_match);",
+            "    ",
+            "    match result {",
+            "        RawEntryMut::Occupied(occupied) => {",
+            "            assert_eq!(occupied.entries.lookup(0).unwrap().key, DummyKey(1));",
+            "            // Additional assertions can be added as needed",
+            "        }",
+            "        _ => panic!(\"Expected an Occupied entry\"),",
+            "    }",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.map.core.indices.find_entry(hash, eq) matches Ok(index) is true\n",
+        "// constraint: self.map.core.indices.find_entry(hash, eq) matches Ok(index) is true\n",
+        "// expected return value/type: RawEntryMut::Occupied(RawOccupiedEntryMut {\n                entries: &mut self.map.core.entries,\n                index,\n                hash_builder: PhantomData,\n            })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use crate::IndexMap;",
+            "use crate::HashValue;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use crate::{IndexMap, HashValue};",
+                  "    // Define a simple string key and i32 value for our test",
+                  "    let mut map: IndexMap<String, i32, std::collections::hash_map::RandomState> = IndexMap::new();",
+                  "    map.insert(\"key\".into(), 42);",
+                  "",
+                  "    // Assuming that the underlying structure has been set up properly",
+                  "    let hash = 12345; // using a hash that we assume matches \"key\"",
+                  "    ",
+                  "    // Create a RawEntryBuilderMut",
+                  "    let mut builder = RawEntryBuilderMut { map: &mut map };",
+                  "",
+                  "    // Create a matching function for the key",
+                  "    let is_match = |key: &String| key == \"key\";",
+                  "",
+                  "    // Call from_hash which should find the existing entry",
+                  "    let entry = builder.from_hash(hash, is_match);",
+                  "    ",
+                  "    // Validate that we received an Occupied entry",
+                  "    if let RawEntryMut::Occupied(_occupied) = entry {",
+                  "        // Unlocking the entry to verify its contents",
+                  "        assert_eq!(_occupied.entries.get(_occupied.index), Some(&Bucket { hash: HashValue::new(hash), key: \"key\".into(), value: 42 }));",
+                  "    } else {",
+                  "        panic!(\"Expected RawEntryMut::Occupied but got Vacant\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rand_core v0.9.3\n   Compiling rand v0.8.5\n   Compiling quickcheck v1.0.3\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling serde_derive v1.0.219\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling indexmap v2.9.0 (/home/abezbm/rust-utgen-test-crates-new/indexmap)\nerror[E0422]: cannot find struct, variant or union type `Bucket` in this scope\n   --> src/map/core/raw_entry_v1.rs:693:66\n    |\n693 |         assert_eq!(_occupied.entries.get(_occupied.index), Some(&Bucket { hash: HashValue::new(hash), key: \"key\".into(), value: 42 }));\n    |                                                                  ^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n668 +    use crate::Bucket;\n    |\n\nwarning: unused import: `ntest::timeout`\n   --> src/map/core/raw_entry_v1.rs:669:8\n    |\n669 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/map/slice.rs:520:9\n    |\n520 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/map/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/map/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused macro definition: `move_index_oob`\n   --> src/map/tests.rs:817:14\n    |\n817 | macro_rules! move_index_oob {\n    |              ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/set/slice.rs:334:9\n    |\n334 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n --> src/set/tests.rs:1:5\n  |\n1 | use super::*;\n  |     ^^^^^^^^\n\nwarning: unused import: `std::string::String`\n --> src/set/tests.rs:2:5\n  |\n2 | use std::string::String;\n  |     ^^^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the type `[Bucket<String, i32>]` cannot be indexed by `hashbrown::hash_table::OccupiedEntry<'_, usize>`\n   --> src/map/core/raw_entry_v1.rs:693:42\n    |\n693 |         assert_eq!(_occupied.entries.get(_occupied.index), Some(&Bucket { hash: HashValue::new(hash), key: \"key\".into(), value: 42 }));\n    |                                      --- ^^^^^^^^^^^^^^^ slice indices are of type `usize` or ranges of `usize`\n    |                                      |\n    |                                      required by a bound introduced by this call\n    |\n    = help: the trait `SliceIndex<[Bucket<String, i32>]>` is not implemented for `hashbrown::hash_table::OccupiedEntry<'_, usize>`\nnote: required by a bound in `core::slice::<impl [T]>::get`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/mod.rs:614:12\n    |\n612 |     pub fn get<I>(&self, index: I) -> Option<&I::Output>\n    |            --- required by a bound in this associated function\n613 |     where\n614 |         I: SliceIndex<Self>,\n    |            ^^^^^^^^^^^^^^^^ required by this bound in `core::slice::<impl [T]>::get`\n\nerror[E0599]: no function or associated item named `new` found for struct `HashValue` in the current scope\n   --> src/map/core/raw_entry_v1.rs:693:92\n    |\n693 |         assert_eq!(_occupied.entries.get(_occupied.index), Some(&Bucket { hash: HashValue::new(hash), key: \"key\".into(), value: 42 }));\n    |                                                                                            ^^^ function or associated item not found in `HashValue`\n    |\n   ::: src/lib.rs:139:1\n    |\n139 | struct HashValue(usize);\n    | ---------------- function or associated item `new` not found for this struct\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\n    = note: the following traits define an item `new`, perhaps you need to implement one of them:\n            candidate #1: `itertools::adaptors::coalesce::CountItem`\n            candidate #2: `rand::distr::uniform::UniformSampler`\n            candidate #3: `rand::distributions::uniform::UniformSampler`\nhelp: there is a method `ne` with a similar name\n    |\n693 |         assert_eq!(_occupied.entries.get(_occupied.index), Some(&Bucket { hash: HashValue::ne(hash), key: \"key\".into(), value: 42 }));\n    |                                                                                            ~~\n\nSome errors have detailed explanations: E0277, E0422, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `indexmap` (lib test) generated 8 warnings\nerror: could not compile `indexmap` (lib test) due to 3 previous errors; 8 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use crate::{IndexMap, HashValue};",
+                  "    // Define a simple string key and i32 value for our test",
+                  "    let mut map: IndexMap<String, i32, std::collections::hash_map::RandomState> = IndexMap::new();",
+                  "    ",
+                  "    // Assuming the map is empty",
+                  "    let hash = 54321; // using a hash that does not match any entry",
+                  "    ",
+                  "    // Create a RawEntryBuilderMut",
+                  "    let mut builder = RawEntryBuilderMut { map: &mut map };",
+                  "",
+                  "    // Create a matching function that will not find a key",
+                  "    let is_match = |key: &String| key == \"key\";",
+                  "",
+                  "    // Call from_hash which should not find the existing entry",
+                  "    let entry = builder.from_hash(hash, is_match);",
+                  "    ",
+                  "    // Validate that we received a Vacant entry",
+                  "    if let RawEntryMut::Vacant(_vacant) = entry {",
+                  "        // We can check that the map is still empty",
+                  "        assert!(map.is_empty());",
+                  "    } else {",
+                  "        panic!(\"Expected RawEntryMut::Vacant but got Occupied\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,976 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct MyRead {",
+      "    data: Vec<u8>,",
+      "    position: usize,",
+      "}",
+      "",
+      "impl Read<'_> for MyRead {",
+      "    const should_early_return_if_failed: bool = false;",
+      "",
+      "    fn next(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.data.len() {",
+      "            let byte = self.data[self.position];",
+      "            self.position += 1;",
+      "            Ok(Some(byte))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn peek(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.data.len() {",
+      "            Ok(Some(self.data[self.position]))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn discard(&mut self) {",
+      "        self.position += 1;",
+      "    }",
+      "",
+      "    fn position(&self) -> Position {",
+      "        Position { line: 1, column: self.position as u32 }",
+      "    }",
+      "",
+      "    fn peek_position(&self) -> Position {",
+      "        Position { line: 1, column: self.position as u32 }",
+      "    }",
+      "",
+      "    fn byte_offset(&self) -> usize {",
+      "        self.position",
+      "    }",
+      "",
+      "    fn parse_str<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Reference<'_, 's, str>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn parse_str_raw<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Reference<'_, 's, [u8]>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn ignore_str(&mut self) -> Result<()> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn decode_hex_escape(&mut self) -> Result<u16> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    #[cfg(feature = \"raw_value\")]",
+      "    fn begin_raw_buffering(&mut self) {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    #[cfg(feature = \"raw_value\")]",
+      "    fn end_raw_buffering<V>(&mut self, _visitor: V) -> Result<V::Value>",
+      "    where",
+      "        V: Visitor<'_>,",
+      "    {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn set_failed(&mut self, _failed: &mut bool) {}",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MyRead { data: b\"12345678901234567890.0\".to_vec(), position: 0 },",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 0,",
+          "    };",
+          "    let result = deserializer.parse_decimal(false, 18446744073709551615, 5);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MyRead { data: b\"12345678901234567890.0\".to_vec(), position: 0 }, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_decimal(false, 18446744073709551615, 5);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MyRead { data: b\"12345678901234567890.0\".to_vec(), position: 0 }, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_decimal(false, 18446744073709551615, 5);",
+            "    assert_eq!(result.unwrap_err(), deserializer.peek_error(ErrorCode::InvalidNumber));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345678901234567890.0\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 18446744073709551615, 5);",
+            "    let mut deserializer = Deserializer { read: MyRead { data: b\"12345678901234567890.0\".to_vec(), position: 0 }, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_decimal(false, 18446744073709551615, 5);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345678901234567890.0\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 18446744073709551615, 5);",
+            "    let mut deserializer = Deserializer { read: MyRead { data: b\"12345678901234567890.0\".to_vec(), position: 0 }, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_decimal(false, 18446744073709551615, 5);",
+            "    assert_eq!(result.unwrap_err(), deserializer.peek_error(ErrorCode::InvalidNumber));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 0,",
+          "    };",
+          "    let result = deserializer.parse_decimal(false, 10, 0);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    assert_eq!(parsed_value, 12345.0);"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert_eq!(result, Err(deserializer.peek_error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert_eq!(result, Err(deserializer.peek_error(ErrorCode::InvalidNumber)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert_eq!(result, Err(deserializer.peek_error(ErrorCode::NumberOutOfRange)));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let result = deserializer.parse_decimal(false, 0, 1);",
+            "    assert!(result.is_ok()); // expected valid parsing without underflow"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let result = deserializer.parse_decimal(false, 0, 1);",
+            "    deserializer.read.data = b\"12345.0e0\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let result = deserializer.parse_decimal(false, 0, 1);",
+            "    deserializer.read.data = b\"12345.0e0\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e-1\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let result = deserializer.parse_decimal(false, 0, 1);",
+            "    deserializer.read.data = b\"12345.0e0\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e-1\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e-1000\".to_vec(); // test for extreme exponent both negative/positive",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    assert_eq!(parsed_value, 12345.0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert_eq!(result, Err(deserializer.peek_error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert_eq!(result, Err(deserializer.peek_error(ErrorCode::InvalidNumber)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert_eq!(result, Err(deserializer.peek_error(ErrorCode::NumberOutOfRange)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let result = deserializer.parse_decimal(false, 0, 1);",
+            "    assert!(result.is_ok()); // expected valid parsing without underflow",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let result = deserializer.parse_decimal(false, 0, 1);",
+            "    deserializer.read.data = b\"12345.0e0\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let result = deserializer.parse_decimal(false, 0, 1);",
+            "    deserializer.read.data = b\"12345.0e0\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e-1\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"12345.0e\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let parsed_value = result.unwrap();",
+            "    deserializer.read.data = b\"12345.\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e\".to_vec();",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.e\".to_vec(); // invalid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+\".to_vec(); // valid exponent case",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e+99999999999999999999\".to_vec(); // test overflow",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    let result = deserializer.parse_decimal(false, 0, 1);",
+            "    deserializer.read.data = b\"12345.0e0\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e-1\".to_vec(); // valid input",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    deserializer.read.data = b\"12345.0e-1000\".to_vec(); // test for extreme exponent both negative/positive",
+            "    let result = deserializer.parse_decimal(false, 10, 0);",
+            "    assert!(result.is_ok());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 0,",
+          "    };",
+          "    let result = deserializer.parse_decimal(true, 10, 2);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let result_err = result.unwrap_err();",
+            "    assert_eq!(result_err, deserializer.peek_error(ErrorCode::InvalidNumber));"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let result_err = result.unwrap_err();",
+            "    let deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.0\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let result_err = result.unwrap_err();",
+            "    let deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.0\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let result = deserializer.parse_decimal(false, 0, 0);",
+            "    assert!(result.is_ok());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let result_err = result.unwrap_err();",
+            "    assert_eq!(result_err, deserializer.peek_error(ErrorCode::InvalidNumber));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let result_err = result.unwrap_err();",
+            "    let deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.0\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let mut deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let result_err = result.unwrap_err();",
+            "    let deserializer = Deserializer {",
+            "    read: MyRead { data: b\"10.0\".to_vec(), position: 0 },",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(true, 10, 2);",
+            "    let result = deserializer.parse_decimal(false, 0, 0);",
+            "    assert!(result.is_ok());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MyRead { data: b\"1e99999\".to_vec(), position: 0 },",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 0,",
+          "    };",
+          "    let result = deserializer.parse_decimal(false, 1, 0);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer { read: MyRead { data: b\"1e99999\".to_vec(), position: 0 }, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_decimal(false, 1, 0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer { read: MyRead { data: b\"1e99999\".to_vec(), position: 0 }, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_decimal(false, 1, 0);",
+            "    assert_eq!(result.unwrap_err().err, Error::syntax(ErrorCode::NumberOutOfRange, 1, 6));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"1e99999\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 1, 0);",
+            "    let mut deserializer = Deserializer { read: MyRead { data: b\"1e99999\".to_vec(), position: 0 }, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_decimal(false, 1, 0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"1e99999\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 1, 0);",
+            "    let mut deserializer = Deserializer { read: MyRead { data: b\"1e99999\".to_vec(), position: 0 }, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_decimal(false, 1, 0);",
+            "    assert_eq!(result.unwrap_err().err, Error::syntax(ErrorCode::NumberOutOfRange, 1, 6));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: MyRead { data: b\"-1234.5678\".to_vec(), position: 0 },",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 0,",
+          "    };",
+          "    let result = deserializer.parse_decimal(false, 1234, 0);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut read = MyRead { data: b\"-1234.5678\".to_vec(), position: 0 };",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    result = deserializer.parse_decimal(false, 1234, 0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut read = MyRead { data: b\"-1234.5678\".to_vec(), position: 0 };",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    result = deserializer.parse_decimal(false, 1234, 0);",
+            "    assert_eq!(result.err().unwrap().err, Error::peek_error(ErrorCode::InvalidNumber));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"-1234.5678\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 1234, 0);",
+            "    let mut read = MyRead { data: b\"-1234.5678\".to_vec(), position: 0 };",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    result = deserializer.parse_decimal(false, 1234, 0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: MyRead { data: b\"-1234.5678\".to_vec(), position: 0 },",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 0,",
+            "    };",
+            "    let result = deserializer.parse_decimal(false, 1234, 0);",
+            "    let mut read = MyRead { data: b\"-1234.5678\".to_vec(), position: 0 };",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    result = deserializer.parse_decimal(false, 1234, 0);",
+            "    assert_eq!(result.err().unwrap().err, Error::peek_error(ErrorCode::InvalidNumber));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

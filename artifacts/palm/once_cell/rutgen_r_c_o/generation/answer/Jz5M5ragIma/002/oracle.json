@@ -1,0 +1,247 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[should_panic]",
+      "fn test_wait_uninitialized_panic() {",
+      "    let cell = OnceCell::new();",
+      "    let _value: &u32 = cell.wait(); // This should panic as the cell is not initialized.",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cell = std::sync::Arc::new(OnceCell::new());",
+          "    cell.set(42).unwrap();",
+          "    let value: &u32 = cell.wait();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let cell = OnceCell::new();",
+            "    assert!(std::panic::catch_unwind(|| { cell.wait(); }).is_err());"
+          ],
+          [
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    cell.set(42).unwrap();",
+            "    let value: &u32 = cell.wait();",
+            "    assert_eq!(*value, 42);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    cell.set(42).unwrap();",
+            "    let value: &u32 = cell.wait();",
+            "    let cell = OnceCell::new();",
+            "    assert!(std::panic::catch_unwind(|| { cell.wait(); }).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    cell.set(42).unwrap();",
+            "    let value: &u32 = cell.wait();",
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    cell.set(42).unwrap();",
+            "    let value: &u32 = cell.wait();",
+            "    assert_eq!(*value, 42);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let cell = std::sync::Arc::new(OnceCell::new());",
+          "    let t = std::thread::spawn({",
+          "        let cell = std::sync::Arc::clone(&cell);",
+          "        move || cell.set(99).unwrap()",
+          "    });",
+          "    let value: &u32 = cell.wait();",
+          "    t.join().unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let cell = OnceCell::new();",
+            "    assert!(cell.get().is_none());"
+          ],
+          [
+            "    let cell = OnceCell::new();",
+            "    assert!(std::panic::catch_unwind(|| { cell.wait(); }).is_err());"
+          ],
+          [
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    assert!(cell.get().is_none());"
+          ],
+          [
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    assert!(std::panic::catch_unwind(|| { cell.wait(); }).is_err());"
+          ],
+          [
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "    let cell = std::sync::Arc::clone(&cell);",
+            "    move || cell.set(99).unwrap()",
+            "    });",
+            "    assert!(cell.get().is_none());"
+          ],
+          [
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "    let cell = std::sync::Arc::clone(&cell);",
+            "    move || cell.set(99).unwrap()",
+            "    });",
+            "    let value: &u32 = cell.wait();",
+            "    assert_eq!(*value, 99);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "        let cell = std::sync::Arc::clone(&cell);",
+            "        move || cell.set(99).unwrap()",
+            "    });",
+            "    let value: &u32 = cell.wait();",
+            "    t.join().unwrap();",
+            "    let cell = OnceCell::new();",
+            "    assert!(cell.get().is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "        let cell = std::sync::Arc::clone(&cell);",
+            "        move || cell.set(99).unwrap()",
+            "    });",
+            "    let value: &u32 = cell.wait();",
+            "    t.join().unwrap();",
+            "    let cell = OnceCell::new();",
+            "    assert!(std::panic::catch_unwind(|| { cell.wait(); }).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "        let cell = std::sync::Arc::clone(&cell);",
+            "        move || cell.set(99).unwrap()",
+            "    });",
+            "    let value: &u32 = cell.wait();",
+            "    t.join().unwrap();",
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    assert!(cell.get().is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "        let cell = std::sync::Arc::clone(&cell);",
+            "        move || cell.set(99).unwrap()",
+            "    });",
+            "    let value: &u32 = cell.wait();",
+            "    t.join().unwrap();",
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    assert!(std::panic::catch_unwind(|| { cell.wait(); }).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "        let cell = std::sync::Arc::clone(&cell);",
+            "        move || cell.set(99).unwrap()",
+            "    });",
+            "    let value: &u32 = cell.wait();",
+            "    t.join().unwrap();",
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "    let cell = std::sync::Arc::clone(&cell);",
+            "    move || cell.set(99).unwrap()",
+            "    });",
+            "    assert!(cell.get().is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "        let cell = std::sync::Arc::clone(&cell);",
+            "        move || cell.set(99).unwrap()",
+            "    });",
+            "    let value: &u32 = cell.wait();",
+            "    t.join().unwrap();",
+            "    let cell = OnceCell::new();",
+            "    let cell = std::sync::Arc::new(OnceCell::new());",
+            "    let t = std::thread::spawn({",
+            "    let cell = std::sync::Arc::clone(&cell);",
+            "    move || cell.set(99).unwrap()",
+            "    });",
+            "    let value: &u32 = cell.wait();",
+            "    assert_eq!(*value, 99);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

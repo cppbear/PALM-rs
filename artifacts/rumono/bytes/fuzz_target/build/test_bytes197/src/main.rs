@@ -1,0 +1,29 @@
+#![feature(int_log)]
+#![feature(allocator_api)]
+
+#[macro_use]
+extern crate afl;
+fn _to_slice<T>(data:&[u8], start_index: usize, end_index: usize)->&[T] {
+    let data_slice = &data[start_index..end_index];
+    let (_, shorts, _) = unsafe {data_slice.align_to::<T>()};
+    shorts
+}
+
+fn test_function197(_param0 :&[u8] ,_param1 :&[u8]) {
+    let _local0 = bytes::Bytes::from_static(_param0);
+    let _local1 = bytes::Bytes::from_static(_param1);
+    let _local2: bytes::buf::Chain::<bytes::Bytes, bytes::Bytes> = <bytes::Bytes as bytes::buf::Buf>::chain(_local0, _local1);
+    let _local3: bytes::buf::Reader::<bytes::buf::Chain::<bytes::Bytes, bytes::Bytes>> = <bytes::buf::Chain::<bytes::Bytes, bytes::Bytes> as bytes::buf::Buf>::reader(_local2);
+    let _: bytes::buf::Chain::<bytes::Bytes, bytes::Bytes> = bytes::buf::Reader::<bytes::buf::Chain::<bytes::Bytes, bytes::Bytes>>::into_inner(_local3);
+}
+
+fn main() {
+    fuzz!(|data: &[u8]| {
+        //actual body emit
+        if data.len() < 2 {return;}
+        let dynamic_length = (data.len() - 0) / 2;
+        let _param0 = _to_slice::<u8>(data, 0 + 0 * dynamic_length, 0 + 1 * dynamic_length);
+        let _param1 = _to_slice::<u8>(data, 0 + 1 * dynamic_length, data.len());
+        test_function197(_param0 ,_param1);
+    });
+}

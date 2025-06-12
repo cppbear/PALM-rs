@@ -1,0 +1,97 @@
+// Answer 0
+
+#[test]
+fn test_capture_matches_text_non_empty_string() {
+    struct DummyRegex;
+    impl RegularExpression for DummyRegex {
+        type Text = String;
+    }
+    
+    let text = String::from("abcdefghi");
+    let matches = Matches {
+        re: DummyRegex,
+        text: &text,
+        last_end: 5,
+        last_match: Some(3),
+    };
+    
+    let capture_matches = CaptureMatches(matches);
+    capture_matches.text();
+}
+
+#[test]
+fn test_capture_matches_text_single_character() {
+    struct DummyRegex;
+    impl RegularExpression for DummyRegex {
+        type Text = String;
+    }
+    
+    let text = String::from("a");
+    let matches = Matches {
+        re: DummyRegex,
+        text: &text,
+        last_end: 1,
+        last_match: None,
+    };
+    
+    let capture_matches = CaptureMatches(matches);
+    capture_matches.text();
+}
+
+#[test]
+fn test_capture_matches_text_upper_bound_length() {
+    struct DummyRegex;
+    impl RegularExpression for DummyRegex {
+        type Text = String;
+    }
+    
+    let text = String::from("abcdefghij");
+    let matches = Matches {
+        re: DummyRegex,
+        text: &text,
+        last_end: 10,
+        last_match: Some(9),
+    };
+    
+    let capture_matches = CaptureMatches(matches);
+    capture_matches.text();
+}
+
+#[test]
+fn test_capture_matches_last_end_zero() {
+    struct DummyRegex;
+    impl RegularExpression for DummyRegex {
+        type Text = String;
+    }
+    
+    let text = String::from("abc");
+    let matches = Matches {
+        re: DummyRegex,
+        text: &text,
+        last_end: 0,
+        last_match: Some(0),
+    };
+    
+    let capture_matches = CaptureMatches(matches);
+    capture_matches.text();
+}
+
+#[test]
+fn test_capture_matches_last_end_equal_to_last_match() {
+    struct DummyRegex;
+    impl RegularExpression for DummyRegex {
+        type Text = String;
+    }
+    
+    let text = String::from("xyz");
+    let matches = Matches {
+        re: DummyRegex,
+        text: &text,
+        last_end: 2,
+        last_match: Some(2),
+    };
+    
+    let capture_matches = CaptureMatches(matches);
+    capture_matches.text();
+}
+

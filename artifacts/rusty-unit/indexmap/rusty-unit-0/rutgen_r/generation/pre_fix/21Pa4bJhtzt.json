@@ -1,0 +1,241 @@
+{
+  "name": "indexmap::map::core::map::core::IndexMapCore<K, V>::reserve",
+  "name_with_impl": "indexmap::map::core::{impl#2}::reserve",
+  "mod_info": {
+    "name": "map::core",
+    "loc": "src/map.rs:4:1:4:10"
+  },
+  "visible": true,
+  "loc": "src/map/core.rs:249:5:255:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: additional > self.entries.capacity() - self.entries.len() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestIndexMap {",
+                  "        indices: Vec<usize>,",
+                  "        entries: Vec<usize>,",
+                  "    }",
+                  "",
+                  "    impl TestIndexMap {",
+                  "        fn new() -> Self {",
+                  "            TestIndexMap {",
+                  "                indices: Vec::new(),",
+                  "                entries: Vec::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn reserve(&mut self, additional: usize) {",
+                  "            self.indices.reserve(additional);",
+                  "            if additional > self.entries.capacity() - self.entries.len() {",
+                  "                self.entries.reserve(additional);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut map = TestIndexMap::new();",
+                  "    map.entries.reserve(5); // Initial capacity of 5",
+                  "",
+                  "    // Triggering the condition where additional > entries.capacity() - entries.len()",
+                  "    let additional = 10; // additional = 10, current capacity = 5, current len = 0",
+                  "    map.reserve(additional);",
+                  "",
+                  "    assert_eq!(map.entries.capacity(), 15); // After reserving, capacity should increase",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestIndexMap {",
+                  "        indices: Vec<usize>,",
+                  "        entries: Vec<usize>,",
+                  "    }",
+                  "",
+                  "    impl TestIndexMap {",
+                  "        fn new() -> Self {",
+                  "            TestIndexMap {",
+                  "                indices: Vec::new(),",
+                  "                entries: Vec::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn reserve(&mut self, additional: usize) {",
+                  "            self.indices.reserve(additional);",
+                  "            if additional > self.entries.capacity() - self.entries.len() {",
+                  "                self.entries.reserve(additional);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut map = TestIndexMap::new();",
+                  "    ",
+                  "    // This will panic since the capacity is 0 and we will try to ask for more space",
+                  "    let additional = 1; // additional = 1, current capacity = 0, current len = 0",
+                  "    map.reserve(additional);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: additional > self.entries.capacity() - self.entries.len() is false, with bound additional == self.entries.capacity() - self.entries.len()\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct Indices {",
+            "    capacity: usize,",
+            "    len: usize,",
+            "}",
+            "",
+            "impl Indices {",
+            "    fn reserve(&mut self, additional: usize, _: fn()) {",
+            "        self.capacity += additional;",
+            "    }",
+            "}",
+            "",
+            "#[derive(Default)]",
+            "struct Entries {",
+            "    capacity: usize,",
+            "    len: usize,",
+            "}",
+            "",
+            "impl Entries {",
+            "    fn capacity(&self) -> usize {",
+            "        self.capacity",
+            "    }",
+            "",
+            "    fn len(&self) -> usize {",
+            "        self.len",
+            "    }",
+            "",
+            "    fn reserve(&mut self, additional: usize) {",
+            "        self.capacity += additional;",
+            "    }",
+            "}",
+            "",
+            "struct IndexMap {",
+            "    indices: Indices,",
+            "    entries: Entries,",
+            "}",
+            "",
+            "impl IndexMap {",
+            "    fn borrow_mut(&mut self) -> &mut Entries {",
+            "        &mut self.entries",
+            "    }",
+            "",
+            "    pub(crate) fn reserve(&mut self, additional: usize) {",
+            "        self.indices.reserve(additional, || {});",
+            "        if additional > self.entries.capacity() - self.entries.len() {",
+            "            self.borrow_mut().reserve(additional);",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut index_map = IndexMap {",
+                  "        indices: Indices { capacity: 10, len: 5 },",
+                  "        entries: Entries { capacity: 10, len: 5 },",
+                  "    };",
+                  "    index_map.reserve(5);",
+                  "    assert_eq!(index_map.indices.capacity, 15);",
+                  "    assert_eq!(index_map.entries.capacity, 10);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut index_map = IndexMap {",
+                  "        indices: Indices { capacity: 10, len: 5 },",
+                  "        entries: Entries { capacity: 10, len: 9 },",
+                  "    };",
+                  "    index_map.reserve(1);",
+                  "    assert_eq!(index_map.indices.capacity, 11);",
+                  "    assert_eq!(index_map.entries.capacity, 11);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

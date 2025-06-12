@@ -1,0 +1,215 @@
+{
+  "name": "bytes::bytes::bytes::Bytes::inc_start",
+  "name_with_impl": "bytes::bytes::{impl#0}::inc_start",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:672:5:677:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.len >= by is true, with bound self.len == by\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = unsafe {",
+                  "        Bytes::with_vtable(",
+                  "            b\"Test\"[..].as_ptr(),",
+                  "            4,",
+                  "            AtomicPtr::new(ptr::null_mut()),",
+                  "            &STATIC_VTABLE,",
+                  "        )",
+                  "    };",
+                  "    let initial_len = bytes.len();",
+                  "    let by = initial_len; // Constraint: self.len >= by and self.len == by",
+                  "",
+                  "    unsafe {",
+                  "        bytes.inc_start(by);",
+                  "    }",
+                  "",
+                  "    assert_eq!(bytes.len(), 0); // After inc_start, length should be 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"internal: inc_start out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = unsafe {",
+                  "        Bytes::with_vtable(",
+                  "            b\"Test\"[..].as_ptr(),",
+                  "            4,",
+                  "            AtomicPtr::new(ptr::null_mut()),",
+                  "            &STATIC_VTABLE,",
+                  "        )",
+                  "    };",
+                  "",
+                  "    let exceeding_by = 5; // Constraint: self.len >= by is false",
+                  "",
+                  "    unsafe {",
+                  "        bytes.inc_start(exceeding_by); // This should panic",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.len >= by is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"internal: inc_start out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes::new(); // Initialized with len = 0",
+                  "    unsafe {",
+                  "        // Attempt to call inc_start with a value greater than the current length",
+                  "        bytes.inc_start(1); // This should panic",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"internal: inc_start out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let bytes = Bytes::from_static(b\"test\"); // Initialized with len = 4",
+                  "    unsafe {",
+                  "        // Attempt to call inc_start with a value equal to the current length",
+                  "        bytes.inc_start(4); // This should panic",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0596]: cannot borrow `bytes` as mutable, as it is not declared as mutable\n    --> src/bytes.rs:1692:9\n     |\n1692 |         bytes.inc_start(4); // This should panic\n     |         ^^^^^ cannot borrow as mutable\n     |\nhelp: consider changing this to be mutable\n     |\n1689 |     let mut bytes = Bytes::from_static(b\"test\"); // Initialized with len = 4\n     |         +++\n\nFor more information about this error, try `rustc --explain E0596`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes::from_static(b\"test\"); // Initialized with len = 4",
+                  "    unsafe {",
+                  "        bytes.inc_start(0); // This should not panic",
+                  "        assert_eq!(bytes.len(), 4);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes::from_static(b\"example\"); // Initialized with len = 7",
+                  "    unsafe {",
+                  "        bytes.inc_start(3); // Decrease length by 3",
+                  "        assert_eq!(bytes.len(), 4); // Length should now be 4",
+                  "        assert_eq!(bytes.ptr as usize, (bytes.ptr as usize + 3)); // Pointer should be moved forward by 3",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

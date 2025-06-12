@@ -1,0 +1,112 @@
+// Answer 0
+
+#[test]
+fn test_retain_in_order_with_elements_kept() {
+    struct Entry<K, V> {
+        key: K,
+        value: V,
+    }
+
+    struct TestMap<K, V> {
+        entries: Vec<Entry<K, V>>,
+        indices: Vec<usize>,
+    }
+
+    impl<K, V> TestMap<K, V> {
+        pub fn new() -> Self {
+            TestMap {
+                entries: Vec::new(),
+                indices: Vec::new(),
+            }
+        }
+
+        pub fn insert(&mut self, key: K, value: V) {
+            self.entries.push(Entry { key, value });
+            self.indices.push(self.entries.len() - 1);
+        }
+
+        pub fn rebuild_hash_table(&mut self) {
+            self.indices.clear();
+            for (idx, _) in self.entries.iter().enumerate() {
+                self.indices.push(idx);
+            }
+        }
+
+        pub fn retain_in_order<F>(&mut self, mut keep: F)
+        where
+            F: FnMut(&mut K, &mut V) -> bool,
+        {
+            self.entries
+                .retain_mut(|entry| keep(&mut entry.key, &mut entry.value));
+            if self.entries.len() < self.indices.len() {
+                self.rebuild_hash_table();
+            }
+        }
+    }
+
+    let mut map = TestMap::new();
+    map.insert(1, "a");
+    map.insert(2, "b");
+    map.insert(3, "c");
+
+    map.retain_in_order(|key, value| *key % 2 == 0);
+
+    assert_eq!(map.entries.len(), 1);
+    assert_eq!(map.entries[0].key, 2);
+    assert_eq!(map.entries[0].value, "b");
+}
+
+#[test]
+fn test_retain_in_order_with_no_elements_kept() {
+    struct Entry<K, V> {
+        key: K,
+        value: V,
+    }
+
+    struct TestMap<K, V> {
+        entries: Vec<Entry<K, V>>,
+        indices: Vec<usize>,
+    }
+
+    impl<K, V> TestMap<K, V> {
+        pub fn new() -> Self {
+            TestMap {
+                entries: Vec::new(),
+                indices: Vec::new(),
+            }
+        }
+
+        pub fn insert(&mut self, key: K, value: V) {
+            self.entries.push(Entry { key, value });
+            self.indices.push(self.entries.len() - 1);
+        }
+
+        pub fn rebuild_hash_table(&mut self) {
+            self.indices.clear();
+            for (idx, _) in self.entries.iter().enumerate() {
+                self.indices.push(idx);
+            }
+        }
+
+        pub fn retain_in_order<F>(&mut self, mut keep: F)
+        where
+            F: FnMut(&mut K, &mut V) -> bool,
+        {
+            self.entries
+                .retain_mut(|entry| keep(&mut entry.key, &mut entry.value));
+            if self.entries.len() < self.indices.len() {
+                self.rebuild_hash_table();
+            }
+        }
+    }
+
+    let mut map = TestMap::new();
+    map.insert(1, "a");
+    map.insert(2, "b");
+    map.insert(3, "c");
+
+    map.retain_in_order(|_, _| false);
+
+    assert_eq!(map.entries.len(), 0);
+}
+

@@ -1,0 +1,273 @@
+{
+  "name": "bytes::bytes_mut::bytes_mut::BytesMut::set_vec_pos",
+  "name_with_impl": "bytes::bytes_mut::{impl#0}::set_vec_pos",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1076:5:1081:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: pos <= MAX_VEC_POS is true, with bound pos == MAX_VEC_POS\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::mem::MaybeUninit;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::mem::MaybeUninit;",
+                  "",
+                  "    struct TestBytesMut {",
+                  "        data: *mut Shared,",
+                  "        kind_value: usize,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        unsafe fn kind(&self) -> usize {",
+                  "            self.kind_value",
+                  "        }",
+                  "",
+                  "        unsafe fn set_vec_pos(&mut self, pos: usize) {",
+                  "            debug_assert_eq!(self.kind(), KIND_VEC);",
+                  "            debug_assert!(pos <= MAX_VEC_POS);",
+                  "",
+                  "            self.data = invalid_ptr((pos << VEC_POS_OFFSET) | (self.data as usize & NOT_VEC_POS_MASK));",
+                  "        }",
+                  "    }",
+                  "",
+                  "    const MAX_VEC_POS: usize = usize::MAX >> VEC_POS_OFFSET;",
+                  "",
+                  "    let mut test_bytes_mut = TestBytesMut {",
+                  "        data: core::ptr::null_mut(),",
+                  "        kind_value: KIND_VEC,",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        test_bytes_mut.set_vec_pos(MAX_VEC_POS);",
+                  "    }",
+                  "",
+                  "    // Assuming we cannot take a reference to a potentially invalid pointer,",
+                  "    // we verify the internal representation. This step may vary depending on full context.",
+                  "    // Since direct testing is limited, we can inspect this indirectly through test_results:",
+                  "",
+                  "    let expected_data_value = (MAX_VEC_POS << VEC_POS_OFFSET) & NOT_VEC_POS_MASK;",
+                  "",
+                  "    assert_eq!(test_bytes_mut.data as usize & NOT_VEC_POS_MASK, expected_data_value);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: pos <= MAX_VEC_POS is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::new(); // or use with_capacity if needed",
+                  "    unsafe {",
+                  "        bytes_mut.set_vec_pos(0); // testing with a valid position",
+                  "        assert_eq!(bytes_mut.get_vec_pos(), 0); // assuming get_vec_pos returns the correct value for verification",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::new(); // or use with_capacity if needed",
+                  "    let invalid_pos = MAX_VEC_POS + 1;",
+                  "    unsafe {",
+                  "        bytes_mut.set_vec_pos(invalid_pos); // should panic as pos exceeds MAX_VEC_POS",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut shared = Shared {",
+                  "        vec: vec![1, 2, 3],",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    };",
+                  "    let mut bytes_mut = BytesMut {",
+                  "        ptr: NonNull::new(shared.vec.as_mut_ptr()).unwrap(),",
+                  "        len: 3,",
+                  "        cap: 3,",
+                  "        data: &mut shared as *mut _,",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.set_vec_pos(0); // This should not panic",
+                  "        assert_eq!(bytes_mut.data as usize & KIND_MASK, KIND_VEC);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"assertion failed: self.kind() == KIND_VEC\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut {",
+                  "        ptr: NonNull::dangling(),",
+                  "        len: 0,",
+                  "        cap: 0,",
+                  "        data: ptr::null_mut(),",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.set_vec_pos(0); // This should panic since kind is not KIND_VEC",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"assertion failed: pos <= MAX_VEC_POS\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut shared = Shared {",
+                  "        vec: vec![1, 2, 3],",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    };",
+                  "    let mut bytes_mut = BytesMut {",
+                  "        ptr: NonNull::new(shared.vec.as_mut_ptr()).unwrap(),",
+                  "        len: 3,",
+                  "        cap: 3,",
+                  "        data: &mut shared as *mut _,",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.set_vec_pos(usize::MAX); // This should panic as it exceeds MAX_VEC_POS",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,468 @@
+{
+  "name": "http::header::map::header::map::HeaderMap<T>::try_reserve",
+  "name_with_impl": "http::header::map::{impl#1}::try_reserve",
+  "mod_info": {
+    "name": "header::map",
+    "loc": "src/header/mod.rs:73:1:73:9"
+  },
+  "visible": true,
+  "loc": "src/header/map.rs:701:5:730:6",
+  "doc": "/// Reserves capacity for at least `additional` more headers to be inserted\n/// into the `HeaderMap`.\n///\n/// The header map may reserve more space to avoid frequent reallocations.\n/// Like with `with_capacity`, this will be a \"best effort\" to avoid\n/// allocations until `additional` more headers are inserted. Certain usage\n/// patterns could cause additional allocations before the number is\n/// reached.\n///\n/// # Errors\n///\n/// This method differs from `reserve` by returning an error instead of\n/// panicking if the value is too large.\n///\n/// # Examples\n///\n/// ```\n/// # use http::HeaderMap;\n/// # use http::header::HOST;\n/// let mut map = HeaderMap::new();\n/// map.try_reserve(10).unwrap();\n/// # map.try_insert(HOST, \"bar\".parse().unwrap()).unwrap();\n/// ```\n",
+  "code": [
+    "pub fn try_reserve(&mut self, additional: usize) -> Result<(), MaxSizeReached> {",
+    "    // TODO: This can't overflow if done properly... since the max # of",
+    "    // elements is u16::MAX.",
+    "    let cap = self",
+    "        .entries",
+    "        .len()",
+    "        .checked_add(additional)",
+    "        .ok_or_else(MaxSizeReached::new)?;",
+    "",
+    "    let raw_cap = to_raw_capacity(cap);",
+    "",
+    "    if raw_cap > self.indices.len() {",
+    "        let raw_cap = raw_cap",
+    "            .checked_next_power_of_two()",
+    "            .ok_or_else(MaxSizeReached::new)?;",
+    "        if raw_cap > MAX_SIZE {",
+    "            return Err(MaxSizeReached::new());",
+    "        }",
+    "",
+    "        if self.entries.is_empty() {",
+    "            self.mask = raw_cap as Size - 1;",
+    "            self.indices = vec![Pos::none(); raw_cap].into_boxed_slice();",
+    "            self.entries = Vec::with_capacity(usable_capacity(raw_cap));",
+    "        } else {",
+    "            self.try_grow(raw_cap)?;",
+    "        }",
+    "    }",
+    "",
+    "    Ok(())",
+    "}"
+  ],
+  "size": {
+    "chain": 7,
+    "contra": 0,
+    "min_set": 7
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 704,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        50,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 704,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > self.indices.len()",
+          "norm": null,
+          "value": "true",
+          "line": 712,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 713,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        17,
+        19,
+        20,
+        49,
+        50,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 704,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > self.indices.len()",
+          "norm": null,
+          "value": "true",
+          "line": 712,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 713,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > MAX_SIZE",
+          "norm": "MAX_SIZE < raw_cap",
+          "value": "true",
+          "line": 716,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Err(MaxSizeReached::new())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        18,
+        21,
+        23,
+        49,
+        50,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 704,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > self.indices.len()",
+          "norm": null,
+          "value": "true",
+          "line": 712,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 713,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > MAX_SIZE",
+          "norm": "MAX_SIZE < raw_cap",
+          "value": "false",
+          "line": 716,
+          "bound": "raw_cap == MAX_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "self.entries.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 720,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        18,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        32,
+        33,
+        34,
+        35,
+        37,
+        46,
+        48,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 704,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > self.indices.len()",
+          "norm": null,
+          "value": "true",
+          "line": 712,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 713,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > MAX_SIZE",
+          "norm": "MAX_SIZE < raw_cap",
+          "value": "false",
+          "line": 716,
+          "bound": "raw_cap == MAX_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "self.entries.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 720,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.try_grow(raw_cap)?",
+          "norm": null,
+          "value": "Err/None",
+          "line": 725,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        18,
+        22,
+        24,
+        38,
+        39,
+        40,
+        42,
+        44,
+        45,
+        49,
+        50,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 704,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > self.indices.len()",
+          "norm": null,
+          "value": "true",
+          "line": 712,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap\n                .checked_next_power_of_two()\n                .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 713,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > MAX_SIZE",
+          "norm": "MAX_SIZE < raw_cap",
+          "value": "false",
+          "line": 716,
+          "bound": "raw_cap == MAX_SIZE",
+          "may_panic": false
+        },
+        {
+          "cond": "self.entries.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 720,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.try_grow(raw_cap)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 725,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        18,
+        22,
+        24,
+        38,
+        39,
+        40,
+        43,
+        46,
+        48,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self\n            .entries\n            .len()\n            .checked_add(additional)\n            .ok_or_else(MaxSizeReached::new)?",
+          "norm": null,
+          "value": "Ok/Some",
+          "line": 704,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "raw_cap > self.indices.len()",
+          "norm": null,
+          "value": "false",
+          "line": 712,
+          "bound": "raw_cap == self.indices.len()",
+          "may_panic": false
+        }
+      ],
+      "ret": "Ok(())",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        7,
+        10,
+        11,
+        47,
+        48,
+        51
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

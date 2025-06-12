@@ -1,0 +1,107 @@
+{
+  "name": "bytes::bytes::promotable_even_clone",
+  "name_with_impl": "bytes::bytes::promotable_even_clone",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1208:1:1219:2",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::alloc::alloc;",
+            "use core::alloc::Layout;",
+            "use core::alloc::dealloc;",
+            "use core::ptr::null;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null;",
+                  "",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        buf: null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    }));",
+                  "",
+                  "    let data = AtomicPtr::new(shared as *mut _ | KIND_ARC as usize);",
+                  "    let ptr = null();",
+                  "    let len = 0;",
+                  "",
+                  "    unsafe {",
+                  "        let cloned = promotable_even_clone(&data, ptr, len);",
+                  "        assert_eq!(cloned.len, len);",
+                  "        assert_eq!(cloned.data.load(Ordering::Relaxed) as usize, shared as usize);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0425]: cannot find function `null_mut` in this scope\n    --> src/bytes.rs:1691:14\n     |\n1691 |         buf: null_mut(),\n     |              ^^^^^^^^ not found in this scope\n     |\nhelp: consider importing this function\n     |\n1683 +    use std::ptr::null_mut;\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0369]: no implementation for `*mut _ | usize`\n    --> src/bytes.rs:1696:48\n     |\n1696 |     let data = AtomicPtr::new(shared as *mut _ | KIND_ARC as usize);\n     |                               ---------------- ^ ----------------- usize\n     |                               |\n     |                               *mut _\n\nSome errors have detailed explanations: E0369, E0425.\nFor more information about an error, try `rustc --explain E0369`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::alloc::{alloc, dealloc, Layout};",
+                  "",
+                  "    let layout = Layout::from_size_align(16, 8).unwrap();",
+                  "    let buf = unsafe { alloc(layout) };",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        buf,",
+                  "        cap: 16,",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    }));",
+                  "",
+                  "    let data = AtomicPtr::new(shared as *mut _ | KIND_VEC as usize);",
+                  "    let ptr = buf;  // Pointing to the allocated buffer",
+                  "    let len = 16;",
+                  "",
+                  "    unsafe {",
+                  "        let cloned = promotable_even_clone(&data, ptr, len);",
+                  "        assert_eq!(cloned.len, len);",
+                  "        assert_eq!(cloned.data.load(Ordering::Relaxed) as usize, shared as usize);",
+                  "",
+                  "        dealloc(buf, layout);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0432]: unresolved imports `core::alloc::alloc`, `core::alloc::dealloc`\n    --> src/bytes.rs:1688:23\n     |\n1688 |     use core::alloc::{alloc, dealloc, Layout};\n     |                       ^^^^^  ^^^^^^^ no `dealloc` in `alloc`\n     |                       |\n     |                       no `alloc` in `alloc`\n     |\n     = help: consider importing one of these items instead:\n             crate::alloc\n             std::alloc\n             alloc::alloc\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0369]: no implementation for `*mut _ | usize`\n    --> src/bytes.rs:1698:48\n     |\n1698 |     let data = AtomicPtr::new(shared as *mut _ | KIND_VEC as usize);\n     |                               ---------------- ^ ----------------- usize\n     |                               |\n     |                               *mut _\n\nSome errors have detailed explanations: E0369, E0432.\nFor more information about an error, try `rustc --explain E0369`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

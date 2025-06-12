@@ -1,0 +1,228 @@
+{
+  "name": "bytes::bytes_mut::bytes_mut::BytesMut::try_reclaim",
+  "name_with_impl": "bytes::bytes_mut::{impl#0}::try_reclaim",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": true,
+  "loc": "src/bytes_mut.rs:833:5:844:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: additional <= rem is true, with bound additional == rem\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::with_capacity(64);",
+                  "    assert_eq!(true, buf.try_reclaim(64)); // Initial try_reclaim should succeed",
+                  "    assert_eq!(64, buf.capacity()); // Capacity should still be 64",
+                  "",
+                  "    buf.extend_from_slice(b\"abcd\"); // Extend buffer with some data",
+                  "    let mut split = buf.split(); // Split the buffer",
+                  "    assert_eq!(60, buf.capacity()); // Remaining capacity of the first buffer",
+                  "    assert_eq!(4, split.capacity()); // Capacity of the split",
+                  "",
+                  "    assert_eq!(false, split.try_reclaim(64)); // Should fail as it needs more capacity",
+                  "    assert_eq!(false, buf.try_reclaim(64)); // Should also fail for the same reason",
+                  "",
+                  "    assert_eq!(true, buf.try_reclaim(60)); // buf empty should reclaim 60 successfully",
+                  "    assert_eq!(true, split.try_reclaim(4)); // split still has space for 4 bytes",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::new(); // Create a new empty buffer",
+                  "    // At this point, capacity is 0",
+                  "    assert_eq!(true, buf.try_reclaim(0)); // Should always succeed if nothing is requested",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::with_capacity(16);",
+                  "    assert_eq!(true, buf.try_reclaim(16)); // Should succeed as we have enough capacity",
+                  "",
+                  "    buf.extend_from_slice(b\"abcdefgh\"); // Fill buffer to some length",
+                  "    assert_eq!(8, buf.len()); // Length is now 8",
+                  "    assert_eq!(8, buf.capacity()); // Ensure capacity is still enough",
+                  "",
+                  "    assert_eq!(false, buf.try_reclaim(16)); // Should fail as additional exceeds rem",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::with_capacity(32);",
+                  "    assert_eq!(true, buf.try_reclaim(32)); // Initial reclaim should succeed",
+                  "    buf.extend_from_slice(b\"Hello, World!\"); // Fill the buffer with data",
+                  "    assert_eq!(false, buf.try_reclaim(32)); // Not enough capacity to reclaim",
+                  "",
+                  "    buf.clear(); // Clear the buffer",
+                  "    assert_eq!(true, buf.try_reclaim(32)); // Should succeed after clearing",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: additional <= rem is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::with_capacity(64);",
+                  "    // Initially, should have enough capacity to reclaim 64 bytes",
+                  "    assert_eq!(true, buf.try_reclaim(64));",
+                  "    assert_eq!(64, buf.capacity());",
+                  "",
+                  "    buf.extend_from_slice(b\"abcd\");",
+                  "    // Split the buffer, which will reduce the original buffer's capacity",
+                  "    let mut split = buf.split();",
+                  "    assert_eq!(60, buf.capacity());",
+                  "    assert_eq!(4, split.capacity());",
+                  "",
+                  "    // Trying to reclaim 64 bytes should fail",
+                  "    assert_eq!(false, split.try_reclaim(64));",
+                  "    assert_eq!(false, buf.try_reclaim(64));",
+                  "",
+                  "    // The split buffer is filled with \"abcd\", which means it has few references",
+                  "    assert_eq!(false, split.try_reclaim(4)); // Not enough space as it has 0 spare",
+                  "",
+                  "    // buf is empty and has capacity for 60 bytes, can reclaim 60 ",
+                  "    assert_eq!(true, buf.try_reclaim(60));",
+                  "",
+                  "    drop(buf); // Dropping buf should lead split being isolated",
+                  "    ",
+                  "    // Post-drop, split should have insufficient capacity to reclaim",
+                  "    assert_eq!(false, split.try_reclaim(64));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::with_capacity(64);",
+                  "    assert_eq!(true, buf.try_reclaim(64));",
+                  "    assert_eq!(64, buf.capacity());",
+                  "",
+                  "    buf.extend_from_slice(b\"abcd\");",
+                  "    let mut split = buf.split();",
+                  "    split.clear(); // Clear split buffer changing state",
+                  "",
+                  "    // After clearing, it should succeed in reclaiming 64",
+                  "    assert_eq!(4, split.capacity()); // the capacity remains the same despite being clear",
+                  "    assert_eq!(true, split.try_reclaim(64));",
+                  "    assert_eq!(64, split.capacity());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

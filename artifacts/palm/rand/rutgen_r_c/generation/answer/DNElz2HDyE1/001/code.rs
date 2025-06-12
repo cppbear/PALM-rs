@@ -1,0 +1,26 @@
+// Answer 0
+
+#[test]
+fn test_next_u64() {
+    // Initializing the PRNG with a specific state and stream
+    let mut rng = Lcg128CmDxsm64::new(1u128, 1u128);
+    
+    // Testing the first call to next_u64
+    let result1 = rng.next_u64();
+    assert_eq!(result1, output_dxsm(1u128.wrapping_add(1))); // Expected value based on the output_dxsm implementation
+
+    // Testing the second call to next_u64
+    let result2 = rng.next_u64();
+    assert_eq!(result2, output_dxsm(rng.state)); // Check output with updated state
+
+    // Advance the RNG and test next_u64
+    rng.advance(10);
+    let result3 = rng.next_u64();
+    assert_eq!(result3, output_dxsm(rng.state)); // Validate output after advancing
+
+    // Edge case: Set state close to u128::MAX
+    let mut rng_edge = Lcg128CmDxsm64::new(u128::MAX - 1, 1u128);
+    let edge_result = rng_edge.next_u64();
+    assert_eq!(edge_result, output_dxsm(u128::MAX)); // Check that it handles wrapping correctly
+}
+

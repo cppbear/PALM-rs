@@ -1,0 +1,313 @@
+{
+  "name": "ryu::buffer::buffer::Buffer::format_finite",
+  "name_with_impl": "ryu::buffer::{impl#0}::format_finite",
+  "mod_info": {
+    "name": "buffer",
+    "loc": "src/lib.rs:106:1:106:12"
+  },
+  "visible": true,
+  "loc": "src/buffer/mod.rs:72:5:79:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: n <= self.bytes.len() is true, with bound n == self.bytes.len()\n",
+        "// expected return value/type: str::from_utf8_unchecked(slice)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::mem::MaybeUninit;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{  ",
+                  "   // use core::mem::MaybeUninit;  ",
+                  " ",
+                  "  #[derive(Clone)]",
+                  "  struct DummyFloat;  ",
+                  "   impl Copy for DummyFloat {}  ",
+                  " ",
+                  "   impl Sealed for DummyFloat {  ",
+                  "       fn is_nonfinite(self) -> bool {  ",
+                  "           false  ",
+                  "       }  ",
+                  " ",
+                  "       fn format_nonfinite(self) -> &'static str {  ",
+                  "           \"\"  ",
+                  "       }  ",
+                  " ",
+                  "       unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {  ",
+                  "           let data = b\"123456789012345678901234\";  ",
+                  "           let ptr = result as *mut u8;  ",
+                  "           for (i, &byte) in data.iter().enumerate() {  ",
+                  "               *ptr.add(i) = byte;  ",
+                  "           }  ",
+                  "           data.len()  ",
+                  "       }  ",
+                  "   }  ",
+                  " ",
+                  "   let mut buffer = Buffer::new();  ",
+                  "   let result = buffer.format_finite(DummyFloat);  ",
+                  "   assert_eq!(result, \"123456789012345678901234\");  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0277]: the trait bound `DummyFloat: Float` is not satisfied\n   --> src/buffer/mod.rs:208:38\n    |\n208 |    let result = buffer.format_finite(DummyFloat);  \n    |                        ------------- ^^^^^^^^^^ the trait `Float` is not implemented for `DummyFloat`\n    |                        |\n    |                        required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `Float`:\n              f32\n              f64\nnote: required by a bound in `buffer::Buffer::format_finite`\n   --> src/buffer/mod.rs:72:29\n    |\n72  |     pub fn format_finite<F: Float>(&mut self, f: F) -> &str {\n    |                             ^^^^^ required by this bound in `Buffer::format_finite`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Clone)]",
+                  "   struct OverflowFloat;",
+                  "",
+                  "   impl Copy for OverflowFloat {}",
+                  "",
+                  "   impl Sealed for OverflowFloat {",
+                  "       fn is_nonfinite(self) -> bool {",
+                  "           false",
+                  "       }",
+                  "",
+                  "       fn format_nonfinite(self) -> &'static str {",
+                  "           \"\"",
+                  "       }",
+                  "       ",
+                  "      unsafe fn write_to_ryu_buffer(self, _result: *mut u8) -> usize {  ",
+                  "          25 // Intentionally over the buffer size of 24  ",
+                  "      }  ",
+                  "   }",
+                  "",
+                  "   let mut buffer = Buffer::new();",
+                  "   let result = buffer.format_finite(OverflowFloat);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0277]: the trait bound `OverflowFloat: Float` is not satisfied\n   --> src/buffer/mod.rs:202:38\n    |\n202 |    let result = buffer.format_finite(OverflowFloat);\n    |                        ------------- ^^^^^^^^^^^^^ the trait `Float` is not implemented for `OverflowFloat`\n    |                        |\n    |                        required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `Float`:\n              f32\n              f64\nnote: required by a bound in `buffer::Buffer::format_finite`\n   --> src/buffer/mod.rs:72:29\n    |\n72  |     pub fn format_finite<F: Float>(&mut self, f: F) -> &str {\n    |                             ^^^^^ required by this bound in `Buffer::format_finite`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Clone)]",
+                  "   struct InvalidUtf8Float;",
+                  "   ",
+                  "   impl Copy for InvalidUtf8Float {}",
+                  "   ",
+                  "   impl Sealed for InvalidUtf8Float {",
+                  "        fn is_nonfinite(self) -> bool {",
+                  "            false",
+                  "        }",
+                  "",
+                  "        fn format_nonfinite(self) -> &'static str {",
+                  "            \"\"",
+                  "        }",
+                  "",
+                  "        unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                  "            let invalid_data = [0xff; 24]; // Invalid UTF-8 byte",
+                  "            let ptr = result as *mut u8;",
+                  "            for (i, &byte) in invalid_data.iter().enumerate() {",
+                  "                *ptr.add(i) = byte;",
+                  "            }",
+                  "            invalid_data.len()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buffer = Buffer::new();",
+                  "    buffer.format_finite(InvalidUtf8Float); // Expect this to panic due to invalid UTF-8",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "    Blocking waiting for file lock on package cache\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0277]: the trait bound `InvalidUtf8Float: Float` is not satisfied\n   --> src/buffer/mod.rs:208:26\n    |\n208 |     buffer.format_finite(InvalidUtf8Float); // Expect this to panic due to invalid UTF-8\n    |            ------------- ^^^^^^^^^^^^^^^^ the trait `Float` is not implemented for `InvalidUtf8Float`\n    |            |\n    |            required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `Float`:\n              f32\n              f64\nnote: required by a bound in `buffer::Buffer::format_finite`\n   --> src/buffer/mod.rs:72:29\n    |\n72  |     pub fn format_finite<F: Float>(&mut self, f: F) -> &str {\n    |                             ^^^^^ required by this bound in `Buffer::format_finite`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: n <= self.bytes.len() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "#[derive(Copy, Clone)]",
+                  "struct ValidFloat;",
+                  "",
+                  "impl Sealed for ValidFloat {",
+                  "    fn is_nonfinite(self) -> bool {",
+                  "        false",
+                  "    }",
+                  "",
+                  "    fn format_nonfinite(self) -> &'static str {",
+                  "        \"\"",
+                  "    }",
+                  "",
+                  "    unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                  "        // Simulate a valid float writing that returns a length greater than the buffer size",
+                  "        // We can return 25 to trigger the debug_assert while compiling",
+                  "        let representation = b\"1234567890123456789012345\"; // 25 bytes",
+                  "        let slice = core::slice::from_raw_parts_mut(result, 25);",
+                  "        slice.copy_from_slice(representation);",
+                  "        25",
+                  "    }",
+                  "}",
+                  "",
+                  "",
+                  "#[derive(Copy, Clone)]",
+                  "struct AnotherValidFloat;",
+                  "",
+                  "impl Sealed for AnotherValidFloat {",
+                  "    fn is_nonfinite(self) -> bool {",
+                  "        false",
+                  "    }",
+                  "",
+                  "    fn format_nonfinite(self) -> &'static str {",
+                  "        \"\"",
+                  "    }",
+                  "",
+                  "    unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                  "        // Simulate a float writing that properly fits within the buffer",
+                  "        let representation = b\"123456\"; // 6 bytes",
+                  "        let slice = core::slice::from_raw_parts_mut(result, 6);",
+                  "        slice.copy_from_slice(representation);",
+                  "        6",
+                  "    }",
+                  "}",
+                  "    let mut buffer = Buffer::new();",
+                  "    let result = buffer.format_finite(ValidFloat);",
+                  "    assert_eq!(result, \"1234567890123456789012345\"); // Optional to validate the output as well",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0277]: the trait bound `ValidFloat: Float` is not satisfied\n   --> src/buffer/mod.rs:227:39\n    |\n227 |     let result = buffer.format_finite(ValidFloat);\n    |                         ------------- ^^^^^^^^^^ the trait `Float` is not implemented for `ValidFloat`\n    |                         |\n    |                         required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `Float`:\n              f32\n              f64\nnote: required by a bound in `buffer::Buffer::format_finite`\n   --> src/buffer/mod.rs:72:29\n    |\n72  |     pub fn format_finite<F: Float>(&mut self, f: F) -> &str {\n    |                             ^^^^^ required by this bound in `Buffer::format_finite`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "#[derive(Copy, Clone)]",
+                  "struct ValidFloat;",
+                  "",
+                  "impl Sealed for ValidFloat {",
+                  "    fn is_nonfinite(self) -> bool {",
+                  "        false",
+                  "    }",
+                  "",
+                  "    fn format_nonfinite(self) -> &'static str {",
+                  "        \"\"",
+                  "    }",
+                  "",
+                  "    unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                  "        // Simulate a valid float writing that returns a length greater than the buffer size",
+                  "        // We can return 25 to trigger the debug_assert while compiling",
+                  "        let representation = b\"1234567890123456789012345\"; // 25 bytes",
+                  "        let slice = core::slice::from_raw_parts_mut(result, 25);",
+                  "        slice.copy_from_slice(representation);",
+                  "        25",
+                  "    }",
+                  "}",
+                  "",
+                  "",
+                  "#[derive(Copy, Clone)]",
+                  "struct AnotherValidFloat;",
+                  "",
+                  "impl Sealed for AnotherValidFloat {",
+                  "    fn is_nonfinite(self) -> bool {",
+                  "        false",
+                  "    }",
+                  "",
+                  "    fn format_nonfinite(self) -> &'static str {",
+                  "        \"\"",
+                  "    }",
+                  "",
+                  "    unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                  "        // Simulate a float writing that properly fits within the buffer",
+                  "        let representation = b\"123456\"; // 6 bytes",
+                  "        let slice = core::slice::from_raw_parts_mut(result, 6);",
+                  "        slice.copy_from_slice(representation);",
+                  "        6",
+                  "    }",
+                  "}",
+                  "    let mut buffer = Buffer::new();",
+                  "    let result = buffer.format_finite(AnotherValidFloat);",
+                  "    assert_eq!(result, \"123456\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0277]: the trait bound `AnotherValidFloat: Float` is not satisfied\n   --> src/buffer/mod.rs:226:39\n    |\n226 |     let result = buffer.format_finite(AnotherValidFloat);\n    |                         ------------- ^^^^^^^^^^^^^^^^^ the trait `Float` is not implemented for `AnotherValidFloat`\n    |                         |\n    |                         required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `Float`:\n              f32\n              f64\nnote: required by a bound in `buffer::Buffer::format_finite`\n   --> src/buffer/mod.rs:72:29\n    |\n72  |     pub fn format_finite<F: Float>(&mut self, f: F) -> &str {\n    |                             ^^^^^ required by this bound in `Buffer::format_finite`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

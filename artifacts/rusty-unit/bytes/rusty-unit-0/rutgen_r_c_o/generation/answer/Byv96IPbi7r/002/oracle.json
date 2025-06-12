@@ -1,0 +1,486 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe fn drop_fn(_: *mut ()) {}",
+          "",
+          "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+          "        drop: drop_fn,",
+          "    }));",
+          "",
+          "    owned_drop_impl(owned_lifetime as *mut ());",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(usize::MAX >> 1), drop: drop_fn, }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    let is_old_cnt_valid = old_cnt > 0 && old_cnt <= usize::MAX >> 1;",
+            "    assert!(is_old_cnt_valid);"
+          ],
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(usize::MAX >> 1), drop: drop_fn, }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    let is_old_cnt_valid = old_cnt > 0 && old_cnt <= usize::MAX >> 1;",
+            "    assert_eq!(old_cnt, 1);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(usize::MAX >> 1), drop: drop_fn, }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    let is_old_cnt_valid = old_cnt > 0 && old_cnt <= usize::MAX >> 1;",
+            "    assert!(is_old_cnt_valid);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(usize::MAX >> 1),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(usize::MAX >> 1), drop: drop_fn, }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    let is_old_cnt_valid = old_cnt > 0 && old_cnt <= usize::MAX >> 1;",
+            "    assert_eq!(old_cnt, 1);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe fn drop_fn(_: *mut ()) {}",
+          "",
+          "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(2),",
+          "        drop: drop_fn,",
+          "    }));",
+          "",
+          "    owned_drop_impl(owned_lifetime as *mut ());",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(2),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    assert_eq!(owned_lifetime.is_null(), false);"
+          ],
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(2),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    assert_eq!(ref_cnt.load(Ordering::SeqCst), 2);"
+          ],
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(2),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    assert!(unsafe { owned_drop_impl(owned_lifetime as *mut ()) }.is_none());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(2),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(2),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    assert_eq!(owned_lifetime.is_null(), false);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(2),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(2),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    assert_eq!(ref_cnt.load(Ordering::SeqCst), 2);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(2),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(2),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    assert!(unsafe { owned_drop_impl(owned_lifetime as *mut ()) }.is_none());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe fn drop_fn(_: *mut ()) {}",
+          "",
+          "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(0),",
+          "        drop: drop_fn,",
+          "    }));",
+          "",
+          "    owned_drop_impl(owned_lifetime as *mut ());",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(1), drop: drop_fn }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt > 0, \"expected non-zero refcount and no underflow\");"
+          ],
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(1), drop: drop_fn }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt <= usize::MAX >> 1, \"expected non-overflow\");"
+          ],
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(1), drop: drop_fn }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert_eq!(old_cnt, 1, \"expected old_count not to equal one\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(0),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(1), drop: drop_fn }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt > 0, \"expected non-zero refcount and no underflow\");",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(0),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(1), drop: drop_fn }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt <= usize::MAX >> 1, \"expected non-overflow\");",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(0),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime { ref_cnt: AtomicUsize::new(1), drop: drop_fn }));",
+            "    let ref_cnt = &(*owned_lifetime).ref_cnt;",
+            "    let old_cnt = ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert_eq!(old_cnt, 1, \"expected old_count not to equal one\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize,",
+          "        drop: unsafe fn(*mut ()),",
+          "    }",
+          "",
+          "    unsafe fn drop_fn(_: *mut ()) {}",
+          "",
+          "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+          "        ref_cnt: AtomicUsize::new(1),",
+          "        drop: drop_fn,",
+          "    }));",
+          "",
+          "    owned_drop_impl(owned_lifetime as *mut ());",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(1),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt > 0, \"expected non-zero refcount and no underflow\");"
+          ],
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(1),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt <= usize::MAX >> 1, \"expected old_cnt to be less than or equal to usize::MAX >> 1\");"
+          ],
+          [
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(1),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert_eq!(old_cnt, 1, \"expected old_cnt to be 1\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(1),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(1),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt > 0, \"expected non-zero refcount and no underflow\");",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(1),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(1),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert!(old_cnt <= usize::MAX >> 1, \"expected old_cnt to be less than or equal to usize::MAX >> 1\");",
+            "}"
+          ],
+          [
+            "{",
+            "    struct TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize,",
+            "        drop: unsafe fn(*mut ()),",
+            "    }",
+            "",
+            "    unsafe fn drop_fn(_: *mut ()) {}",
+            "",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "        ref_cnt: AtomicUsize::new(1),",
+            "        drop: drop_fn,",
+            "    }));",
+            "",
+            "    owned_drop_impl(owned_lifetime as *mut ());",
+            "    let owned_lifetime = Box::into_raw(Box::new(TestOwnedLifetime {",
+            "    ref_cnt: AtomicUsize::new(1),",
+            "    drop: drop_fn,",
+            "    }));",
+            "    let old_cnt = owned_lifetime.ref_cnt.fetch_sub(1, Ordering::Release);",
+            "    assert_eq!(old_cnt, 1, \"expected old_cnt to be 1\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,127 @@
+{
+  "name": "rand_core::<UnwrapErr<R> as RngCore>::next_u64",
+  "name_with_impl": "rand_core::{impl#4}::next_u64",
+  "mod_info": {
+    "name": "",
+    "loc": "rand_core/src/lib.rs:10:1:772:2"
+  },
+  "visible": true,
+  "loc": "rand_core/src/lib.rs:308:5:310:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// may panic: self.0.try_next_u64().unwrap() may panic in certain situations\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct MockGenerator {",
+            "    value: u64,",
+            "}",
+            "",
+            "impl MockGenerator {",
+            "    fn new(value: u64) -> Self {",
+            "        MockGenerator { value }",
+            "    }",
+            "",
+            "    fn try_next_u64(&mut self) -> Result<u64, &'static str> {",
+            "        if self.value == 0 {",
+            "            Err(\"Panic: Value is zero!\")",
+            "        } else {",
+            "            let next_value = self.value;",
+            "            self.value = 0; // After the first call, set to zero to trigger panic on next call",
+            "            Ok(next_value)",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "struct RandCore(MockGenerator);",
+            "",
+            "impl RandCore {",
+            "    fn next_u64(&mut self) -> u64 {",
+            "        self.0.try_next_u64().unwrap()",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut generator = RandCore(MockGenerator::new(42));",
+                  "    let result = generator.next_u64();",
+                  "    assert_eq!(result, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Panic: Value is zero!\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut generator = RandCore(MockGenerator::new(0));",
+                  "    generator.next_u64();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Panic: Value is zero!\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut generator = RandCore(MockGenerator::new(100));",
+                  "    let _ = generator.next_u64();",
+                  "    // This will trigger the panic in the next call",
+                  "    generator.next_u64();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

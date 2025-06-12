@@ -1,0 +1,262 @@
+{
+  "name": "hashbrown::raw::raw::TableLayout::new",
+  "name_with_impl": "hashbrown::raw::{impl#4}::new",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:248:5:258:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: layout.align() > Group::WIDTH is true\n",
+        "// expected return value/type: Self {\n            size: layout.size(),\n            ctrl_align: if layout.align() > Group::WIDTH {\n                layout.align()\n            } else {\n                Group::WIDTH\n            },\n        }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "const GROUP_WIDTH: usize = 8; // Assume Group::WIDTH is 8 for this example.",
+            "",
+            "struct Group {",
+            "    // Placeholder for group fields",
+            "}",
+            "",
+            "struct Layout {",
+            "    size: usize,",
+            "    align: usize,",
+            "}",
+            "",
+            "impl Layout {",
+            "    const fn new<T>() -> Self {",
+            "        let size = std::mem::size_of::<T>();",
+            "        let align = std::mem::align_of::<T>();",
+            "        Self { size, align }",
+            "    }",
+            "",
+            "    const fn size(&self) -> usize {",
+            "        self.size",
+            "    }",
+            "",
+            "    const fn align(&self) -> usize {",
+            "        self.align",
+            "    }",
+            "}",
+            "",
+            "struct SelfStruct {",
+            "    size: usize,",
+            "    ctrl_align: usize,",
+            "}",
+            "",
+            "impl SelfStruct {",
+            "    const fn new<T>() -> Self {",
+            "        let layout = Layout::new::<T>();",
+            "        Self {",
+            "            size: layout.size(),",
+            "            ctrl_align: if layout.align() > GROUP_WIDTH {",
+            "                layout.align()",
+            "            } else {",
+            "                GROUP_WIDTH",
+            "            },",
+            "        }",
+            "    }",
+            "}",
+            "",
+            "",
+            "",
+            "",
+            "#[should_panic]",
+            "fn test_new_with_zero_sized_type() {",
+            "    struct ZeroSizedType; // Zero-sized, expect panic",
+            "",
+            "    let _instance = SelfStruct::new::<ZeroSizedType>(); // This would not panic but it's a dangerous operation.",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct AlignedType([u8; 16]); // Alignment greater than GROUP_WIDTH",
+                  "",
+                  "    let instance = SelfStruct::new::<AlignedType>();",
+                  "    assert_eq!(instance.size, 16);",
+                  "    assert_eq!(instance.ctrl_align, 16);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct SmallType(u8); // Alignment greater than GROUP_WIDTH",
+                  "",
+                  "    let instance = SelfStruct::new::<SmallType>();",
+                  "    assert_eq!(instance.size, 1);",
+                  "    assert_eq!(instance.ctrl_align, GROUP_WIDTH);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct EvenMoreAlignedType([u64; 2]); // Alignment greater than GROUP_WIDTH",
+                  "",
+                  "    let instance = SelfStruct::new::<EvenMoreAlignedType>();",
+                  "    assert_eq!(instance.size, 16);",
+                  "    assert_eq!(instance.ctrl_align, 16);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: layout.align() > Group::WIDTH is false, with bound layout.align() == Group::WIDTH\n",
+        "// expected return value/type: Self {\n            size: layout.size(),\n            ctrl_align: if layout.align() > Group::WIDTH {\n                layout.align()\n            } else {\n                Group::WIDTH\n            },\n        }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct Group;",
+            "",
+            "impl Group {",
+            "    const WIDTH: usize = 8; // Example width",
+            "}",
+            "",
+            "struct MyStruct;",
+            "",
+            "impl MyStruct {",
+            "    const fn new<T>() -> Self {",
+            "        let layout = std::alloc::Layout::new::<T>();",
+            "        Self {",
+            "            size: layout.size(),",
+            "            ctrl_align: if layout.align() > Group::WIDTH {",
+            "                layout.align()",
+            "            } else {",
+            "                Group::WIDTH",
+            "            },",
+            "        }",
+            "    }",
+            "",
+            "    const fn size(&self) -> usize {",
+            "        self.size",
+            "    }",
+            "",
+            "    const fn ctrl_align(&self) -> usize {",
+            "        self.ctrl_align",
+            "    }",
+            "",
+            "    const size: usize;",
+            "    const ctrl_align: usize;",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    const EXPECTED_SIZE: usize = std::mem::size_of::<u32>();",
+                  "    const EXPECTED_CTRL_ALIGN: usize = Group::WIDTH;",
+                  "",
+                  "    let instance: MyStruct = MyStruct::new::<u32>();",
+                  "",
+                  "    assert_eq!(instance.size(), EXPECTED_SIZE);",
+                  "    assert_eq!(instance.ctrl_align(), EXPECTED_CTRL_ALIGN);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling crossbeam-utils v0.8.21\n   Compiling libc v0.2.172\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling rayon-core v1.12.1\n   Compiling serde v1.0.219\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nerror: associated constant in `impl` without body\n    --> src/raw/mod.rs:4516:5\n     |\n4516 |     const size: usize;\n     |     ^^^^^^^^^^^^^^^^^-\n     |                      |\n     |                      help: provide a definition for the constant: `= <expr>;`\n\nerror: associated constant in `impl` without body\n    --> src/raw/mod.rs:4517:5\n     |\n4517 |     const ctrl_align: usize;\n     |     ^^^^^^^^^^^^^^^^^^^^^^^-\n     |                            |\n     |                            help: provide a definition for the constant: `= <expr>;`\n\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0592]: duplicate definitions with name `size`\n    --> src/raw/mod.rs:4516:5\n     |\n4508 |     const fn size(&self) -> usize {\n     |     ----------------------------- other definition for `size`\n...\n4516 |     const size: usize;\n     |     ^^^^^^^^^^^^^^^^^ duplicate definitions for `size`\n\nerror[E0592]: duplicate definitions with name `ctrl_align`\n    --> src/raw/mod.rs:4517:5\n     |\n4512 |     const fn ctrl_align(&self) -> usize {\n     |     ----------------------------------- other definition for `ctrl_align`\n...\n4517 |     const ctrl_align: usize;\n     |     ^^^^^^^^^^^^^^^^^^^^^^^ duplicate definitions for `ctrl_align`\n\nerror[E0560]: struct `MyStruct` has no field named `size`\n    --> src/raw/mod.rs:4499:13\n     |\n4499 |             size: layout.size(),\n     |             ^^^^ `MyStruct` does not have this field\n     |\n     = note: all struct fields are already assigned\n\nerror[E0560]: struct `MyStruct` has no field named `ctrl_align`\n    --> src/raw/mod.rs:4500:13\n     |\n4500 |             ctrl_align: if layout.align() > Group::WIDTH {\n     |             ^^^^^^^^^^ `MyStruct` does not have this field\n     |\n     = note: all struct fields are already assigned\n\nerror[E0615]: attempted to take value of method `size` on type `&MyStruct`\n    --> src/raw/mod.rs:4509:14\n     |\n4509 |         self.size\n     |              ^^^^ method, not a field\n     |\nhelp: use parentheses to call the method\n     |\n4509 |         self.size()\n     |                  ++\n\nerror[E0615]: attempted to take value of method `ctrl_align` on type `&MyStruct`\n    --> src/raw/mod.rs:4513:14\n     |\n4513 |         self.ctrl_align\n     |              ^^^^^^^^^^ method, not a field\n     |\nhelp: use parentheses to call the method\n     |\n4513 |         self.ctrl_align()\n     |                        ++\n\nSome errors have detailed explanations: E0560, E0592, E0615.\nFor more information about an error, try `rustc --explain E0560`.\nwarning: `hashbrown` (lib test) generated 13 warnings\nerror: could not compile `hashbrown` (lib test) due to 8 previous errors; 13 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct LargerAlignedStruct(u64); // A struct with larger alignment",
+                  "",
+                  "    const EXPECTED_SIZE: usize = std::mem::size_of::<LargerAlignedStruct>();",
+                  "    const EXPECTED_CTRL_ALIGN: usize = std::mem::align_of::<LargerAlignedStruct>();",
+                  "",
+                  "    let instance: MyStruct = MyStruct::new::<LargerAlignedStruct>();",
+                  "",
+                  "    assert_eq!(instance.size(), EXPECTED_SIZE);",
+                  "    assert_eq!(instance.ctrl_align(), EXPECTED_CTRL_ALIGN);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling libc v0.2.172\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.25\n   Compiling serde v1.0.219\n   Compiling rayon-core v1.12.1\n   Compiling doc-comment v0.3.3\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling getrandom v0.2.16\n   Compiling rand_core v0.6.4\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling hashbrown v0.15.1 (/home/abezbm/rust-utgen-test-crates-new/hashbrown)\nerror: associated constant in `impl` without body\n    --> src/raw/mod.rs:4516:5\n     |\n4516 |     const size: usize;\n     |     ^^^^^^^^^^^^^^^^^-\n     |                      |\n     |                      help: provide a definition for the constant: `= <expr>;`\n\nerror: associated constant in `impl` without body\n    --> src/raw/mod.rs:4517:5\n     |\n4517 |     const ctrl_align: usize;\n     |     ^^^^^^^^^^^^^^^^^^^^^^^-\n     |                            |\n     |                            help: provide a definition for the constant: `= <expr>;`\n\nwarning: unused import: `super::*`\n    --> src/raw/mod.rs:4484:8\n     |\n4484 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/raw/mod.rs:4485:8\n     |\n4485 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Occupied` and `Vacant`\n    --> src/map.rs:4688:24\n     |\n4688 |     use super::Entry::{Occupied, Vacant};\n     |                        ^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::EntryRef`\n    --> src/map.rs:4689:9\n     |\n4689 |     use super::EntryRef;\n     |         ^^^^^^^^^^^^^^^\n\nwarning: unused import: `ToString`\n    --> src/map.rs:4691:33\n     |\n4691 |     use alloc::string::{String, ToString};\n     |                                 ^^^^^^^^\n\nwarning: unused imports: `Rng`, `SeedableRng`, and `rngs::SmallRng`\n    --> src/map.rs:4697:16\n     |\n4697 |     use rand::{rngs::SmallRng, Rng, SeedableRng};\n     |                ^^^^^^^^^^^^^^  ^^^  ^^^^^^^^^^^\n\nwarning: unused import: `std::borrow::ToOwned`\n    --> src/map.rs:4698:9\n     |\n4698 |     use std::borrow::ToOwned;\n     |         ^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashMap`\n    --> src/raw_entry.rs:1487:9\n     |\n1487 |     use super::HashMap;\n     |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::RawEntryMut`\n    --> src/raw_entry.rs:1488:9\n     |\n1488 |     use super::RawEntryMut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `Equivalent`, `HashSet`, and `make_hash`\n    --> src/set.rs:2579:17\n     |\n2579 |     use super::{make_hash, Equivalent, HashSet};\n     |                 ^^^^^^^^^  ^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `crate::DefaultHashBuilder`\n    --> src/set.rs:2580:9\n     |\n2580 |     use crate::DefaultHashBuilder;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `std::vec::Vec`\n    --> src/set.rs:2581:9\n     |\n2581 |     use std::vec::Vec;\n     |         ^^^^^^^^^^^^^\n\nwarning: unused import: `super::HashTable`\n    --> src/table.rs:2375:9\n     |\n2375 |     use super::HashTable;\n     |         ^^^^^^^^^^^^^^^^\n\nerror[E0592]: duplicate definitions with name `size`\n    --> src/raw/mod.rs:4516:5\n     |\n4508 |     const fn size(&self) -> usize {\n     |     ----------------------------- other definition for `size`\n...\n4516 |     const size: usize;\n     |     ^^^^^^^^^^^^^^^^^ duplicate definitions for `size`\n\nerror[E0592]: duplicate definitions with name `ctrl_align`\n    --> src/raw/mod.rs:4517:5\n     |\n4512 |     const fn ctrl_align(&self) -> usize {\n     |     ----------------------------------- other definition for `ctrl_align`\n...\n4517 |     const ctrl_align: usize;\n     |     ^^^^^^^^^^^^^^^^^^^^^^^ duplicate definitions for `ctrl_align`\n\nerror[E0560]: struct `MyStruct` has no field named `size`\n    --> src/raw/mod.rs:4499:13\n     |\n4499 |             size: layout.size(),\n     |             ^^^^ `MyStruct` does not have this field\n     |\n     = note: all struct fields are already assigned\n\nerror[E0560]: struct `MyStruct` has no field named `ctrl_align`\n    --> src/raw/mod.rs:4500:13\n     |\n4500 |             ctrl_align: if layout.align() > Group::WIDTH {\n     |             ^^^^^^^^^^ `MyStruct` does not have this field\n     |\n     = note: all struct fields are already assigned\n\nerror[E0615]: attempted to take value of method `size` on type `&MyStruct`\n    --> src/raw/mod.rs:4509:14\n     |\n4509 |         self.size\n     |              ^^^^ method, not a field\n     |\nhelp: use parentheses to call the method\n     |\n4509 |         self.size()\n     |                  ++\n\nerror[E0615]: attempted to take value of method `ctrl_align` on type `&MyStruct`\n    --> src/raw/mod.rs:4513:14\n     |\n4513 |         self.ctrl_align\n     |              ^^^^^^^^^^ method, not a field\n     |\nhelp: use parentheses to call the method\n     |\n4513 |         self.ctrl_align()\n     |                        ++\n\nSome errors have detailed explanations: E0560, E0592, E0615.\nFor more information about an error, try `rustc --explain E0560`.\nwarning: `hashbrown` (lib test) generated 13 warnings\nerror: could not compile `hashbrown` (lib test) due to 8 previous errors; 13 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

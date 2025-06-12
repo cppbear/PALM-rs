@@ -1,0 +1,2100 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct MockRead {",
+      "    data: Vec<u8>,",
+      "    position: usize,",
+      "}",
+      "",
+      "impl MockRead {",
+      "    fn new(data: Vec<u8>) -> Self {",
+      "        Self { data, position: 0 }",
+      "    }",
+      "",
+      "    fn new_with_error() -> Self {",
+      "        Self { data: vec![], position: 0 }",
+      "    }",
+      "}",
+      "",
+      "impl Read<'_> for MockRead {",
+      "    const should_early_return_if_failed: bool = false;",
+      "",
+      "    fn next(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.data.len() {",
+      "            let byte = self.data[self.position];",
+      "            self.position += 1;",
+      "            Ok(Some(byte))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn peek(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.data.len() {",
+      "            Ok(Some(self.data[self.position]))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn discard(&mut self) {",
+      "        if self.position < self.data.len() {",
+      "            self.position += 1;",
+      "        }",
+      "    }",
+      "",
+      "    fn position(&self) -> Position {",
+      "        // Placeholder, implement if necessary",
+      "        Position::default()",
+      "    }",
+      "",
+      "    fn peek_position(&self) -> Position {",
+      "        // Placeholder, implement if necessary",
+      "        Position::default()",
+      "    }",
+      "",
+      "    fn byte_offset(&self) -> usize {",
+      "        self.position",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let read = MockRead::new(vec![]);",
+          "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+          "    deserializer.parse_whitespace();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b' ')));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'\\n')));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b' ')));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(None));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'\\r')));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b' ')));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'\\n')));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b' ')));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(None));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r']);",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'\\r')));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+          "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+          "    deserializer.parse_whitespace();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\n'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'a'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), None);"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b' '));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\n'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\r', b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\r', b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\r'));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\n'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'a'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), None);",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b' '));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\n'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\r', b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a', b'b', b'c']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\r', b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\r'));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+          "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+          "    deserializer.parse_whitespace();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b' '));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\n'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\t'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\r'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\0'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), None);"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_err());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b' '));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\n'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\t'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\r'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\0'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), None);",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\0']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_err());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+          "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+          "    deserializer.parse_whitespace();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'\\0'))); // Expecting None as it's the end of input after whitespace"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(None)); // EOF should return None"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_err()); // Check for error case when using broken input"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'a')));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(Some(b'\\0'))); // Expecting None as it's the end of input after whitespace",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result, Ok(None)); // EOF should return None",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\r', b'a', b'b']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_err()); // Check for error case when using broken input",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let read = MockRead::new_with_error();",
+          "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+          "    deserializer.parse_whitespace();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b' '));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\n'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\t'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'a'));"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), None);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b' '));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\n'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'\\t'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), Some(b'a'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new_with_error();",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b' ']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\n']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'\\t']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![b'a']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    let read = MockRead::new(vec![]);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let result = deserializer.parse_whitespace();",
+            "    assert_eq!(result.unwrap(), None);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+          "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+          "    deserializer.parse_whitespace();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b' '));"
+          ],
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'\\n'));"
+          ],
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'z'));"
+          ],
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'\\t'));"
+          ],
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'e'));"
+          ],
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'\\r'));"
+          ],
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let empty_read = MockRead::new_with_error();",
+            "    let mut empty_deserializer = Deserializer { read: empty_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert!(empty_deserializer.parse_whitespace().is_ok());"
+          ],
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let empty_read = MockRead::new_with_error();",
+            "    let mut empty_deserializer = Deserializer { read: empty_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(empty_deserializer.parse_whitespace().unwrap(), None);"
+          ],
+          [
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let empty_read = MockRead::new_with_error();",
+            "    let mut empty_deserializer = Deserializer { read: empty_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    mock_read.position = 0; // Reset position to check another case",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b' '));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b' '));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'\\n'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'z'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'\\t'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'e'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b'\\r'));",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let empty_read = MockRead::new_with_error();",
+            "    let mut empty_deserializer = Deserializer { read: empty_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert!(empty_deserializer.parse_whitespace().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let empty_read = MockRead::new_with_error();",
+            "    let mut empty_deserializer = Deserializer { read: empty_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    assert_eq!(empty_deserializer.parse_whitespace().unwrap(), None);",
+            "}"
+          ],
+          [
+            "{",
+            "    let read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    deserializer.parse_whitespace();",
+            "    let mut mock_read = MockRead::new(vec![b' ', b'\\n', b'z', b'\\t', b'e', b'\\r']);",
+            "    let mut deserializer = Deserializer { read: mock_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    let empty_read = MockRead::new_with_error();",
+            "    let mut empty_deserializer = Deserializer { read: empty_read, scratch: Vec::new(), remaining_depth: 0 };",
+            "    mock_read.position = 0; // Reset position to check another case",
+            "    assert_eq!(deserializer.parse_whitespace().unwrap(), Some(b' '));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

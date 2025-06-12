@@ -1,0 +1,157 @@
+{
+  "name": "once_cell::sync::<sync::Lazy<T, F> as std::ops::Deref>::deref",
+  "name_with_impl": "once_cell::sync::{impl#12}::deref",
+  "mod_info": {
+    "name": "sync",
+    "loc": "src/lib.rs:863:1:1409:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:1375:9:1377:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// expected return value/type: Lazy::force(self)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct InitValue;",
+                  "",
+                  "    let init_value = || InitValue;",
+                  "    let lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(init_value)),",
+                  "    };",
+                  "",
+                  "    let result: &InitValue = lazy.deref();",
+                  "    assert!(result.is_initialized());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0599]: no method named `is_initialized` found for reference `&InitValue` in the current scope\n    --> src/lib.rs:1429:20\n     |\n1429 |     assert!(result.is_initialized());\n     |                    ^^^^^^^^^^^^^^ method not found in `&InitValue`\n\nFor more information about this error, try `rustc --explain E0599`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct InitValue;",
+                  "",
+                  "    let init_value = || InitValue;",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(init_value)),",
+                  "    };",
+                  "",
+                  "    // Force initialization to consume the closure",
+                  "    let _ = lazy.deref();",
+                  "",
+                  "    // Now poison it by not resetting the init cell",
+                  "    lazy.init.set(None);",
+                  "",
+                  "    // This should panic",
+                  "    let _ = lazy.deref();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct InitValue(u32);",
+                  "",
+                  "    let init_value = || InitValue(42);",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(init_value)),",
+                  "    };",
+                  "",
+                  "    let _ = lazy.deref(); // Initialize",
+                  "",
+                  "    // Now dereference again after initialization",
+                  "    let result: &InitValue = lazy.deref();",
+                  "    assert_eq!(result.0, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct InitValue;",
+                  "",
+                  "    let lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(None),",
+                  "    };",
+                  "",
+                  "    // Should panic since there is no initialization closure",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        let _ = lazy.deref();",
+                  "    });",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0282]: type annotations needed for `sync::Lazy<_, _>`\n    --> src/lib.rs:1422:9\n     |\n1422 |     let lazy = Lazy {\n     |         ^^^^\n...\n1429 |         let _ = lazy.deref();\n     |                      ----- type must be known at this point\n     |\nhelp: consider giving `lazy` an explicit type, where the type for type parameter `T` is specified\n     |\n1422 |     let lazy: sync::Lazy<T, F> = Lazy {\n     |             ++++++++++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

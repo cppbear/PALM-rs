@@ -1,0 +1,525 @@
+{
+  "name": "serde_json::read::read::SliceRead<'a>::skip_to_escape",
+  "name_with_impl": "serde_json::read::{impl#5}::skip_to_escape",
+  "mod_info": {
+    "name": "read",
+    "loc": "src/lib.rs:434:1:434:10"
+  },
+  "visible": false,
+  "loc": "src/read.rs:432:5:481:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.index == self.slice.len() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn test_skip_to_escape_empty_slice() {",
+            "    let mut slice_wrapper = SliceWrapper {",
+            "        slice: b\"\".to_vec(),",
+            "        index: 0,",
+            "    };",
+            "    slice_wrapper.skip_to_escape(false);",
+            "    assert_eq!(slice_wrapper.index, 0);",
+            "}",
+            "",
+            "fn test_skip_to_escape_index_at_end() {",
+            "    let mut slice_wrapper = SliceWrapper {",
+            "        slice: b\"example\".to_vec(),",
+            "        index: 7,",
+            "    };",
+            "    slice_wrapper.skip_to_escape(false);",
+            "    assert_eq!(slice_wrapper.index, 7);",
+            "}",
+            "",
+            "fn test_skip_to_escape_consecutive_escapes() {",
+            "    let mut slice_wrapper = SliceWrapper {",
+            "        slice: b\"\\\\\\\\\".to_vec(),",
+            "        index: 0,",
+            "    };",
+            "    slice_wrapper.skip_to_escape(false);",
+            "    assert_eq!(slice_wrapper.index, 0);",
+            "}",
+            "",
+            "fn test_skip_to_escape_forbidden_control_characters() {",
+            "    let mut slice_wrapper = SliceWrapper {",
+            "        slice: b\"hello\\x00world\".to_vec(),",
+            "        index: 0,",
+            "    };",
+            "    slice_wrapper.skip_to_escape(true);",
+            "    assert_eq!(slice_wrapper.index, 5); // Stops at control character",
+            "}",
+            "",
+            "fn test_skip_to_escape_with_quotes() {",
+            "    let mut slice_wrapper = SliceWrapper {",
+            "        slice: b\"hello\\\"world\".to_vec(),",
+            "        index: 0,",
+            "    };",
+            "    slice_wrapper.skip_to_escape(false);",
+            "    assert_eq!(slice_wrapper.index, 5); // Stops at quote",
+            "}",
+            "",
+            "fn test_skip_to_escape_with_backslashes() {",
+            "    let mut slice_wrapper = SliceWrapper {",
+            "        slice: b\"hello\\\\world\".to_vec(),",
+            "        index: 0,",
+            "    };",
+            "    slice_wrapper.skip_to_escape(false);",
+            "    assert_eq!(slice_wrapper.index, 5); // Stops at backslash",
+            "}",
+            "",
+            "struct SliceWrapper {",
+            "    slice: Vec<u8>,",
+            "    index: usize,",
+            "}",
+            "",
+            "impl SliceWrapper {",
+            "    fn skip_to_escape(&mut self, forbid_control_characters: bool) {",
+            "        // Function implementation here...",
+            "        if self.index == self.slice.len()",
+            "            || is_escape(self.slice[self.index], forbid_control_characters)",
+            "        {",
+            "            return;",
+            "        }",
+            "        self.index += 1;",
+            "",
+            "        let rest = &self.slice[self.index..];",
+            "",
+            "        if !forbid_control_characters {",
+            "            self.index += memchr::memchr2(b'\"', b'\\\\', rest).unwrap_or(rest.len());",
+            "            return;",
+            "        }",
+            "",
+            "        #[cfg(fast_arithmetic = \"64\")]",
+            "        type Chunk = u64;",
+            "        #[cfg(fast_arithmetic = \"32\")]",
+            "        type Chunk = u32;",
+            "",
+            "        const STEP: usize = std::mem::size_of::<Chunk>();",
+            "        const ONE_BYTES: Chunk = Chunk::MAX / 255;",
+            "",
+            "        for chunk in rest.chunks_exact(STEP) {",
+            "            let chars = Chunk::from_le_bytes(chunk.try_into().unwrap());",
+            "            let contains_ctrl = chars.wrapping_sub(ONE_BYTES * 0x20) & !chars;",
+            "            let chars_quote = chars ^ (ONE_BYTES * Chunk::from(b'\"'));",
+            "            let contains_quote = chars_quote.wrapping_sub(ONE_BYTES) & !chars_quote;",
+            "            let chars_backslash = chars ^ (ONE_BYTES * Chunk::from(b'\\\\'));",
+            "            let contains_backslash = chars_backslash.wrapping_sub(ONE_BYTES) & !chars_backslash;",
+            "            let masked = (contains_ctrl | contains_quote | contains_backslash) & (ONE_BYTES << 7);",
+            "            if masked != 0 {",
+            "                self.index = unsafe { chunk.as_ptr().offset_from(self.slice.as_ptr()) } as usize",
+            "                    + masked.trailing_zeros() as usize / 8;",
+            "                return;",
+            "            }",
+            "        }",
+            "",
+            "        self.index += rest.len() / STEP * STEP;",
+            "        self.skip_to_escape_slow();",
+            "    }",
+            "",
+            "    fn skip_to_escape_slow(&mut self) {",
+            "        // Placeholder for the slow implementation.",
+            "    }",
+            "}",
+            "",
+            "fn is_escape(byte: u8, forbid_control_characters: bool) -> bool {",
+            "    // Simple implementation of escape character checking logic",
+            "    if forbid_control_characters {",
+            "        byte == b'\\\\' || (byte >= 0 && byte <= 31)",
+            "    } else {",
+            "        byte == b'\\\\'",
+            "    }",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.index == self.slice.len() is false\n",
+        "// constraint: is_escape(self.slice[self.index], forbid_control_characters) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut obj = {",
+                  "        struct TestStruct {",
+                  "            index: usize,",
+                  "            slice: Vec<u8>,",
+                  "        }",
+                  "        TestStruct { index: 0, slice: vec![] }",
+                  "    };",
+                  "    ",
+                  "    obj.skip_to_escape(false);",
+                  "    ",
+                  "    assert_eq!(obj.index, 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling ref-cast v1.0.24\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nwarning: unused import: `ntest::timeout`\n    --> src/read.rs:1093:8\n     |\n1093 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `skip_to_escape` found for struct `TestStruct` in the current scope\n    --> src/read.rs:1105:9\n     |\n1098 |         struct TestStruct {\n     |         ----------------- method `skip_to_escape` not found for this struct\n...\n1105 |     obj.skip_to_escape(false);\n     |         ^^^^^^^^^^^^^^ method not found in `TestStruct`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut obj = {",
+                  "        struct TestStruct {",
+                  "            index: usize,",
+                  "            slice: Vec<u8>,",
+                  "        }",
+                  "        TestStruct { index: 0, slice: b\"abc\\\"def\\\\\".to_vec() }",
+                  "    };",
+                  "    ",
+                  "    obj.skip_to_escape(false);",
+                  "    ",
+                  "    assert_eq!(obj.index, 4); // Should skip to the quote",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling ref-cast v1.0.24\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling serde_spanned v0.6.8\n   Compiling toml_datetime v0.6.9\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nwarning: unused import: `ntest::timeout`\n    --> src/read.rs:1093:8\n     |\n1093 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `skip_to_escape` found for struct `TestStruct` in the current scope\n    --> src/read.rs:1105:9\n     |\n1098 |         struct TestStruct {\n     |         ----------------- method `skip_to_escape` not found for this struct\n...\n1105 |     obj.skip_to_escape(false);\n     |         ^^^^^^^^^^^^^^ method not found in `TestStruct`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut obj = {",
+                  "        struct TestStruct {",
+                  "            index: usize,",
+                  "            slice: Vec<u8>,",
+                  "        }",
+                  "        TestStruct { index: 0, slice: b\"abc\\0def\\\"ghi\".to_vec() }",
+                  "    };",
+                  "    ",
+                  "    // should not skip control characters",
+                  "    obj.skip_to_escape(true);",
+                  "    ",
+                  "    assert_eq!(obj.index, 3); // Should stop at the null character",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling rustversion v1.0.20\n   Compiling ref-cast v1.0.24\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nwarning: unused import: `ntest::timeout`\n    --> src/read.rs:1093:8\n     |\n1093 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `skip_to_escape` found for struct `TestStruct` in the current scope\n    --> src/read.rs:1106:9\n     |\n1098 |         struct TestStruct {\n     |         ----------------- method `skip_to_escape` not found for this struct\n...\n1106 |     obj.skip_to_escape(true);\n     |         ^^^^^^^^^^^^^^ method not found in `TestStruct`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut obj = {",
+                  "        struct TestStruct {",
+                  "            index: usize,",
+                  "            slice: Vec<u8>,",
+                  "        }",
+                  "        TestStruct { index: 0, slice: b\"abc\\\\u041b\\\\u0435def\".to_vec() }",
+                  "    };",
+                  "    ",
+                  "    obj.skip_to_escape(false);",
+                  "    ",
+                  "    assert_eq!(obj.index, 14); // Should skip to the end of the string",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling rustversion v1.0.20\n   Compiling ref-cast v1.0.24\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nwarning: unused import: `ntest::timeout`\n    --> src/read.rs:1093:8\n     |\n1093 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `skip_to_escape` found for struct `TestStruct` in the current scope\n    --> src/read.rs:1105:9\n     |\n1098 |         struct TestStruct {\n     |         ----------------- method `skip_to_escape` not found for this struct\n...\n1105 |     obj.skip_to_escape(false);\n     |         ^^^^^^^^^^^^^^ method not found in `TestStruct`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.index == self.slice.len() is false\n",
+        "// constraint: is_escape(self.slice[self.index], forbid_control_characters) is false\n",
+        "// may panic: self.slice[self.index..] may panic in certain situations\n",
+        "// constraint: forbid_control_characters is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInput {",
+                  "        index: usize,",
+                  "        slice: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestInput {",
+                  "        fn new(index: usize, slice: Vec<u8>) -> Self {",
+                  "            Self { index, slice }",
+                  "        }",
+                  "        fn skip_to_escape(&mut self, forbid_control_characters: bool) {",
+                  "            // The function implementation as provided in the initial context",
+                  "            if self.index == self.slice.len()",
+                  "                || is_escape(self.slice[self.index], forbid_control_characters)",
+                  "            {",
+                  "                return;",
+                  "            }",
+                  "            self.index += 1;",
+                  "",
+                  "            let rest = &self.slice[self.index..];",
+                  "",
+                  "            if !forbid_control_characters {",
+                  "                self.index += memchr::memchr2(b'\"', b'\\\\', rest).unwrap_or(rest.len());",
+                  "                return;",
+                  "            }",
+                  "",
+                  "            #[cfg(fast_arithmetic = \"64\")]",
+                  "            type Chunk = u64;",
+                  "            #[cfg(fast_arithmetic = \"32\")]",
+                  "            type Chunk = u32;",
+                  "",
+                  "            const STEP: usize = mem::size_of::<Chunk>();",
+                  "            const ONE_BYTES: Chunk = Chunk::MAX / 255;",
+                  "",
+                  "            for chunk in rest.chunks_exact(STEP) {",
+                  "                let chars = Chunk::from_le_bytes(chunk.try_into().unwrap());",
+                  "                let contains_ctrl = chars.wrapping_sub(ONE_BYTES * 0x20) & !chars;",
+                  "                let chars_quote = chars ^ (ONE_BYTES * Chunk::from(b'\"'));",
+                  "                let contains_quote = chars_quote.wrapping_sub(ONE_BYTES) & !chars_quote;",
+                  "                let chars_backslash = chars ^ (ONE_BYTES * Chunk::from(b'\\\\'));",
+                  "                let contains_backslash = chars_backslash.wrapping_sub(ONE_BYTES) & !chars_backslash;",
+                  "                let masked = (contains_ctrl | contains_quote | contains_backslash) & (ONE_BYTES << 7);",
+                  "                if masked != 0 {",
+                  "                    self.index = unsafe { chunk.as_ptr().offset_from(self.slice.as_ptr()) } as usize",
+                  "                        + masked.trailing_zeros() as usize / 8;",
+                  "                    return;",
+                  "                }",
+                  "            }",
+                  "",
+                  "            self.index += rest.len() / STEP * STEP;",
+                  "            self.skip_to_escape_slow();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut input = TestInput::new(0, b\"Hello, World!\".to_vec());",
+                  "    input.skip_to_escape(false);",
+                  "    assert_eq!(input.index, 13); // Entire slice processed",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling ref-cast v1.0.24\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nwarning: unused import: `ntest::timeout`\n    --> src/read.rs:1093:8\n     |\n1093 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `skip_to_escape_slow` found for mutable reference `&mut TestInput` in the current scope\n    --> src/read.rs:1146:18\n     |\n1146 |             self.skip_to_escape_slow();\n     |                  ^^^^^^^^^^^^^^^^^^^\n     |\nhelp: there is a method `skip_to_escape` with a similar name, but with different arguments\n    --> src/read.rs:1106:9\n     |\n1106 |         fn skip_to_escape(&mut self, forbid_control_characters: bool) {\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInput {",
+                  "        index: usize,",
+                  "        slice: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestInput {",
+                  "        fn new(index: usize, slice: Vec<u8>) -> Self {",
+                  "            Self { index, slice }",
+                  "        }",
+                  "        fn skip_to_escape(&mut self, forbid_control_characters: bool) {",
+                  "            if self.index == self.slice.len()",
+                  "                || is_escape(self.slice[self.index], forbid_control_characters)",
+                  "            {",
+                  "                return;",
+                  "            }",
+                  "            self.index += 1;",
+                  "",
+                  "            let rest = &self.slice[self.index..];",
+                  "",
+                  "            if !forbid_control_characters {",
+                  "                self.index += memchr::memchr2(b'\"', b'\\\\', rest).unwrap_or(rest.len());",
+                  "                return;",
+                  "            }",
+                  "",
+                  "            #[cfg(fast_arithmetic = \"64\")]",
+                  "            type Chunk = u64;",
+                  "            #[cfg(fast_arithmetic = \"32\")]",
+                  "            type Chunk = u32;",
+                  "",
+                  "            const STEP: usize = mem::size_of::<Chunk>();",
+                  "            const ONE_BYTES: Chunk = Chunk::MAX / 255;",
+                  "",
+                  "            for chunk in rest.chunks_exact(STEP) {",
+                  "                let chars = Chunk::from_le_bytes(chunk.try_into().unwrap());",
+                  "                let contains_ctrl = chars.wrapping_sub(ONE_BYTES * 0x20) & !chars;",
+                  "                let chars_quote = chars ^ (ONE_BYTES * Chunk::from(b'\"'));",
+                  "                let contains_quote = chars_quote.wrapping_sub(ONE_BYTES) & !chars_quote;",
+                  "                let chars_backslash = chars ^ (ONE_BYTES * Chunk::from(b'\\\\'));",
+                  "                let contains_backslash = chars_backslash.wrapping_sub(ONE_BYTES) & !chars_backslash;",
+                  "                let masked = (contains_ctrl | contains_quote | contains_backslash) & (ONE_BYTES << 7);",
+                  "                if masked != 0 {",
+                  "                    self.index = unsafe { chunk.as_ptr().offset_from(self.slice.as_ptr()) } as usize",
+                  "                        + masked.trailing_zeros() as usize / 8;",
+                  "                    return;",
+                  "                }",
+                  "            }",
+                  "",
+                  "            self.index += rest.len() / STEP * STEP;",
+                  "            self.skip_to_escape_slow();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut input = TestInput::new(0, vec![]);",
+                  "    input.skip_to_escape(false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling ref-cast v1.0.24\n   Compiling rustversion v1.0.20\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nwarning: unused import: `ntest::timeout`\n    --> src/read.rs:1093:8\n     |\n1093 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `skip_to_escape_slow` found for mutable reference `&mut TestInput` in the current scope\n    --> src/read.rs:1146:18\n     |\n1146 |             self.skip_to_escape_slow();\n     |                  ^^^^^^^^^^^^^^^^^^^\n     |\nhelp: there is a method `skip_to_escape` with a similar name, but with different arguments\n    --> src/read.rs:1107:9\n     |\n1107 |         fn skip_to_escape(&mut self, forbid_control_characters: bool) {\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInput {",
+                  "        index: usize,",
+                  "        slice: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestInput {",
+                  "        fn new(index: usize, slice: Vec<u8>) -> Self {",
+                  "            Self { index, slice }",
+                  "        }",
+                  "        fn skip_to_escape(&mut self, forbid_control_characters: bool) {",
+                  "            if self.index == self.slice.len()",
+                  "                || is_escape(self.slice[self.index], forbid_control_characters)",
+                  "            {",
+                  "                return;",
+                  "            }",
+                  "            self.index += 1;",
+                  "",
+                  "            let rest = &self.slice[self.index..];",
+                  "",
+                  "            if !forbid_control_characters {",
+                  "                self.index += memchr::memchr2(b'\"', b'\\\\', rest).unwrap_or(rest.len());",
+                  "                return;",
+                  "            }",
+                  "",
+                  "            #[cfg(fast_arithmetic = \"64\")]",
+                  "            type Chunk = u64;",
+                  "            #[cfg(fast_arithmetic = \"32\")]",
+                  "            type Chunk = u32;",
+                  "",
+                  "            const STEP: usize = mem::size_of::<Chunk>();",
+                  "            const ONE_BYTES: Chunk = Chunk::MAX / 255;",
+                  "",
+                  "            for chunk in rest.chunks_exact(STEP) {",
+                  "                let chars = Chunk::from_le_bytes(chunk.try_into().unwrap());",
+                  "                let contains_ctrl = chars.wrapping_sub(ONE_BYTES * 0x20) & !chars;",
+                  "                let chars_quote = chars ^ (ONE_BYTES * Chunk::from(b'\"'));",
+                  "                let contains_quote = chars_quote.wrapping_sub(ONE_BYTES) & !chars_quote;",
+                  "                let chars_backslash = chars ^ (ONE_BYTES * Chunk::from(b'\\\\'));",
+                  "                let contains_backslash = chars_backslash.wrapping_sub(ONE_BYTES) & !chars_backslash;",
+                  "                let masked = (contains_ctrl | contains_quote | contains_backslash) & (ONE_BYTES << 7);",
+                  "                if masked != 0 {",
+                  "                    self.index = unsafe { chunk.as_ptr().offset_from(self.slice.as_ptr()) } as usize",
+                  "                        + masked.trailing_zeros() as usize / 8;",
+                  "                    return;",
+                  "                }",
+                  "            }",
+                  "",
+                  "            self.index += rest.len() / STEP * STEP;",
+                  "            self.skip_to_escape_slow();",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut input = TestInput::new(0, b\"Hello\\x0AWorld\".to_vec()); // Contains control character (LF)",
+                  "    input.skip_to_escape(true); // Forbidding control characters",
+                  "    assert_eq!(input.index, 5); // Index stops before the control character",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling ref-cast v1.0.24\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_stacker v0.1.12\n   Compiling serde_bytes v0.11.17\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nwarning: unused import: `ntest::timeout`\n    --> src/read.rs:1093:8\n     |\n1093 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `skip_to_escape_slow` found for mutable reference `&mut TestInput` in the current scope\n    --> src/read.rs:1145:18\n     |\n1145 |             self.skip_to_escape_slow();\n     |                  ^^^^^^^^^^^^^^^^^^^\n     |\nhelp: there is a method `skip_to_escape` with a similar name, but with different arguments\n    --> src/read.rs:1106:9\n     |\n1106 |         fn skip_to_escape(&mut self, forbid_control_characters: bool) {\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

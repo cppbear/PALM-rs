@@ -1,0 +1,138 @@
+{
+  "name": "bytes::buf::limit::buf::limit::Limit<T>::get_mut",
+  "name_with_impl": "bytes::buf::limit::{impl#0}::get_mut",
+  "mod_info": {
+    "name": "buf::limit",
+    "loc": "src/buf/mod.rs:21:1:21:11"
+  },
+  "visible": true,
+  "loc": "src/buf/limit.rs:34:5:36:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// expected return value/type: &mut self.inner\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBufMut {",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestBufMut {",
+                  "        fn new() -> Self {",
+                  "            TestBufMut { data: Vec::new() }",
+                  "        }",
+                  "",
+                  "        fn push(&mut self, byte: u8) {",
+                  "            self.data.push(byte);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestStruct<T> {",
+                  "        inner: T,",
+                  "    }",
+                  "",
+                  "    impl TestStruct<TestBufMut> {",
+                  "        pub fn new(inner: TestBufMut) -> Self {",
+                  "            TestStruct { inner }",
+                  "        }",
+                  "",
+                  "        pub fn get_mut(&mut self) -> &mut TestBufMut {",
+                  "            &mut self.inner",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buf_mut = TestBufMut::new();",
+                  "    let mut test_struct = TestStruct::new(buf_mut);",
+                  "",
+                  "    let inner_ref = test_struct.get_mut();",
+                  "    inner_ref.push(1);",
+                  "    inner_ref.push(2);",
+                  "    ",
+                  "    assert_eq!(inner_ref.data.len(), 2);",
+                  "    assert_eq!(inner_ref.data[0], 1);",
+                  "    assert_eq!(inner_ref.data[1], 2);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBufMut {",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestBufMut {",
+                  "        fn new() -> Self {",
+                  "            TestBufMut { data: Vec::new() }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestStruct<T> {",
+                  "        inner: T,",
+                  "    }",
+                  "",
+                  "    impl TestStruct<TestBufMut> {",
+                  "        pub fn new(inner: TestBufMut) -> Self {",
+                  "            TestStruct { inner }",
+                  "        }",
+                  "",
+                  "        pub fn get_mut(&mut self) -> &mut TestBufMut {",
+                  "            &mut self.inner",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buf_mut = TestBufMut::new();",
+                  "    let mut test_struct = TestStruct::new(buf_mut);",
+                  "    ",
+                  "    // Simulate an invalid state that could lead to panic if operations were",
+                  "    // performed on an uninitialized or wrongly set up object",
+                  "    let _ = std::mem::ManuallyDrop::new(test_struct);",
+                  "    ",
+                  "    let _inner_ref = test_struct.get_mut(); // Accessing after the panic. ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n  --> src/buf/limit.rs:78:8\n   |\n78 |    use super::*;\n   |        ^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n  --> src/buf/limit.rs:79:8\n   |\n79 |    use ntest::timeout;\n   |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: variable does not need to be mutable\n   --> src/buf/limit.rs:108:9\n    |\n108 |     let mut buf_mut = TestBufMut::new();\n    |         ----^^^^^^^\n    |         |\n    |         help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nerror[E0382]: borrow of moved value: `test_struct`\n   --> src/buf/limit.rs:115:22\n    |\n109 |     let mut test_struct = TestStruct::new(buf_mut);\n    |         --------------- move occurs because `test_struct` has type `TestStruct<TestBufMut>`, which does not implement the `Copy` trait\n...\n113 |     let _ = std::mem::ManuallyDrop::new(test_struct);\n    |                                         ----------- value moved here\n114 |     \n115 |     let _inner_ref = test_struct.get_mut(); // Accessing after the panic. \n    |                      ^^^^^^^^^^^ value borrowed here after move\n\nFor more information about this error, try `rustc --explain E0382`.\nwarning: `bytes` (lib test) generated 4 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

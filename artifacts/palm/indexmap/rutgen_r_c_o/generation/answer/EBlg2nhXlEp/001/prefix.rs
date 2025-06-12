@@ -1,0 +1,62 @@
+// Answer 0
+
+#[test]
+fn test_from_key_hashed_nocheck_with_non_equivalent_key() {
+    let map: IndexMap<i32, i32, std::collections::hash_map::RandomState> = IndexMap {
+        core: IndexMapCore {
+            indices: Indices::new(),  // Assume Indices can be initialized here
+            entries: Entries::new(),   // Assume Entries can be initialized here
+        },
+        hash_builder: std::collections::hash_map::RandomState::new(),
+    };
+    let builder = RawEntryBuilder { map: &map };
+    let hash: u64 = 123456789; // Arbitrary hash value
+    let key: String = "non_existent_key".to_string(); // A string key that is not equivalent to any key in the IndexMap
+    let result = builder.from_key_hashed_nocheck(hash, &key);
+}
+
+#[test]
+fn test_from_key_hashed_nocheck_with_minimum_hash() {
+    let map: IndexMap<i32, i32, std::collections::hash_map::RandomState> = IndexMap {
+        core: IndexMapCore {
+            indices: Indices::new(),
+            entries: Entries::new(),
+        },
+        hash_builder: std::collections::hash_map::RandomState::new(),
+    };
+    let builder = RawEntryBuilder { map: &map };
+    let hash: u64 = 0; // Minimum hash value
+    let key: String = "unique_key_not_in_map".to_string(); // Unique key not in the map
+    let result = builder.from_key_hashed_nocheck(hash, &key);
+}
+
+#[test]
+fn test_from_key_hashed_nocheck_with_maximum_hash() {
+    let map: IndexMap<i32, i32, std::collections::hash_map::RandomState> = IndexMap {
+        core: IndexMapCore {
+            indices: Indices::new(),
+            entries: Entries::new(),
+        },
+        hash_builder: std::collections::hash_map::RandomState::new(),
+    };
+    let builder = RawEntryBuilder { map: &map };
+    let hash: u64 = 0xFFFFFFFFFFFFFFFF; // Maximum hash value
+    let key: String = "another_unique_key".to_string(); // Another unique key not in the map
+    let result = builder.from_key_hashed_nocheck(hash, &key);
+}
+
+#[test]
+fn test_from_key_hashed_nocheck_with_empty_map() {
+    let map: IndexMap<i32, i32, std::collections::hash_map::RandomState> = IndexMap {
+        core: IndexMapCore {
+            indices: Indices::new(),
+            entries: Entries::new(),
+        },
+        hash_builder: std::collections::hash_map::RandomState::new(),
+    };
+    let builder = RawEntryBuilder { map: &map };
+    let hash: u64 = 999999; // Arbitrary hash value
+    let key: String = "empty_map_key".to_string(); // Key not present in an empty map
+    let result = builder.from_key_hashed_nocheck(hash, &key);
+}
+

@@ -1,0 +1,62 @@
+// Answer 0
+
+#[test]
+fn test_entry_vacant_case_all_false_eq() {
+    use hashbrown::{HashTable, DefaultHashBuilder};
+    use std::hash::BuildHasher;
+    
+    let mut table = HashTable::<(u64, &str)>::new();
+    let hasher = DefaultHashBuilder::default();
+    let hasher_fn = |val: &(u64, &str)| hasher.hash_one(val);
+    
+    // Insert a unique value to ensure no existing entries for the hash
+    table.insert_unique(hasher.hash_one(&(1, "a")), (1, "a"), hasher_fn);
+    
+    // Define eq that always returns false
+    let eq_fn = |_: &(u64, &str)| false;
+
+    // Call entry with a hash unlikely to exist in the table
+    let hash_value = 2; // Arbitrary hash value different from the one inserted
+    table.entry(hasher.hash_one(&(hash_value, "b")), eq_fn, hasher_fn);
+}
+
+#[test]
+fn test_entry_vacant_case_identical_hash() {
+    use hashbrown::{HashTable, DefaultHashBuilder};
+    use std::hash::BuildHasher;
+
+    let mut table = HashTable::<(u64, &str)>::new();
+    let hasher = DefaultHashBuilder::default();
+    let hasher_fn = |val: &(u64, &str)| hasher.hash_one(val);
+    
+    // Insert a unique value
+    table.insert_unique(hasher.hash_one(&(1, "a")), (1, "a"), hasher_fn);
+
+    // Define eq that returns false for any entry
+    let eq_fn = |_: &(u64, &str)| false;
+
+    // Call entry with a different object having the same hash
+    let hash_value = 1; // Same hash as the one inserted
+    table.entry(hasher.hash_one(&(hash_value, "b")), eq_fn, hasher_fn);
+}
+
+#[test]
+fn test_entry_vacant_case_large_hash() {
+    use hashbrown::{HashTable, DefaultHashBuilder};
+    use std::hash::BuildHasher;
+
+    let mut table = HashTable::<(u64, &str)>::new();
+    let hasher = DefaultHashBuilder::default();
+    let hasher_fn = |val: &(u64, &str)| hasher.hash_one(val);
+    
+    // Insert a unique value
+    table.insert_unique(hasher.hash_one(&(1, "a")), (1, "a"), hasher_fn);
+
+    // Define eq that always returns false
+    let eq_fn = |_: &(u64, &str)| false;
+
+    // Call entry with the maximum possible hash value
+    let max_hash_value = u64::MAX; // 2^64 - 1
+    table.entry(max_hash_value, eq_fn, hasher_fn);
+}
+

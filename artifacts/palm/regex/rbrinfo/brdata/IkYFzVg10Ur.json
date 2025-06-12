@@ -1,0 +1,3336 @@
+{
+  "name": "regex::exec::exec::ExecReadOnly::choose_match_type",
+  "name_with_impl": "regex::exec::{impl#7}::choose_match_type",
+  "mod_info": {
+    "name": "exec",
+    "loc": "src/lib.rs:652:1:652:10"
+  },
+  "visible": false,
+  "loc": "src/exec.rs:1142:5:1200:6",
+  "doc": "",
+  "code": [
+    "fn choose_match_type(&self, hint: Option<MatchType>) -> MatchType {",
+    "    use self::MatchType::*;",
+    "    if let Some(Nfa(_)) = hint {",
+    "        return hint.unwrap();",
+    "    }",
+    "    // If the NFA is empty, then we'll never match anything.",
+    "    if self.nfa.insts.is_empty() {",
+    "        return Nothing;",
+    "    }",
+    "    // If our set of prefixes is complete, then we can use it to find",
+    "    // a match in lieu of a regex engine. This doesn't quite work well in",
+    "    // the presence of multiple regexes, so only do it when there's one.",
+    "    //",
+    "    // TODO(burntsushi): Also, don't try to match literals if the regex is",
+    "    // partially anchored. We could technically do it, but we'd need to",
+    "    // create two sets of literals: all of them and then the subset that",
+    "    // aren't anchored. We would then only search for all of them when at",
+    "    // the beginning of the input and use the subset in all other cases.",
+    "    if self.res.len() == 1 {",
+    "        if self.nfa.prefixes.complete() {",
+    "            return if self.nfa.is_anchored_start {",
+    "                Literal(MatchLiteralType::AnchoredStart)",
+    "            } else {",
+    "                Literal(MatchLiteralType::Unanchored)",
+    "            };",
+    "        }",
+    "        if self.suffixes.complete() {",
+    "            return if self.nfa.is_anchored_end {",
+    "                Literal(MatchLiteralType::AnchoredEnd)",
+    "            } else {",
+    "                // This case shouldn't happen. When the regex isn't",
+    "                // anchored, then complete prefixes should imply complete",
+    "                // suffixes.",
+    "                Literal(MatchLiteralType::Unanchored)",
+    "            };",
+    "        }",
+    "    }",
+    "    // If we can execute the DFA, then we totally should.",
+    "    if dfa::can_exec(&self.dfa) {",
+    "        // Regex sets require a slightly specialized path.",
+    "        if self.res.len() >= 2 {",
+    "            return DfaMany;",
+    "        }",
+    "        // If the regex is anchored at the end but not the start, then",
+    "        // just match in reverse from the end of the haystack.",
+    "        if !self.nfa.is_anchored_start && self.nfa.is_anchored_end {",
+    "            return DfaAnchoredReverse;",
+    "        }",
+    "        // If there's a longish suffix literal, then it might be faster",
+    "        // to look for that first.",
+    "        if self.should_suffix_scan() {",
+    "            return DfaSuffix;",
+    "        }",
+    "        // Fall back to your garden variety forward searching lazy DFA.",
+    "        return Dfa;",
+    "    }",
+    "    // We're so totally hosed.",
+    "    Nfa(MatchNfaType::Auto)",
+    "}"
+  ],
+  "size": {
+    "chain": 39,
+    "contra": 0,
+    "min_set": 11
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Nothing",
+      "path": [
+        0,
+        5,
+        6,
+        7,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "true",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1162,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Literal(MatchLiteralType::AnchoredStart)",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        38,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "true",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Literal(MatchLiteralType::Unanchored)",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        38,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "true",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "true",
+          "line": 1169,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Literal(MatchLiteralType::AnchoredEnd)",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        18,
+        19,
+        21,
+        38,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "true",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1169,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Literal(MatchLiteralType::Unanchored)",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        18,
+        20,
+        21,
+        38,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "true",
+          "line": 1182,
+          "bound": "self.res.len() == 2",
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaMany",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaSuffix",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        32,
+        33,
+        34,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Dfa",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        32,
+        33,
+        35,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaAnchoredReverse",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        31,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaSuffix",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        32,
+        33,
+        34,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Dfa",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        32,
+        33,
+        35,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "false",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Nfa(MatchNfaType::Auto)",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        36,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "true",
+          "line": 1182,
+          "bound": "self.res.len() == 2",
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaMany",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaSuffix",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        32,
+        33,
+        34,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Dfa",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        32,
+        33,
+        35,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaAnchoredReverse",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        31,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaSuffix",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        32,
+        33,
+        34,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Dfa",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        32,
+        33,
+        35,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "false",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Nfa(MatchNfaType::Auto)",
+      "path": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        36,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "true",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Nothing",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        7,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "true",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1162,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Literal(MatchLiteralType::AnchoredStart)",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        38,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "true",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1162,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Literal(MatchLiteralType::Unanchored)",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15,
+        38,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "true",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "true",
+          "line": 1169,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Literal(MatchLiteralType::AnchoredEnd)",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        18,
+        19,
+        21,
+        38,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "true",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1169,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Literal(MatchLiteralType::Unanchored)",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        18,
+        20,
+        21,
+        38,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 25,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "true",
+          "line": 1182,
+          "bound": "self.res.len() == 2",
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaMany",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        28,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 26,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaSuffix",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        32,
+        33,
+        34,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 27,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Dfa",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        32,
+        33,
+        35,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 28,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaAnchoredReverse",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        31,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 29,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaSuffix",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        32,
+        33,
+        34,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 30,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Dfa",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        32,
+        33,
+        35,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 31,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "false",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.prefixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1161,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.suffixes.complete()",
+          "norm": null,
+          "value": "false",
+          "line": 1168,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "false",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Nfa(MatchNfaType::Auto)",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        16,
+        17,
+        22,
+        24,
+        25,
+        36,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 32,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "true",
+          "line": 1182,
+          "bound": "self.res.len() == 2",
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaMany",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 33,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaSuffix",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        32,
+        33,
+        34,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 34,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Dfa",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        32,
+        33,
+        35,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 35,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "true",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaAnchoredReverse",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        31,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 36,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "true",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "DfaSuffix",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        32,
+        33,
+        34,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 37,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "true",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() >= 2",
+          "norm": "2 <= self.res.len()",
+          "value": "false",
+          "line": 1182,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_start",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.is_anchored_end",
+          "norm": null,
+          "value": "false",
+          "line": 1187,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.should_suffix_scan()",
+          "norm": null,
+          "value": "false",
+          "line": 1192,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Dfa",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        26,
+        27,
+        29,
+        30,
+        32,
+        33,
+        35,
+        37,
+        39
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 38,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.nfa.insts.is_empty()",
+          "norm": null,
+          "value": "false",
+          "line": 1148,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.res.len() == 1",
+          "norm": "1 == self.res.len()",
+          "value": "true",
+          "line": 1160,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "dfa::can_exec(&self.dfa)",
+          "norm": null,
+          "value": "false",
+          "line": 1180,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Nfa(MatchNfaType::Auto)",
+      "path": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        23,
+        24,
+        25,
+        36,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 39,
+      "conds": [
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "let Some(Nfa(_)) = hint",
+          "norm": null,
+          "value": "true",
+          "line": 1144,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "hint.unwrap()",
+          "norm": null,
+          "value": "",
+          "line": 1145,
+          "bound": null,
+          "may_panic": true
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        39
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+// Answer 0
+
+#[test]
+fn test_choose_match_type_with_nfa_hint_and_empty_nfa_insts() {
+    let nfa_program = Program {
+        insts: Vec::new(),
+        matches: Vec::new(),
+        captures: Vec::new(),
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: InstPtr::new(),
+        byte_classes: Vec::new(),
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: false,
+        is_reverse: false,
+        is_anchored_start: false,
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher::empty(),
+        dfa_size_limit: 0,
+    };
+
+    let exec_read_only = ExecReadOnly {
+        res: vec!["test".to_string()],
+        nfa: nfa_program,
+        dfa: Program { insts: Vec::new(), ..Default::default() },
+        dfa_reverse: Program { insts: Vec::new(), ..Default::default() },
+        suffixes: LiteralSearcher::empty(),
+        match_type: MatchType::Nothing,
+    };
+
+    let result = exec_read_only.choose_match_type(Some(MatchType::Nfa(MatchNfaType::Auto)));
+}
+

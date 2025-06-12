@@ -1,0 +1,103 @@
+{
+  "name": "serde::__private::de::<__private::de::FlatStructAccess<'a, 'de, E> as de::MapAccess<'de>>::next_value_seed",
+  "name_with_impl": "serde::__private::de::{impl#10}::next_value_seed",
+  "mod_info": {
+    "name": "__private::de",
+    "loc": "serde/src/private/mod.rs:2:1:2:12"
+  },
+  "visible": true,
+  "loc": "serde/src/private/de.rs:2721:5:2729:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.pending_content.take() matches Some(value) is true\n",
+        "// constraint: self.pending_content.take() matches Some(value) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use crate::de::Visitor;",
+            "use crate::de::Error;",
+            "use crate::de::DeserializeSeed;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.pending_content.take() matches None is true\n",
+        "// expected return value/type: Err(Error::custom(\"value is missing\"))\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    #[derive(Debug)]",
+                  "    struct TestError;",
+                  "    impl Error for TestError {",
+                  "        fn custom<T: std::fmt::Display>(msg: T) -> Self {",
+                  "            TestError",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSeed;",
+                  "",
+                  "    impl<'de> DeserializeSeed<'de> for TestSeed {",
+                  "        type Value = u32;",
+                  "",
+                  "        fn deserialize<DSR>(self, _: DSR) -> Result<Self::Value, TestError>",
+                  "        where",
+                  "            DSR: Deserializer<'de>,",
+                  "        {",
+                  "            // This seed does not perform actual deserialization since we expect an error",
+                  "            Err(TestError)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut access = FlatStructAccess {",
+                  "        iter: [].iter_mut(),",
+                  "        pending_content: None,",
+                  "        fields: &[],",
+                  "        _marker: std::marker::PhantomData,",
+                  "    };",
+                  "",
+                  "    let result: Result<u32, TestError> = access.next_value_seed(TestSeed);",
+                  "    assert!(result.is_err());",
+                  "    if let Err(e) = result {",
+                  "        // Assuming that TestError is identifiable or convertible to the expected error message/format",
+                  "        assert_eq!(e, TestError);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\nerror[E0277]: the trait bound `TestError: std::error::Error` is not satisfied\n    --> serde/src/private/de.rs:2817:20\n     |\n2817 |     impl Error for TestError {\n     |                    ^^^^^^^^^ the trait `std::error::Error` is not implemented for `TestError`\n     |\nnote: required by a bound in `de::Error`\n    --> serde/src/de/mod.rs:161:38\n     |\n161  |         pub trait Error: Sized $(+ $($supertrait)::+)* {\n     |                                      ^^^^^^^^^^^ required by this bound in `Error`\n...\n300  | declare_error_trait!(Error: Sized + StdError);\n     | --------------------------------------------- in this macro invocation\n     = note: this error originates in the macro `declare_error_trait` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nerror[E0053]: method `deserialize` has an incompatible type for trait\n    --> serde/src/private/de.rs:2828:46\n     |\n2828 |         fn deserialize<DSR>(self, _: DSR) -> Result<Self::Value, TestError>\n     |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected associated type, found `TestError`\n     |\nnote: type in trait\n    --> serde/src/de/mod.rs:784:49\n     |\n784  |     fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>\n     |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     = note: expected signature `fn(TestSeed, _) -> Result<_, <DSR as de::Deserializer<'de>>::Error>`\n                found signature `fn(TestSeed, _) -> Result<_, TestError>`\nhelp: change the output type to match the trait\n     |\n2828 |         fn deserialize<DSR>(self, _: DSR) -> Result<u32, <DSR as de::Deserializer<'de>>::Error>\n     |                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0369]: binary operation `==` cannot be applied to type `TestError`\n    --> serde/src/private/de.rs:2848:9\n     |\n2848 |         assert_eq!(e, TestError);\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^\n     |         |\n     |         TestError\n     |         TestError\n     |\nnote: an implementation of `PartialEq` might be missing for `TestError`\n    --> serde/src/private/de.rs:2816:5\n     |\n2816 |     struct TestError;\n     |     ^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `TestError` with `#[derive(PartialEq)]`\n     |\n2816 +     #[derive(PartialEq)]\n2817 |     struct TestError;\n     |\n\nwarning: unused variable: `msg`\n    --> serde/src/private/de.rs:2818:41\n     |\n2818 |         fn custom<T: std::fmt::Display>(msg: T) -> Self {\n     |                                         ^^^ help: if this is intentional, prefix it with an underscore: `_msg`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nSome errors have detailed explanations: E0053, E0277, E0369.\nFor more information about an error, try `rustc --explain E0053`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 3 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

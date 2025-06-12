@@ -1,0 +1,75 @@
+// Answer 0
+
+#[test]
+fn test_deserialize_enum_single_variant() {
+    use serde::de::{Visitor, Deserialize, Deserializer};
+    use serde_json::value::Value;
+    use serde_json::Map;
+
+    struct MockVisitor {
+        result: Result<(), serde::de::Error>,
+    }
+
+    impl<'de> Visitor<'de> for MockVisitor {
+        type Value = ();
+
+        fn visit_enum<V>(self, _value: V) -> Result<Self::Value, serde::de::Error>
+        where
+            V: serde::de::EnumAccess<'de>,
+        {
+            self.result
+        }
+
+        forward_to_deserialize_any! {
+            bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 char str string bytes byte_buf
+            option unit unit_struct newtype_struct seq tuple tuple_struct map
+            struct identifier ignored_any
+        }
+    }
+
+    let mut map = Map::new();
+    map.insert(String::from("single_variant"), Value::String(String::from("example_value")));
+
+    let visitor = MockVisitor {
+        result: Ok(()),
+    };
+
+    let value = Value::Object(map);
+    let _ = value.deserialize_enum("test_enum", &["single_variant"], visitor);
+}
+
+#[test]
+#[should_panic]
+fn test_deserialize_enum_empty_map() {
+    use serde_json::value::Value;
+    use serde_json::Map;
+
+    let map: Map<String, Value> = Map::new();
+    let value = Value::Object(map);
+    
+    let visitor = MockVisitor {
+        result: Ok(()),
+    };
+
+    let _: Result<(), serde::de::Error> = value.deserialize_enum("test_enum", &["single_variant"], visitor);
+}
+
+#[test]
+#[should_panic]
+fn test_deserialize_enum_multiple_keys() {
+    use serde_json::value::Value;
+    use serde_json::Map;
+
+    let mut map = Map::new();
+    map.insert(String::from("variant1"), Value::String(String::from("example_value1")));
+    map.insert(String::from("variant2"), Value::String(String::from("example_value2")));
+
+    let visitor = MockVisitor {
+        result: Ok(()),
+    };
+
+    let value = Value::Object(map);
+    
+    let _: Result<(), serde::de::Error> = value.deserialize_enum("test_enum", &["variant1", "variant2"], visitor);
+}
+

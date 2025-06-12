@@ -1,0 +1,291 @@
+{
+  "name": "once_cell::race::once_box::race::once_box::OnceBox<T>::init",
+  "name_with_impl": "once_cell::race::once_box::{impl#3}::init",
+  "mod_info": {
+    "name": "race::once_box",
+    "loc": "src/race.rs:354:1:498:2"
+  },
+  "visible": false,
+  "loc": "src/race.rs:462:9:476:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: f()? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    struct TestWrapper {",
+                  "        inner: std::sync::atomic::AtomicPtr<TestStruct>,",
+                  "    }",
+                  "",
+                  "    impl TestWrapper {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                inner: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn init<E>(&self, f: impl FnOnce() -> Result<Box<TestStruct>, E>) -> Result<&TestStruct, E> {",
+                  "            let val = f()?;",
+                  "            let mut ptr = Box::into_raw(val);",
+                  "            let exchange = self.inner.compare_exchange(",
+                  "                std::ptr::null_mut(),",
+                  "                ptr,",
+                  "                std::sync::atomic::Ordering::Release,",
+                  "                std::sync::atomic::Ordering::Acquire,",
+                  "            );",
+                  "            if let Err(old) = exchange {",
+                  "                drop(unsafe { Box::from_raw(ptr) });",
+                  "                ptr = old;",
+                  "            }",
+                  "            Ok(unsafe { &*ptr })",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let wrapper = TestWrapper::new();",
+                  "    ",
+                  "    let result = wrapper.init(|| Ok(Box::new(TestStruct { value: 42 })));",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "    let value_ref = result.unwrap();",
+                  "    assert_eq!(value_ref.value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed for `Result<&TestStruct, _>`\n   --> src/race.rs:540:9\n    |\n540 |     let result = wrapper.init(|| Ok(Box::new(TestStruct { value: 42 })));\n    |         ^^^^^^                   -------------------------------------- type must be known at this point\n    |\nhelp: consider giving `result` an explicit type, where the type for type parameter `E` is specified\n    |\n540 |     let result: Result<&TestStruct, E> = wrapper.init(|| Ok(Box::new(TestStruct { value: 42 })));\n    |               ++++++++++++++++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestWrapper {",
+                  "        inner: std::sync::atomic::AtomicPtr<i32>,",
+                  "    }",
+                  "",
+                  "    impl TestWrapper {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                inner: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn init<E>(&self, f: impl FnOnce() -> Result<Box<i32>, E>) -> Result<&i32, E> {",
+                  "            let val = f()?;",
+                  "            let mut ptr = Box::into_raw(val);",
+                  "            let exchange = self.inner.compare_exchange(",
+                  "                std::ptr::null_mut(),",
+                  "                ptr,",
+                  "                std::sync::atomic::Ordering::Release,",
+                  "                std::sync::atomic::Ordering::Acquire,",
+                  "            );",
+                  "            if let Err(old) = exchange {",
+                  "                drop(unsafe { Box::from_raw(ptr) });",
+                  "                ptr = old;",
+                  "            }",
+                  "            Ok(unsafe { &*ptr })",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let wrapper = TestWrapper::new();",
+                  "    ",
+                  "    // Triggers a panic since Result will be Err when None is returned.",
+                  "    let _result = wrapper.init::<&'static str>(|| Err(\"error\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: f()? is Ok/Some\n",
+        "// constraint: let Err(old) = exchange is true\n",
+        "// expected return value/type: Ok(unsafe { &*ptr })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::ptr;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr;",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    ",
+                  "    struct Inner {",
+                  "        inner: AtomicPtr<i32>,",
+                  "    }",
+                  "",
+                  "    struct TestOnceCell {",
+                  "        inner: Inner,",
+                  "    }",
+                  "",
+                  "    impl TestOnceCell {",
+                  "        fn init<F, E>(&self, f: F) -> Result<&i32, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<Box<i32>, E>,",
+                  "        {",
+                  "            let val = f()?;",
+                  "            let mut ptr = Box::into_raw(val);",
+                  "            let exchange = self.inner.inner.compare_exchange(",
+                  "                ptr::null_mut(),",
+                  "                ptr,",
+                  "                Ordering::Release,",
+                  "                Ordering::Acquire,",
+                  "            );",
+                  "            if let Err(old) = exchange {",
+                  "                drop(unsafe { Box::from_raw(ptr) });",
+                  "                ptr = old;",
+                  "            }",
+                  "            Ok(unsafe { &*ptr })",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = TestOnceCell {",
+                  "        inner: Inner {",
+                  "            inner: AtomicPtr::new(ptr::null_mut()),",
+                  "        },",
+                  "    };",
+                  "",
+                  "    // Simulate a previous initialization to trigger exchange",
+                  "    let existing_value = Box::new(10);",
+                  "    cell.inner.inner.store(Box::into_raw(existing_value), Ordering::SeqCst);",
+                  "",
+                  "    // Perform initialization",
+                  "    let result = cell.init(|| Ok(Box::new(42)));",
+                  "",
+                  "    // Check the result",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(*result.unwrap(), 10); // should return the existing value",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed for `Result<&i32, _>`\n   --> src/race.rs:549:9\n    |\n549 |     let result = cell.init(|| Ok(Box::new(42)));\n    |         ^^^^^^                ---------------- type must be known at this point\n    |\nhelp: consider giving `result` an explicit type, where the type for type parameter `E` is specified\n    |\n549 |     let result: Result<&i32, E> = cell.init(|| Ok(Box::new(42)));\n    |               +++++++++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr;",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    ",
+                  "    struct Inner {",
+                  "        inner: AtomicPtr<i32>,",
+                  "    }",
+                  "",
+                  "    struct TestOnceCell {",
+                  "        inner: Inner,",
+                  "    }",
+                  "",
+                  "    impl TestOnceCell {",
+                  "        fn init<F, E>(&self, f: F) -> Result<&i32, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<Box<i32>, E>,",
+                  "        {",
+                  "            let val = f()?;",
+                  "            let mut ptr = Box::into_raw(val);",
+                  "            let exchange = self.inner.inner.compare_exchange(",
+                  "                ptr::null_mut(),",
+                  "                ptr,",
+                  "                Ordering::Release,",
+                  "                Ordering::Acquire,",
+                  "            );",
+                  "            if let Err(old) = exchange {",
+                  "                drop(unsafe { Box::from_raw(ptr) });",
+                  "                ptr = old;",
+                  "            }",
+                  "            Ok(unsafe { &*ptr })",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = TestOnceCell {",
+                  "        inner: Inner {",
+                  "            inner: AtomicPtr::new(ptr::null_mut()),",
+                  "        },",
+                  "    };",
+                  "",
+                  "    // Perform initialization with a function that panics",
+                  "    let _ = cell.init(|| {",
+                  "        panic!(\"This function should panic\");",
+                  "    }); // Expects panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed for `Result<&i32, _>`\n   --> src/race.rs:546:9\n    |\n546 |       let _ = cell.init(|| {\n    |  _________^___-\n547 | |         panic!(\"This function should panic\");\n548 | |     }); // Expects panic\n    | |______- type must be known at this point\n    |\nhelp: consider giving this pattern a type, where the type for type parameter `E` is specified\n    |\n546 |     let _: Result<&i32, E> = cell.init(|| {\n    |          +++++++++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

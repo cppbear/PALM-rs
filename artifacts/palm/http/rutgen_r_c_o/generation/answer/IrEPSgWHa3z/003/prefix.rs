@@ -1,0 +1,64 @@
+// Answer 0
+
+fn test_find_empty_entry() {
+    let mut header_map: HeaderMap = HeaderMap::with_capacity(10);
+    header_map.entries.push(Bucket {
+        hash: HashValue(1),
+        key: HeaderName { inner: Repr::SomeValue },
+        value: HeaderValue::new("value1"),
+        links: None,
+    });
+    header_map.indices = Box::from([Pos::new(0, HashValue(1)), Pos::new(1, HashValue(2))]);
+    
+    let key = HeaderName { inner: Repr::SomeValue };
+    let result = header_map.find(&key);
+}
+
+fn test_find_with_distance_check() {
+    let mut header_map: HeaderMap = HeaderMap::with_capacity(10);
+    header_map.entries.push(Bucket {
+        hash: HashValue(2),
+        key: HeaderName { inner: Repr::SomeValue },
+        value: HeaderValue::new("value2"),
+        links: None,
+    });
+    header_map.indices = Box::from([Pos::new(0, HashValue(3)), Pos::new(1, HashValue(2))]);
+    
+    let key = HeaderName { inner: Repr::SomeValue };
+    let result = header_map.find(&key);
+}
+
+fn test_find_with_hash_collision() {
+    let mut header_map: HeaderMap = HeaderMap::with_capacity(10);
+    header_map.entries.push(Bucket {
+        hash: HashValue(3),
+        key: HeaderName { inner: Repr::CustomValue },
+        value: HeaderValue::new("value3"),
+        links: None,
+    });
+    header_map.entries.push(Bucket {
+        hash: HashValue(3),
+        key: HeaderName { inner: Repr::AnotherValue },
+        value: HeaderValue::new("value4"),
+        links: None,
+    });
+    header_map.indices = Box::from([Pos::new(0, HashValue(3)), Pos::new(1, HashValue(3))]);
+    
+    let key = HeaderName { inner: Repr::SomeValue };
+    let result = header_map.find(&key);
+}
+
+fn test_find_with_invalid_probed_distance() {
+    let mut header_map: HeaderMap = HeaderMap::with_capacity(10);
+    header_map.entries.push(Bucket {
+        hash: HashValue(4),
+        key: HeaderName { inner: Repr::SomeValue },
+        value: HeaderValue::new("value5"),
+        links: None,
+    });
+    header_map.indices = Box::from([Pos::new(0, HashValue(5)), Pos::new(1, HashValue(4))]);
+    
+    let key = HeaderName { inner: Repr::SomeValue };
+    let result = header_map.find(&key);
+}
+

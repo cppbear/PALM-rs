@@ -1,0 +1,104 @@
+// Answer 0
+
+#[test]
+fn test_bounded_backtracking() {
+    // Setting up a RegexOptions instance with default values
+    let opts = RegexOptions {
+        pats: vec!["test".to_owned()],
+        size_limit: 1024,
+        dfa_size_limit: 2048,
+        nest_limit: 100,
+        case_insensitive: false,
+        multi_line: false,
+        dot_matches_new_line: false,
+        swap_greed: false,
+        ignore_whitespace: false,
+        unicode: false,
+        octal: false,
+    };
+
+    // Creating an ExecBuilder instance using the new_options method
+    let builder = ExecBuilder::new_options(opts);
+    
+    // Call the bounded_backtracking method
+    let updated_builder = builder.bounded_backtracking();
+
+    // Check if the match_type is set correctly to Nfa with Backtrack
+    match updated_builder.match_type {
+        Some(MatchType::Nfa(MatchNfaType::Backtrack)) => (),
+        _ => panic!("Expected match_type to be Nfa with Backtrack"),
+    };
+}
+
+#[test]
+fn test_bounded_backtracking_overrides() {
+    // Setup: Create an ExecBuilder instance with a different match type
+    let opts = RegexOptions {
+        pats: vec!["test".to_owned()],
+        size_limit: 1024,
+        dfa_size_limit: 2048,
+        nest_limit: 100,
+        case_insensitive: false,
+        multi_line: false,
+        dot_matches_new_line: false,
+        swap_greed: false,
+        ignore_whitespace: false,
+        unicode: false,
+        octal: false,
+    };
+
+    // Create an ExecBuilder instance and switch to Nfa
+    let builder = ExecBuilder::new_options(opts).nfa();
+
+    // Call bounded_backtracking to see if it overrides the previous setting
+    let updated_builder = builder.bounded_backtracking();
+
+    // Check if the previous Nfa setting was overridden
+    match updated_builder.match_type {
+        Some(MatchType::Nfa(MatchNfaType::Backtrack)) => (),
+        _ => panic!("Expected match_type to be Nfa with Backtrack after override"),
+    };
+}
+
+#[test]
+fn test_bounded_backtracking_no_ops() {
+    // Creating an ExecBuilder instance with default RegexOptions
+    let opts = RegexOptions::default();
+    let builder = ExecBuilder::new_options(opts);
+    
+    // Call bounded_backtracking when no other modifications were made
+    let updated_builder = builder.bounded_backtracking();
+
+    // Ensure match_type is set correctly to Nfa with Backtrack
+    match updated_builder.match_type {
+        Some(MatchType::Nfa(MatchNfaType::Backtrack)) => (),
+        _ => panic!("Expected match_type to be Nfa with Backtrack"),
+    };
+}
+
+#[test]
+fn test_bounded_backtracking_state() {
+    // Creating an instance with some options set
+    let opts = RegexOptions {
+        pats: vec!["example".to_owned()],
+        size_limit: 8192,
+        dfa_size_limit: 8192,
+        nest_limit: 50,
+        case_insensitive: true,
+        multi_line: true,
+        dot_matches_new_line: true,
+        swap_greed: true,
+        ignore_whitespace: true,
+        unicode: true,
+        octal: true,
+    };
+
+    let builder = ExecBuilder::new_options(opts);
+    
+    // Calling bounded_backtracking
+    let updated_builder = builder.bounded_backtracking();
+
+    // Confirming the match_type is set to Backtrack
+    assert!(matches!(updated_builder.match_type, Some(MatchType::Nfa(MatchNfaType::Backtrack))));
+}
+

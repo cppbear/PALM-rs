@@ -1,0 +1,302 @@
+{
+  "name": "bytes::bytes::promotable_even_clone",
+  "name_with_impl": "bytes::bytes::promotable_even_clone",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1208:1:1219:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::Ordering;",
+            "use core::ptr::null_mut;",
+            "use core::sync::atomic::AtomicPtr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    struct TestShared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let shared = Box::new(TestShared {",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    });",
+                  "",
+                  "    let shared_ptr = Box::into_raw(shared);",
+                  "    let atomic_ptr = AtomicPtr::new(shared_ptr as *mut () | KIND_ARC as usize);",
+                  "    let data_ptr: *const u8 = null_mut(); // Pointing to no valid data",
+                  "    let len: usize = 0; // Length of 0 for the test",
+                  "",
+                  "    unsafe {",
+                  "        let result = promotable_even_clone(&atomic_ptr, data_ptr, len);",
+                  "        // Validate the result",
+                  "        assert_eq!(result.len, len);",
+                  "        assert_eq!(result.ptr, data_ptr);",
+                  "        // Validate the reference count has increased",
+                  "        assert_eq!((*shared_ptr).ref_cnt.load(Ordering::Relaxed), 2);",
+                  "    }",
+                  "",
+                  "    // Clean up the shared pointer",
+                  "    unsafe {",
+                  "        let _ = atomic_ptr.load(Ordering::Relaxed) as *mut TestShared;",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0369]: no implementation for `*mut () | usize`\n    --> src/bytes.rs:1700:59\n     |\n1700 |     let atomic_ptr = AtomicPtr::new(shared_ptr as *mut () | KIND_ARC as usize);\n     |                                     --------------------- ^ ----------------- usize\n     |                                     |\n     |                                     *mut ()\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::AtomicPtr;",
+            "use core::sync::atomic::Ordering;",
+            "use core::ptr::null_mut;",
+            "use alloc::boxed::Box;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use alloc::boxed::Box;",
+                  "",
+                  "    struct Dummy;",
+                  "",
+                  "    // Create a shared buffer",
+                  "    let buffer: *mut u8 = Box::into_raw(Box::new([0u8; 10])) as *mut u8;",
+                  "    let len: usize = 5;",
+                  "    let atomic_ptr = AtomicPtr::new(buffer as _);",
+                  "    ",
+                  "    // Setting kind to KIND_VEC",
+                  "    let kind_vec: *mut Shared = Box::into_raw(Box::new(Shared {",
+                  "        buf: buffer,",
+                  "        cap: len,",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    }));",
+                  "    ",
+                  "    // Mask to represent it as KIND_VEC",
+                  "    let kind_masked = (kind_vec as usize & !KIND_MASK) as *mut ();",
+                  "    ",
+                  "    // Store the shared buffer into AtomicPtr",
+                  "    atomic_ptr.store(kind_masked, Ordering::Release);",
+                  "",
+                  "    // Call the function with kind set to KIND_VEC",
+                  "    let clone = unsafe { promotable_even_clone(&atomic_ptr, null_mut(), len) };",
+                  "",
+                  "    // Assert the clone values",
+                  "    assert_eq!(clone.len, len);",
+                  "    assert_eq!(clone.ptr, null_mut()); // since we passed null_mut() as ptr",
+                  "",
+                  "    // Clean up to prevent memory leaks",
+                  "    unsafe {",
+                  "        Box::from_raw(kind_vec);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    // Create a shared buffer, but with incorrect setup to provoke panic",
+                  "    let atomic_ptr = AtomicPtr::new(null_mut());",
+                  "    let len: usize = 5;",
+                  "",
+                  "    // This should panic because we have an invalid pointer",
+                  "    unsafe {",
+                  "        let _ = promotable_even_clone(&atomic_ptr, null_mut(), len);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null;",
+                  "",
+                  "    struct MockAtomicPtr {",
+                  "        ptr: *const (),",
+                  "    }",
+                  "",
+                  "    // Helper to simulate AtomicPtr behavior",
+                  "    impl MockAtomicPtr {",
+                  "        fn load(&self) -> *const () {",
+                  "            self.ptr",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Initialize a vector case (KIND_VEC)",
+                  "    let shared = Box::new(crate::Shared {",
+                  "        buf: Box::into_raw(Box::new([0u8; 8])), // A mock buffer",
+                  "        cap: 8,",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    });",
+                  "    let ptr = Box::into_raw(shared) as *const ();",
+                  "    let mock_atomic = MockAtomicPtr { ptr };",
+                  "",
+                  "    // Expected values for promotable_even_clone parameters",
+                  "    let new_ptr: *const u8 = null(); // This won't match with ptr during comparison",
+                  "    let len = 4; // Length that we want to clone",
+                  "",
+                  "    // Invoke the function under test",
+                  "    let result = unsafe { promotable_even_clone(&mock_atomic, new_ptr, len) };",
+                  "",
+                  "    // The sanity check to verify the return from promotable_even_clone",
+                  "    assert_eq!(result.len, len);",
+                  "    assert_eq!(result.ptr, new_ptr);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0422]: cannot find struct, variant or union type `Shared` in the crate root\n    --> src/bytes.rs:1702:34\n     |\n1702 |     let shared = Box::new(crate::Shared {\n     |                                  ^^^^^^ not found in the crate root\n     |\nhelp: consider importing this struct\n     |\n1683 +    use crate::bytes::Shared;\n     |\nhelp: if you import `Shared`, refer to it directly\n     |\n1702 -     let shared = Box::new(crate::Shared {\n1702 +     let shared = Box::new(Shared {\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1715:49\n     |\n1715 |     let result = unsafe { promotable_even_clone(&mock_atomic, new_ptr, len) };\n     |                           --------------------- ^^^^^^^^^^^^ expected `&AtomicPtr<()>`, found `&MockAtomicPtr`\n     |                           |\n     |                           arguments to this function are incorrect\n     |\n     = note: expected reference `&AtomicPtr<()>`\n                found reference `&MockAtomicPtr`\nnote: function defined here\n    --> src/bytes.rs:1208:11\n     |\n1208 | unsafe fn promotable_even_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Bytes {\n     |           ^^^^^^^^^^^^^^^^^^^^^ --------------------\n\nSome errors have detailed explanations: E0308, E0422.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null;",
+                  "",
+                  "    struct MockAtomicPtr {",
+                  "        ptr: *const (),",
+                  "    }",
+                  "",
+                  "    // Setup kind == KIND_ARC with a mock reference count that would trigger a panic",
+                  "    let shared_arc = Box::new(crate::Shared {",
+                  "        buf: Box::into_raw(Box::new([0u8; 8])),",
+                  "        cap: 8,",
+                  "        ref_cnt: AtomicUsize::new(usize::MAX >> 1 + 1), // This should cause panic",
+                  "    });",
+                  "    let ptr_arc = Box::into_raw(shared_arc) as *const ();",
+                  "    let mock_atomic_arc = MockAtomicPtr { ptr: ptr_arc };",
+                  "",
+                  "    // Invoke and ensure panic due to the reference count exceeding limit",
+                  "    let new_ptr: *const u8 = null(); // Placeholder",
+                  "    let len = 4;",
+                  "",
+                  "    #[should_panic]",
+                  "    unsafe fn invoke_with_panic() {",
+                  "        let _ = promotable_even_clone(&mock_atomic_arc, new_ptr, len);",
+                  "    }",
+                  "",
+                  "    invoke_with_panic();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0434]: can't capture dynamic environment in a fn item\n    --> src/bytes.rs:1709:40\n     |\n1709 |         let _ = promotable_even_clone(&mock_atomic_arc, new_ptr, len);\n     |                                        ^^^^^^^^^^^^^^^\n     |\n     = help: use the `|| { ... }` closure form instead\n\nerror[E0434]: can't capture dynamic environment in a fn item\n    --> src/bytes.rs:1709:57\n     |\n1709 |         let _ = promotable_even_clone(&mock_atomic_arc, new_ptr, len);\n     |                                                         ^^^^^^^\n     |\n     = help: use the `|| { ... }` closure form instead\n\nerror[E0434]: can't capture dynamic environment in a fn item\n    --> src/bytes.rs:1709:66\n     |\n1709 |         let _ = promotable_even_clone(&mock_atomic_arc, new_ptr, len);\n     |                                                                  ^^^\n     |\n     = help: use the `|| { ... }` closure form instead\n\nerror[E0422]: cannot find struct, variant or union type `Shared` in the crate root\n    --> src/bytes.rs:1695:38\n     |\n1695 |     let shared_arc = Box::new(crate::Shared {\n     |                                      ^^^^^^ not found in the crate root\n     |\nhelp: consider importing this struct\n     |\n1683 +    use crate::bytes::Shared;\n     |\nhelp: if you import `Shared`, refer to it directly\n     |\n1695 -     let shared_arc = Box::new(crate::Shared {\n1695 +     let shared_arc = Box::new(Shared {\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nSome errors have detailed explanations: E0422, E0434.\nFor more information about an error, try `rustc --explain E0422`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 4 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

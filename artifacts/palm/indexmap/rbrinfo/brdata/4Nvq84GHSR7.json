@@ -1,0 +1,2741 @@
+{
+  "name": "indexmap::map::core::map::core::IndexMapCore<K, V>::erase_indices",
+  "name_with_impl": "indexmap::map::core::{impl#2}::erase_indices",
+  "mod_info": {
+    "name": "map::core",
+    "loc": "src/map.rs:4:1:4:10"
+  },
+  "visible": false,
+  "loc": "src/map/core.rs:451:5:495:6",
+  "doc": "/// Erase `start..end` from `indices`, and shift `end..` indices down to `start..`\n///\n/// All of these items should still be at their original location in `entries`.\n/// This is used by `drain`, which will let `Vec::drain` do the work on `entries`.\n",
+  "code": [
+    "fn erase_indices(&mut self, start: usize, end: usize) {",
+    "    let (init, shifted_entries) = self.entries.split_at(end);",
+    "    let (start_entries, erased_entries) = init.split_at(start);",
+    "",
+    "    let erased = erased_entries.len();",
+    "    let shifted = shifted_entries.len();",
+    "    let half_capacity = self.indices.capacity() / 2;",
+    "",
+    "    // Use a heuristic between different strategies",
+    "    if erased == 0 {",
+    "        // Degenerate case, nothing to do",
+    "    } else if start + shifted < half_capacity && start < erased {",
+    "        // Reinsert everything, as there are few kept indices",
+    "        self.indices.clear();",
+    "",
+    "        // Reinsert stable indices, then shifted indices",
+    "        insert_bulk_no_grow(&mut self.indices, start_entries);",
+    "        insert_bulk_no_grow(&mut self.indices, shifted_entries);",
+    "    } else if erased + shifted < half_capacity {",
+    "        // Find each affected index, as there are few to adjust",
+    "",
+    "        // Find erased indices",
+    "        for (i, entry) in (start..).zip(erased_entries) {",
+    "            erase_index(&mut self.indices, entry.hash, i);",
+    "        }",
+    "",
+    "        // Find shifted indices",
+    "        for ((new, old), entry) in (start..).zip(end..).zip(shifted_entries) {",
+    "            update_index(&mut self.indices, entry.hash, old, new);",
+    "        }",
+    "    } else {",
+    "        // Sweep the whole table for adjustments",
+    "        let offset = end - start;",
+    "        self.indices.retain(move |i| {",
+    "            if *i >= end {",
+    "                *i -= offset;",
+    "                true",
+    "            } else {",
+    "                *i < start",
+    "            }",
+    "        });",
+    "    }",
+    "",
+    "    debug_assert_eq!(self.indices.len(), start + shifted);",
+    "}"
+  ],
+  "size": {
+    "chain": 24,
+    "contra": 12,
+    "min_set": 5
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "false",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "false",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 5,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        30,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        41,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 6,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        30,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        41,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 7,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        30,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 8,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        30,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 9,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        41,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 10,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        41,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 11,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 12,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 13,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": "erased + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 14,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "true",
+          "line": 462,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start < erased",
+          "norm": "erased > start",
+          "value": "false",
+          "line": 462,
+          "bound": "start == erased",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": "erased + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        16,
+        18,
+        19,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 15,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        30,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        41,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 16,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        30,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        41,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 17,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        30,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 18,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        28,
+        30,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 19,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        41,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 20,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "true",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        39,
+        41,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 21,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 22,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "true",
+          "line": 469,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(i, entry) in (start..).zip(erased_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 473,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "((new, old), entry) in (start..).zip(end..).zip(shifted_entries)",
+          "norm": null,
+          "value": "false",
+          "line": 478,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        27,
+        29,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        38,
+        40,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    },
+    {
+      "id": 23,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": "erased + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "true",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        54
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 24,
+      "conds": [
+        {
+          "cond": "self.entries.split_at(end)",
+          "norm": null,
+          "value": "",
+          "line": 452,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "init.split_at(start)",
+          "norm": null,
+          "value": "",
+          "line": 453,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "erased == 0",
+          "norm": "0 == erased",
+          "value": "true",
+          "line": 460,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "start + shifted < half_capacity",
+          "norm": "half_capacity > start + shifted",
+          "value": "false",
+          "line": 462,
+          "bound": "start + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "erased + shifted < half_capacity",
+          "norm": null,
+          "value": "false",
+          "line": 469,
+          "bound": "erased + shifted == half_capacity",
+          "may_panic": false
+        },
+        {
+          "cond": "(*left_val == *right_val)",
+          "norm": null,
+          "value": "false",
+          "line": 40,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        17,
+        18,
+        19,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        52,
+        55
+      ],
+      "may_contra": false,
+      "min_set": false
+    }
+  ]
+}

@@ -1,0 +1,512 @@
+{
+  "name": "once_cell::unsync::unsync::OnceCell<T>::get_or_try_init",
+  "name_with_impl": "once_cell::unsync::{impl#8}::get_or_try_init",
+  "mod_info": {
+    "name": "unsync",
+    "loc": "src/lib.rs:383:1:859:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:622:9:636:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: let Some(val) = self.get() is true\n",
+        "// constraint: f()? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        cell: OnceCell<i32>,",
+                  "    }",
+                  "",
+                  "    let mut test_cell = TestCell {",
+                  "        cell: OnceCell::with_value(42),",
+                  "    };",
+                  "    ",
+                  "    let result = test_cell.cell.get_or_try_init(|| Err(()));",
+                  "    assert_eq!(result, Ok(&42));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        cell: OnceCell<i32>,",
+                  "    }",
+                  "",
+                  "    let mut test_cell = TestCell {",
+                  "        cell: OnceCell::new(),",
+                  "    };",
+                  "",
+                  "    let _ = test_cell.cell.get_or_try_init(|| {",
+                  "        test_cell.cell.set(10).unwrap(); // Attempt to reinitialize",
+                  "        Err(())",
+                  "    });",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        cell: OnceCell<i32>,",
+                  "    }",
+                  "",
+                  "    let test_cell = TestCell {",
+                  "        cell: OnceCell::new(),",
+                  "    };",
+                  "",
+                  "    let result = test_cell.cell.get_or_try_init(|| Err(()));",
+                  "    assert_eq!(result, Err(()));",
+                  "    assert!(test_cell.cell.get().is_none());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        cell: OnceCell<i32>,",
+                  "    }",
+                  "",
+                  "    let mut test_cell = TestCell {",
+                  "        cell: OnceCell::new(),",
+                  "    };",
+                  "",
+                  "   let result: Result<&i32, &str> = test_cell.cell.get_or_try_init(|| Ok(50));",
+                  "   assert_eq!(result, Ok(&50));",
+                  "   assert_eq!(test_cell.cell.get(), Some(&50));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: let Some(val) = self.get() is true\n",
+        "// constraint: f()? is Ok/Some\n",
+        "// constraint: self.set(val).is_ok() is true\n",
+        "// may panic: self.get().unwrap_unchecked() may panic in certain situations\n",
+        "// expected return value/type: Ok(unsafe { self.get().unwrap_unchecked() })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Debug)]",
+                  "   struct TestStruct {",
+                  "       value: i32,",
+                  "   }",
+                  "   impl TestStruct {",
+                  "       fn new(value: i32) -> Self {",
+                  "           TestStruct { value }",
+                  "       }",
+                  "   }",
+                  "   ",
+                  "   let cell = OnceCell::new();",
+                  "   let value = cell.get_or_try_init(|| Ok(TestStruct::new(42)));",
+                  "   assert_eq!(value, Ok(&TestStruct::new(42)));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0369]: binary operation `==` cannot be applied to type `Result<&TestStruct, _>`\n   --> src/lib.rs:882:4\n    |\n882 |    assert_eq!(value, Ok(&TestStruct::new(42)));\n    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |    |\n    |    Result<&TestStruct, _>\n    |    Result<&TestStruct, _>\n    |\nnote: an implementation of `PartialEq` might be missing for `TestStruct`\n   --> src/lib.rs:871:4\n    |\n871 |    struct TestStruct {\n    |    ^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `TestStruct` with `#[derive(PartialEq)]`\n    |\n871 +    #[derive(PartialEq)]\n872 |    struct TestStruct {\n    |\n\nFor more information about this error, try `rustc --explain E0369`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Debug)]",
+                  "   struct TestStruct {",
+                  "       value: i32,",
+                  "   }",
+                  "   impl TestStruct {",
+                  "       fn new(value: i32) -> Self {",
+                  "           TestStruct { value }",
+                  "       }",
+                  "   }",
+                  "   ",
+                  "   let cell = OnceCell::new();",
+                  "   let _ = cell.set(TestStruct::new(42)).unwrap();",
+                  "   let value = cell.get_or_try_init(|| Ok(TestStruct::new(13)));",
+                  "   assert_eq!(value, Ok(&TestStruct::new(42)));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0369]: binary operation `==` cannot be applied to type `Result<&TestStruct, _>`\n   --> src/lib.rs:883:4\n    |\n883 |    assert_eq!(value, Ok(&TestStruct::new(42)));\n    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |    |\n    |    Result<&TestStruct, _>\n    |    Result<&TestStruct, _>\n    |\nnote: an implementation of `PartialEq` might be missing for `TestStruct`\n   --> src/lib.rs:871:4\n    |\n871 |    struct TestStruct {\n    |    ^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `TestStruct` with `#[derive(PartialEq)]`\n    |\n871 +    #[derive(PartialEq)]\n872 |    struct TestStruct {\n    |\n\nFor more information about this error, try `rustc --explain E0369`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let cell = OnceCell::new();",
+                  "    let _ = cell.get_or_try_init(|| cell.get_or_try_init(|| Ok(())));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0308]: mismatched types\n   --> src/lib.rs:872:37\n    |\n872 |     let _ = cell.get_or_try_init(|| cell.get_or_try_init(|| Ok(())));\n    |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Result<(), _>`, found `Result<&(), _>`\n    |\n    = note: expected enum `Result<(), _>`\n               found enum `Result<&(), _>`\nhelp: try wrapping the expression in `Err`\n    |\n872 |     let _ = cell.get_or_try_init(|| Err(cell.get_or_try_init(|| Ok(()))));\n    |                                     ++++                               +\n\nFor more information about this error, try `rustc --explain E0308`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let cell: OnceCell<()> = OnceCell::new();  ",
+                  "   let value = cell.get_or_try_init(|| Err(()));  ",
+                  "   assert_eq!(value, Err(()));  ",
+                  "   assert!(cell.get().is_none());  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(Debug)]",
+                  "   struct TestStruct {",
+                  "       value: i32,",
+                  "   }",
+                  "   impl TestStruct {",
+                  "       fn new(value: i32) -> Self {",
+                  "           TestStruct { value }",
+                  "       }",
+                  "   }",
+                  "   ",
+                  "   let cell = OnceCell::new();",
+                  "   let _ = cell.get_or_try_init(|| Err(()));",
+                  "   let value = cell.get_or_try_init(|| Ok(TestStruct::new(99)));",
+                  "   assert_eq!(value, Ok(&TestStruct::new(99)));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0369]: binary operation `==` cannot be applied to type `Result<&TestStruct, _>`\n   --> src/lib.rs:883:4\n    |\n883 |    assert_eq!(value, Ok(&TestStruct::new(99)));\n    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |    |\n    |    Result<&TestStruct, _>\n    |    Result<&TestStruct, _>\n    |\nnote: an implementation of `PartialEq` might be missing for `TestStruct`\n   --> src/lib.rs:871:4\n    |\n871 |    struct TestStruct {\n    |    ^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `TestStruct` with `#[derive(PartialEq)]`\n    |\n871 +    #[derive(PartialEq)]\n872 |    struct TestStruct {\n    |\n\nFor more information about this error, try `rustc --explain E0369`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: let Some(val) = self.get() is true\n",
+        "// constraint: f()? is Ok/Some\n",
+        "// constraint: self.set(val).is_ok() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        inner: UnsafeCell<Option<i32>>,",
+                  "    }",
+                  "",
+                  "    impl TestCell {",
+                  "        const fn new() -> Self {",
+                  "            Self {",
+                  "                inner: UnsafeCell::new(Some(42)),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get(&self) -> Option<&i32> {",
+                  "            unsafe { &*self.inner.get() }.as_ref()",
+                  "        }",
+                  "",
+                  "        fn set(&self, value: i32) -> Result<(), i32> {",
+                  "            if unsafe { &*self.inner.get() }.is_none() {",
+                  "                unsafe { *self.inner.get() = Some(value) };",
+                  "                Ok(())",
+                  "            } else {",
+                  "                Err(value)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F, E>(&self, f: F) -> Result<&i32, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<i32, E>,",
+                  "        {",
+                  "            if let Some(val) = self.get() {",
+                  "                return Ok(val);",
+                  "            }",
+                  "            let val = f()?;",
+                  "            assert!(self.set(val).is_ok(), \"reentrant init\");",
+                  "            Ok(unsafe { self.get().unwrap() })",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = TestCell::new();",
+                  "   assert_eq!(cell.get_or_try_init(|| Ok::<i32, i32>(99)), Ok(&42));  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"reentrant init\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        inner: UnsafeCell<Option<i32>>,",
+                  "    }",
+                  "",
+                  "    impl TestCell {",
+                  "        const fn new() -> Self {",
+                  "            Self {",
+                  "                inner: UnsafeCell::new(None),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get(&self) -> Option<&i32> {",
+                  "            unsafe { &*self.inner.get() }.as_ref()",
+                  "        }",
+                  "",
+                  "        fn set(&self, value: i32) -> Result<(), i32> {",
+                  "            if unsafe { &*self.inner.get() }.is_none() {",
+                  "                unsafe { *self.inner.get() = Some(value) };",
+                  "                Ok(())",
+                  "            } else {",
+                  "                Err(value)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F, E>(&self, f: F) -> Result<&i32, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<i32, E>,",
+                  "        {",
+                  "            if let Some(val) = self.get() {",
+                  "                return Ok(val);",
+                  "            }",
+                  "            let val = f()?;",
+                  "            assert!(self.set(val).is_ok(), \"reentrant init\");",
+                  "            Ok(unsafe { self.get().unwrap() })",
+                  "        }",
+                  "    }",
+                  "",
+                  "   let cell = TestCell::new();  ",
+                  "   let _ = cell.get_or_try_init::<_, i32>(|| {  ",
+                  "       cell.get_or_try_init::<_, i32>(|| Ok(100)); // Reentrant call  ",
+                  "       Ok(42)  ",
+                  "   });  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell {",
+                  "        inner: UnsafeCell<Option<i32>>,",
+                  "    }",
+                  "",
+                  "    impl TestCell {",
+                  "        const fn new() -> Self {",
+                  "            Self {",
+                  "                inner: UnsafeCell::new(None),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get(&self) -> Option<&i32> {",
+                  "            unsafe { &*self.inner.get() }.as_ref()",
+                  "        }",
+                  "",
+                  "        fn set(&self, value: i32) -> Result<(), i32> {",
+                  "            if unsafe { &*self.inner.get() }.is_none() {",
+                  "                unsafe { *self.inner.get() = Some(value) };",
+                  "                Ok(())",
+                  "            } else {",
+                  "                Err(value)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F, E>(&self, f: F) -> Result<&i32, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<i32, E>,",
+                  "        {",
+                  "            if let Some(val) = self.get() {",
+                  "                return Ok(val);",
+                  "            }",
+                  "            let val = f()?;",
+                  "            assert!(self.set(val).is_ok(), \"reentrant init\");",
+                  "            Ok(unsafe { self.get().unwrap() })",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = TestCell::new();",
+                  "    assert_eq!(cell.get_or_try_init(|| Err(())), Err(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,183 @@
+{
+  "name": "hashbrown::raw::raw::RawIterRange<T>::new",
+  "name_with_impl": "hashbrown::raw::{impl#20}::new",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:3492:5:3509:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::alloc::dealloc;",
+            "use core::alloc::Layout;",
+            "use core::alloc::GlobalAlloc;",
+            "use std::alloc::alloc;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::alloc::{GlobalAlloc, Layout};",
+                  "    use std::alloc::{alloc, dealloc};",
+                  "",
+                  "    struct MyAllocator;",
+                  "",
+                  "    unsafe impl GlobalAlloc for MyAllocator {",
+                  "        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {",
+                  "            alloc(layout)",
+                  "        }",
+                  "",
+                  "        unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {",
+                  "            dealloc(ptr, layout)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let allocator = MyAllocator;",
+                  "    let layout = Layout::from_size_align(64, 8).unwrap();",
+                  "    let ctrl_ptr = unsafe { allocator.alloc(layout) };",
+                  "    let data_bucket = Bucket {",
+                  "        ptr: NonNull::new(ctrl_ptr).unwrap(),",
+                  "    };",
+                  "    ",
+                  "    let len: usize = 8; // must be a power of two",
+                  "    let aligned_ctrl = ctrl_ptr as *const u8;",
+                  "",
+                  "    let _iter_range: RawIterRange<u8> = unsafe { RawIterRange::new(aligned_ctrl, data_bucket, len) };",
+                  "",
+                  "    unsafe {",
+                  "        allocator.dealloc(ctrl_ptr, layout);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let layout = Layout::from_size_align(64, 8).unwrap();",
+                  "    let ctrl_ptr = unsafe { std::alloc::alloc(layout) };",
+                  "    ",
+                  "    let data_bucket = Bucket {",
+                  "        ptr: NonNull::new(ctrl_ptr).unwrap(),",
+                  "    };",
+                  "    ",
+                  "    let len: usize = 0; // Invalid length, should panic",
+                  "    ",
+                  "    unsafe {",
+                  "        let _iter_range: RawIterRange<u8> = RawIterRange::new(ctrl_ptr as *const u8, data_bucket, len);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let layout = Layout::from_size_align(64, 8).unwrap();",
+                  "    let ctrl_ptr = unsafe { std::alloc::alloc(layout).add(1) }; // Unaligned",
+                  "",
+                  "    let data_bucket = Bucket {",
+                  "        ptr: NonNull::new(ctrl_ptr).unwrap(),",
+                  "    };",
+                  "",
+                  "    let len: usize = 8; // must be a power of two",
+                  "",
+                  "    unsafe {",
+                  "        let _iter_range: RawIterRange<u8> = RawIterRange::new(ctrl_ptr as *const u8, data_bucket, len);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let layout = Layout::from_size_align(64, 8).unwrap();",
+                  "    let ctrl_ptr = unsafe { std::alloc::alloc(layout) };",
+                  "    ",
+                  "    let data_bucket = Bucket {",
+                  "        ptr: NonNull::new(ctrl_ptr).unwrap(),",
+                  "    };",
+                  "",
+                  "    let len: usize = 7; // Invalid length, not a power of two, should panic",
+                  "",
+                  "    unsafe {",
+                  "        let _iter_range: RawIterRange<u8> = RawIterRange::new(ctrl_ptr as *const u8, data_bucket, len);",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        std::alloc::dealloc(ctrl_ptr, layout);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+{
+  "name": "bytes::bytes_mut::release_shared",
+  "name_with_impl": "bytes::bytes_mut::release_shared",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1433:1:1463:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: (*ptr).ref_count.fetch_sub(1, Ordering::Release) != 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::boxed::Box;",
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::mem;",
+            "use std::ptr::NonNull;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   use std::sync::atomic::AtomicUsize;",
+                  "   use std::boxed::Box;",
+                  "",
+                  "",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "        original_capacity_repr: usize,",
+                  "        ref_count: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let shared = Shared {",
+                  "        vec: vec![1, 2, 3],",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(2), // Initialize ref_count to 2",
+                  "    };",
+                  "",
+                  "    let ptr = Box::into_raw(Box::new(shared));",
+                  "",
+                  "    unsafe {",
+                  "        release_shared(ptr); // Call the function under test",
+                  "        // The reference count should now be decreased to 1",
+                  "        assert_eq!((*ptr).ref_count.load(Ordering::SeqCst), 1);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n    --> src/bytes_mut.rs:1952:24\n     |\n1952 |         release_shared(ptr); // Call the function under test\n     |         -------------- ^^^ expected `bytes_mut::Shared`, found `ntest_callback::Shared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: `ntest_callback::Shared` and `bytes_mut::Shared` have similar names, but are actually distinct types\nnote: `ntest_callback::Shared` is defined in module `crate::bytes_mut::llmtests` of the current crate\n    --> src/bytes_mut.rs:1937:5\n     |\n1937 |     struct Shared {\n     |     ^^^^^^^^^^^^^\nnote: `bytes_mut::Shared` is defined in module `crate::bytes_mut` of the current crate\n    --> src/bytes_mut.rs:77:1\n     |\n77   | struct Shared {\n     | ^^^^^^^^^^^^^\nnote: function defined here\n    --> src/bytes_mut.rs:1433:11\n     |\n1433 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   use std::sync::atomic::AtomicUsize;",
+                  "   use std::ptr::NonNull;",
+                  "   use std::boxed::Box;",
+                  "   use std::mem;",
+                  "",
+                  "   struct Shared {",
+                  "       vec: Vec<u8>,",
+                  "       original_capacity_repr: usize,",
+                  "       ref_count: AtomicUsize,",
+                  "   }",
+                  "",
+                  "   let shared = Shared {",
+                  "       vec: vec![1, 2, 3],",
+                  "       original_capacity_repr: 0,",
+                  "       ref_count: AtomicUsize::new(1), // Initialize ref_count to 1",
+                  "   };",
+                  "",
+                  "   let ptr = Box::into_raw(Box::new(shared));",
+                  "",
+                  "   unsafe {",
+                  "       release_shared(ptr as *mut super::Shared); // Call the function under test",
+                  "       release_shared(ptr as *mut super::Shared); // This should panic since we're trying to drop the same pointer again",
+                  "   }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: (*ptr).ref_count.fetch_sub(1, Ordering::Release) != 1 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "#[should_panic]",
+                  "fn test_release_shared_invalid_pointer() {",
+                  "    let ptr: *mut Shared = core::ptr::null_mut();",
+                  "    ",
+                  "    unsafe {",
+                  "        release_shared(ptr);",
+                  "    }",
+                  "}",
+                  "    let shared = Box::new(Shared {",
+                  "        vec: Vec::new(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(1),",
+                  "    });",
+                  "",
+                  "    let ptr = Box::into_raw(shared);",
+                  "    ",
+                  "    unsafe {",
+                  "        release_shared(ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "#[should_panic]",
+                  "fn test_release_shared_invalid_pointer() {",
+                  "    let ptr: *mut Shared = core::ptr::null_mut();",
+                  "    ",
+                  "    unsafe {",
+                  "        release_shared(ptr);",
+                  "    }",
+                  "}",
+                  "    let shared = Box::new(Shared {",
+                  "        vec: Vec::new(),",
+                  "        original_capacity_repr: 0,",
+                  "        ref_count: AtomicUsize::new(2),",
+                  "    });",
+                  "",
+                  "    let ptr = Box::into_raw(shared);",
+                  "    ",
+                  "    unsafe {",
+                  "        release_shared(ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

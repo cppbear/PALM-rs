@@ -1,0 +1,363 @@
+{
+  "name": "bytes::buf::chain::<buf::chain::Chain<T, U> as buf::buf_mut::BufMut>::advance_mut",
+  "name_with_impl": "bytes::buf::chain::{impl#2}::advance_mut",
+  "mod_info": {
+    "name": "buf::chain",
+    "loc": "src/buf/mod.rs:19:1:19:11"
+  },
+  "visible": true,
+  "loc": "src/buf/chain.rs:210:5:226:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: a_rem != 0 is true\n",
+        "// constraint: a_rem >= cnt is true, with bound a_rem == cnt\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockBuffer {",
+                  "        data: Vec<u8>,",
+                  "        pos: usize,",
+                  "    }",
+                  "",
+                  "    impl MockBuffer {",
+                  "        fn new(size: usize) -> Self {",
+                  "            MockBuffer {",
+                  "                data: vec![0; size],",
+                  "                pos: 0,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.data.len() - self.pos",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            self.pos += cnt;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Chain {",
+                  "        a: MockBuffer,",
+                  "        b: MockBuffer,",
+                  "    }",
+                  "",
+                  "    impl Chain {",
+                  "        fn new(a_size: usize, b_size: usize) -> Self {",
+                  "            Chain {",
+                  "                a: MockBuffer::new(a_size),",
+                  "                b: MockBuffer::new(b_size),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, mut cnt: usize) {",
+                  "            let a_rem = self.a.remaining_mut();",
+                  "",
+                  "            if a_rem != 0 {",
+                  "                if a_rem >= cnt {",
+                  "                    self.a.advance_mut(cnt);",
+                  "                    return;",
+                  "                }",
+                  "",
+                  "                self.a.advance_mut(a_rem);",
+                  "                cnt -= a_rem;",
+                  "            }",
+                  "",
+                  "            self.b.advance_mut(cnt);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut chain = Chain::new(5, 3); // a has 5 remaining units, b has 3",
+                  "    let mut cnt = 5; // This equals to a_rem",
+                  "",
+                  "    unsafe {",
+                  "        chain.advance_mut(cnt);",
+                  "    }",
+                  "",
+                  "    assert_eq!(chain.a.pos, 5); // a should have advanced by 5",
+                  "    assert_eq!(chain.b.pos, 0); // b should not have advanced",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockBuffer {",
+                  "        data: Vec<u8>,",
+                  "        pos: usize,",
+                  "    }",
+                  "",
+                  "    impl MockBuffer {",
+                  "        fn new(size: usize) -> Self {",
+                  "            MockBuffer {",
+                  "                data: vec![0; size],",
+                  "                pos: 0,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.data.len() - self.pos",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            self.pos += cnt;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Chain {",
+                  "        a: MockBuffer,",
+                  "        b: MockBuffer,",
+                  "    }",
+                  "",
+                  "    impl Chain {",
+                  "        fn new(a_size: usize, b_size: usize) -> Self {",
+                  "            Chain {",
+                  "                a: MockBuffer::new(a_size),",
+                  "                b: MockBuffer::new(b_size),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, mut cnt: usize) {",
+                  "            let a_rem = self.a.remaining_mut();",
+                  "",
+                  "            if a_rem != 0 {",
+                  "                if a_rem >= cnt {",
+                  "                    self.a.advance_mut(cnt);",
+                  "                    return;",
+                  "                }",
+                  "",
+                  "                self.a.advance_mut(a_rem);",
+                  "                cnt -= a_rem;",
+                  "            }",
+                  "",
+                  "            self.b.advance_mut(cnt);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut chain = Chain::new(3, 0); // a has 3 remaining units, b has 0",
+                  "    let cnt = 3; // This equals to a_rem",
+                  "",
+                  "    unsafe {",
+                  "        chain.advance_mut(cnt);",
+                  "    }",
+                  "",
+                  "    assert_eq!(chain.a.pos, 3); // a should have advanced by 3",
+                  "    assert_eq!(chain.b.pos, 0); // b should not have advanced",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: a_rem != 0 is true\n",
+        "// constraint: a_rem >= cnt is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Buffer {",
+                  "        data: Vec<u8>,",
+                  "        position: usize,",
+                  "    }",
+                  "",
+                  "    impl Buffer {",
+                  "        fn new(size: usize) -> Self {",
+                  "            Buffer {",
+                  "                data: vec![0; size],",
+                  "                position: 0,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.data.len() - self.position",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            self.position += cnt;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Chain {",
+                  "        a: Buffer,",
+                  "        b: Buffer,",
+                  "    }",
+                  "",
+                  "    impl Chain {",
+                  "        fn new(a_size: usize, b_size: usize) -> Self {",
+                  "            Chain {",
+                  "                a: Buffer::new(a_size),",
+                  "                b: Buffer::new(b_size),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, mut cnt: usize) {",
+                  "            let a_rem = self.a.remaining_mut();",
+                  "",
+                  "            if a_rem != 0 {",
+                  "                if a_rem >= cnt {",
+                  "                    self.a.advance_mut(cnt);",
+                  "                    return;",
+                  "                }",
+                  "                ",
+                  "                self.a.advance_mut(a_rem);",
+                  "                cnt -= a_rem;",
+                  "            }",
+                  "",
+                  "            self.b.advance_mut(cnt);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut chain = Chain::new(5, 10);",
+                  "",
+                  "    unsafe {",
+                  "        chain.advance_mut(10); // This should consume all of a and then proceed to b",
+                  "    }",
+                  "",
+                  "    assert_eq!(chain.a.remaining_mut(), 0);",
+                  "    assert_eq!(chain.b.position, 5); // Since a had 5 and it was entirely consumed",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: a_rem != 0 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct A {",
+                  "        remaining: usize,",
+                  "    }",
+                  "    ",
+                  "    struct B {",
+                  "        buffer: usize,",
+                  "    }",
+                  "    ",
+                  "    impl A {",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "        ",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            // Assume some logic to advance the buffer",
+                  "            self.remaining = self.remaining.saturating_sub(cnt);",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    impl B {",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            // Assume some logic to advance the buffer",
+                  "            self.buffer += cnt;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Chain {",
+                  "        a: A,",
+                  "        b: B,",
+                  "    }",
+                  "",
+                  "    let mut a = A { remaining: 0 }; // a_rem == 0",
+                  "    let mut b = B { buffer: 0 };",
+                  "    let mut chain = Chain { a, b };",
+                  "",
+                  "    let cnt: usize = 5; // Arbitrary count to test the advanced functionality",
+                  "",
+                  "    unsafe {",
+                  "        chain.advance_mut(cnt);",
+                  "    }",
+                  "",
+                  "    // Checking the state, since a_rem is zero, we expect b's buffer to have increased by cnt",
+                  "    assert_eq!(chain.b.buffer, cnt);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n   --> src/buf/chain.rs:244:8\n    |\n244 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: no method named `advance_mut` found for struct `llmtests::test_advance_mut_03::Chain` in the current scope\n   --> src/buf/chain.rs:286:15\n    |\n274 |     struct Chain {\n    |     ------------ method `advance_mut` not found for this struct\n...\n286 |         chain.advance_mut(cnt);\n    |               ^^^^^^^^^^^ method not found in `Chain`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buf_mut::BufMut` defines an item `advance_mut`, perhaps you need to implement it\n   --> src/buf/buf_mut.rs:30:1\n    |\n30  | pub unsafe trait BufMut {\n    | ^^^^^^^^^^^^^^^^^^^^^^^\nhelp: some of the expressions' fields have a method of the same name\n    |\n286 |         chain.a.advance_mut(cnt);\n    |               ++\n286 |         chain.b.advance_mut(cnt);\n    |               ++\n\nwarning: unused import: `super`\n   --> src/buf/chain.rs:243:8\n    |\n243 |    use super::*;\n    |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

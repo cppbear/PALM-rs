@@ -1,0 +1,282 @@
+{
+  "name": "rand_core::block::<block::BlockRng64<R> as RngCore>::next_u32",
+  "name_with_impl": "rand_core::block::{impl#7}::next_u32",
+  "mod_info": {
+    "name": "block",
+    "loc": "rand_core/src/lib.rs:44:1:44:15"
+  },
+  "visible": true,
+  "loc": "rand_core/src/block.rs:350:5:366:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: index >= self.results.as_ref().len() is true, with bound index == self.results.as_ref().len()\n",
+        "// expected return value/type: (self.results.as_ref()[index] >> shift) as u32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockCore {",
+                  "        calls: usize,",
+                  "    }",
+                  "",
+                  "    impl MockCore {",
+                  "        fn generate(&mut self, results: &mut Vec<u32>) {",
+                  "            self.calls += 1;",
+                  "            results.push(0); // Push a value so we can test the output",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RandBlock {",
+                  "        core: MockCore,",
+                  "        results: Vec<u32>,",
+                  "        index: usize,",
+                  "        half_used: bool,",
+                  "    }",
+                  "",
+                  "    impl RandBlock {",
+                  "        fn new(core: MockCore) -> Self {",
+                  "            RandBlock {",
+                  "                core,",
+                  "                results: Vec::new(),",
+                  "                index: 0,",
+                  "                half_used: false,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn next_u32(&mut self) -> u32 {",
+                  "            let mut index = self.index - self.half_used as usize;",
+                  "            if index >= self.results.as_ref().len() {",
+                  "                self.core.generate(&mut self.results);",
+                  "                self.index = 0;",
+                  "                index = 0;",
+                  "                self.half_used = false;",
+                  "            }",
+                  "",
+                  "            let shift = 32 * (self.half_used as usize);",
+                  "",
+                  "            self.half_used = !self.half_used;",
+                  "            self.index += self.half_used as usize;",
+                  "",
+                  "            (self.results.as_ref()[index] >> shift) as u32",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut core = MockCore { calls: 0 };",
+                  "    let mut rand_block = RandBlock::new(core);",
+                  "",
+                  "    // Set index to be equal to the length of `results`, which is initially 0",
+                  "    rand_block.index = 0; // This means index will equal the length of results on first call",
+                  "",
+                  "    let result = rand_block.next_u32();",
+                  "    ",
+                  "    // At this point, the core should have been called once to generate results",
+                  "    assert_eq!(core.calls, 1);",
+                  "    assert_eq!(result, 0); // Since we pushed 0 in generate function, output should be 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling rand_core v0.9.3 (/home/utgen/workspace/rand/rand_core)\nwarning: unused imports: `BlockRng64` and `BlockRng`\n   --> rand_core/src/block.rs:428:24\n    |\n428 |     use crate::block::{BlockRng, BlockRng64, BlockRngCore};\n    |                        ^^^^^^^^  ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `RngCore`\n   --> rand_core/src/block.rs:429:17\n    |\n429 |     use crate::{RngCore, SeedableRng};\n    |                 ^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> rand_core/src/block.rs:538:8\n    |\n538 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> rand_core/src/impls.rs:176:9\n    |\n176 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0282]: type annotations needed\n   --> rand_core/src/block.rs:572:38\n    |\n572 |             if index >= self.results.as_ref().len() {\n    |                                      ^^^^^^   --- type must be known at this point\n    |\nhelp: try using a fully qualified path to specify the expected types\n    |\n572 |             if index >= <Vec<u32> as AsRef<T>>::as_ref(&self.results).len() {\n    |                         ++++++++++++++++++++++++++++++++            ~\n\nwarning: unused import: `super`\n   --> rand_core/src/block.rs:537:8\n    |\n537 |    use super::*;\n    |        ^^^^^\n\nwarning: variable does not need to be mutable\n   --> rand_core/src/block.rs:588:9\n    |\n588 |     let mut core = MockCore { calls: 0 };\n    |         ----^^^^\n    |         |\n    |         help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nerror[E0382]: borrow of moved value: `core`\n   --> rand_core/src/block.rs:597:5\n    |\n588 |     let mut core = MockCore { calls: 0 };\n    |         -------- move occurs because `core` has type `MockCore`, which does not implement the `Copy` trait\n589 |     let mut rand_block = RandBlock::new(core);\n    |                                         ---- value moved here\n...\n597 |     assert_eq!(core.calls, 1);\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^ value borrowed here after move\n    |\nnote: consider changing this parameter type in method `new` to borrow instead if owning the value isn't necessary\n   --> rand_core/src/block.rs:561:22\n    |\n561 |         fn new(core: MockCore) -> Self {\n    |            ---       ^^^^^^^^ this parameter takes ownership of the value\n    |            |\n    |            in this method\nnote: if `MockCore` implemented `Clone`, you could clone the value\n   --> rand_core/src/block.rs:542:5\n    |\n542 |     struct MockCore {\n    |     ^^^^^^^^^^^^^^^ consider implementing `Clone` for this type\n...\n589 |     let mut rand_block = RandBlock::new(core);\n    |                                         ---- you could clone this value\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nSome errors have detailed explanations: E0282, E0382.\nFor more information about an error, try `rustc --explain E0282`.\nwarning: `rand_core` (lib test) generated 6 warnings\nerror: could not compile `rand_core` (lib test) due to 2 previous errors; 6 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockCore {",
+                  "        calls: usize,",
+                  "    }",
+                  "",
+                  "    impl MockCore {",
+                  "        fn generate(&mut self, results: &mut Vec<u32>) {",
+                  "            self.calls += 1;",
+                  "            results.push(42); // Push a fixed value to test output",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RandBlock {",
+                  "        core: MockCore,",
+                  "        results: Vec<u32>,",
+                  "        index: usize,",
+                  "        half_used: bool,",
+                  "    }",
+                  "",
+                  "    impl RandBlock {",
+                  "        fn new(core: MockCore) -> Self {",
+                  "            RandBlock {",
+                  "                core,",
+                  "                results: Vec::new(),",
+                  "                index: 0,",
+                  "                half_used: false,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn next_u32(&mut self) -> u32 {",
+                  "            let mut index = self.index - self.half_used as usize;",
+                  "            if index >= self.results.as_ref().len() {",
+                  "                self.core.generate(&mut self.results);",
+                  "                self.index = 0;",
+                  "                index = 0;",
+                  "                self.half_used = false;",
+                  "            }",
+                  "",
+                  "            let shift = 32 * (self.half_used as usize);",
+                  "",
+                  "            self.half_used = !self.half_used;",
+                  "            self.index += self.half_used as usize;",
+                  "",
+                  "            (self.results.as_ref()[index] >> shift) as u32",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut core = MockCore { calls: 0 };",
+                  "    let mut rand_block = RandBlock::new(core);",
+                  "",
+                  "    // First call to next_u32 should trigger generate",
+                  "    let first_result = rand_block.next_u32();",
+                  "    assert_eq!(core.calls, 1);",
+                  "    assert_eq!(first_result, 0); // The value pushed was 42, we expect output to be 0 shifted (lower half)",
+                  "",
+                  "    // Second call to next_u32 should return the shifted value",
+                  "    let second_result = rand_block.next_u32();",
+                  "    assert_eq!(core.calls, 1); // Generate should not be called again",
+                  "    assert_eq!(second_result, 42); // Now we shift the upper half, should return 42",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling rand_core v0.9.3 (/home/utgen/workspace/rand/rand_core)\nwarning: unused imports: `BlockRng64` and `BlockRng`\n   --> rand_core/src/block.rs:428:24\n    |\n428 |     use crate::block::{BlockRng, BlockRng64, BlockRngCore};\n    |                        ^^^^^^^^  ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `RngCore`\n   --> rand_core/src/block.rs:429:17\n    |\n429 |     use crate::{RngCore, SeedableRng};\n    |                 ^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> rand_core/src/block.rs:538:8\n    |\n538 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> rand_core/src/impls.rs:176:9\n    |\n176 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0282]: type annotations needed\n   --> rand_core/src/block.rs:572:38\n    |\n572 |             if index >= self.results.as_ref().len() {\n    |                                      ^^^^^^   --- type must be known at this point\n    |\nhelp: try using a fully qualified path to specify the expected types\n    |\n572 |             if index >= <Vec<u32> as AsRef<T>>::as_ref(&self.results).len() {\n    |                         ++++++++++++++++++++++++++++++++            ~\n\nwarning: unused import: `super`\n   --> rand_core/src/block.rs:537:8\n    |\n537 |    use super::*;\n    |        ^^^^^\n\nwarning: variable does not need to be mutable\n   --> rand_core/src/block.rs:588:9\n    |\n588 |     let mut core = MockCore { calls: 0 };\n    |         ----^^^^\n    |         |\n    |         help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nerror[E0382]: borrow of moved value: `core`\n   --> rand_core/src/block.rs:593:5\n    |\n588 |     let mut core = MockCore { calls: 0 };\n    |         -------- move occurs because `core` has type `MockCore`, which does not implement the `Copy` trait\n589 |     let mut rand_block = RandBlock::new(core);\n    |                                         ---- value moved here\n...\n593 |     assert_eq!(core.calls, 1);\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^ value borrowed here after move\n    |\nnote: consider changing this parameter type in method `new` to borrow instead if owning the value isn't necessary\n   --> rand_core/src/block.rs:561:22\n    |\n561 |         fn new(core: MockCore) -> Self {\n    |            ---       ^^^^^^^^ this parameter takes ownership of the value\n    |            |\n    |            in this method\nnote: if `MockCore` implemented `Clone`, you could clone the value\n   --> rand_core/src/block.rs:542:5\n    |\n542 |     struct MockCore {\n    |     ^^^^^^^^^^^^^^^ consider implementing `Clone` for this type\n...\n589 |     let mut rand_block = RandBlock::new(core);\n    |                                         ---- you could clone this value\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nSome errors have detailed explanations: E0282, E0382.\nFor more information about an error, try `rustc --explain E0282`.\nwarning: `rand_core` (lib test) generated 6 warnings\nerror: could not compile `rand_core` (lib test) due to 2 previous errors; 6 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: index >= self.results.as_ref().len() is false\n",
+        "// expected return value/type: (self.results.as_ref()[index] >> shift) as u32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockCore {",
+                  "        count: usize,",
+                  "    }",
+                  "",
+                  "    impl MockCore {",
+                  "        fn generate(&mut self, results: &mut Vec<u32>) {",
+                  "            if self.count < 3 {",
+                  "                results.push(0x12345678);",
+                  "                results.push(0x87654321);",
+                  "                results.push(0xFFFFFFFF);",
+                  "                self.count += 1;",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct RandomGenerator {",
+                  "        core: MockCore,",
+                  "        results: Vec<u32>,",
+                  "        index: usize,",
+                  "        half_used: bool,",
+                  "    }",
+                  "",
+                  "    impl RandomGenerator {",
+                  "        fn new(core: MockCore) -> Self {",
+                  "            Self {",
+                  "                core,",
+                  "                results: Vec::new(),",
+                  "                index: 0,",
+                  "                half_used: false,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn next_u32(&mut self) -> u32 {",
+                  "            let mut index = self.index - self.half_used as usize;",
+                  "            if index >= self.results.as_ref().len() {",
+                  "                self.core.generate(&mut self.results);",
+                  "                self.index = 0;",
+                  "                index = 0;",
+                  "                self.half_used = false;",
+                  "            }",
+                  "",
+                  "            let shift = 32 * (self.half_used as usize);",
+                  "",
+                  "            self.half_used = !self.half_used;",
+                  "            self.index += self.half_used as usize;",
+                  "",
+                  "            (self.results.as_ref()[index] >> shift) as u32",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut core = MockCore { count: 0 };",
+                  "    let mut generator = RandomGenerator::new(core);",
+                  "",
+                  "    let value1 = generator.next_u32();",
+                  "    assert_eq!(value1, 0x12345678); // First call gives first result",
+                  "",
+                  "    let value2 = generator.next_u32();",
+                  "    assert_eq!(value2, 0x87654321); // Second call gives second result",
+                  "",
+                  "    let value3 = generator.next_u32();",
+                  "    assert_eq!(value3, 0xFFFFFFFF); // Third call gives third result",
+                  "",
+                  "    let value4 = generator.next_u32();",
+                  "    assert_eq!(value4, 0x12345678 >> 32); // Fourth call wraps around, gives first result shifted",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling rand_core v0.9.3 (/home/utgen/workspace/rand/rand_core)\nwarning: unused imports: `BlockRng64` and `BlockRng`\n   --> rand_core/src/block.rs:428:24\n    |\n428 |     use crate::block::{BlockRng, BlockRng64, BlockRngCore};\n    |                        ^^^^^^^^  ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `RngCore`\n   --> rand_core/src/block.rs:429:17\n    |\n429 |     use crate::{RngCore, SeedableRng};\n    |                 ^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> rand_core/src/block.rs:538:8\n    |\n538 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> rand_core/src/impls.rs:176:9\n    |\n176 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0282]: type annotations needed\n   --> rand_core/src/block.rs:576:38\n    |\n576 |             if index >= self.results.as_ref().len() {\n    |                                      ^^^^^^   --- type must be known at this point\n    |\nhelp: try using a fully qualified path to specify the expected types\n    |\n576 |             if index >= <Vec<u32> as AsRef<T>>::as_ref(&self.results).len() {\n    |                         ++++++++++++++++++++++++++++++++            ~\n\nwarning: unused import: `super`\n   --> rand_core/src/block.rs:537:8\n    |\n537 |    use super::*;\n    |        ^^^^^\n\nwarning: variable does not need to be mutable\n   --> rand_core/src/block.rs:592:9\n    |\n592 |     let mut core = MockCore { count: 0 };\n    |         ----^^^^\n    |         |\n    |         help: remove this `mut`\n    |\n    = note: `#[warn(unused_mut)]` on by default\n\nerror: this arithmetic operation will overflow\n   --> rand_core/src/block.rs:605:24\n    |\n605 |     assert_eq!(value4, 0x12345678 >> 32); // Fourth call wraps around, gives first result shifted\n    |                        ^^^^^^^^^^^^^^^^ attempt to shift right by `32_i32`, which would overflow\n    |\n    = note: `#[deny(arithmetic_overflow)]` on by default\n\nFor more information about this error, try `rustc --explain E0282`.\nwarning: `rand_core` (lib test) generated 6 warnings\nerror: could not compile `rand_core` (lib test) due to 2 previous errors; 6 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

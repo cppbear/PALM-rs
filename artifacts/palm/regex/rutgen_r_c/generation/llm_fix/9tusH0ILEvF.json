@@ -1,0 +1,457 @@
+{
+  "name": "regex::literal::literal::BoyerMooreSearch::check_match",
+  "name_with_impl": "regex::literal::{impl#5}::check_match",
+  "mod_info": {
+    "name": "literal",
+    "loc": "src/lib.rs:656:1:656:13"
+  },
+  "visible": false,
+  "loc": "src/literal/mod.rs:746:5:761:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: haystack[window_end - self.guard_reverse_idx] != self.guard is true\n",
+        "// expected return value/type: false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBoyerMooreSearch {",
+                  "        guard: u8,",
+                  "        guard_reverse_idx: usize,",
+                  "        pattern: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl TestBoyerMooreSearch {",
+                  "        fn check_match(&self, haystack: &[u8], window_end: usize) -> bool {",
+                  "            // guard test",
+                  "            if haystack[window_end - self.guard_reverse_idx] != self.guard {",
+                  "                return false;",
+                  "            }",
+                  "",
+                  "            // match loop",
+                  "            let window_start = window_end - (self.pattern.len() - 1);",
+                  "            for i in 0..self.pattern.len() {",
+                  "                if self.pattern[i] != haystack[window_start + i] {",
+                  "                    return false;",
+                  "                }",
+                  "            }",
+                  "",
+                  "            true",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let pattern = b\"abc\".to_vec();",
+                  "    let guard = b'z'; // selecting a guard that is not in the haystack",
+                  "    let search = TestBoyerMooreSearch {",
+                  "        guard,",
+                  "        guard_reverse_idx: 1,",
+                  "        pattern: pattern.clone(),",
+                  "    };",
+                  "",
+                  "    let haystack = b\"xyzabc\";",
+                  "    let window_end = haystack.len(); // Position at the end of haystack",
+                  "    assert_eq!(search.check_match(haystack, window_end), false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: haystack[window_end - self.guard_reverse_idx] != self.guard is false\n",
+        "// constraint: i in 0..self.pattern.len() is true\n",
+        "// may panic: self.pattern[i] may panic in certain situations\n",
+        "// constraint: self.pattern[i] != haystack[window_start + i] is true\n",
+        "// expected return value/type: false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBoyerMooreSearch {",
+                  "        pattern: Vec<u8>,",
+                  "        guard: u8,",
+                  "        guard_reverse_idx: usize,",
+                  "    }",
+                  "    ",
+                  "    impl BoyerMooreSearch {",
+                  "        fn new_test(pattern: Vec<u8>) -> Self {",
+                  "            let guard = pattern[0];",
+                  "            let guard_reverse_idx = 0;",
+                  "            let skip_table = vec![0; pattern.len()];",
+                  "            let md2_shift = 0;",
+                  "            BoyerMooreSearch {",
+                  "                pattern,",
+                  "                skip_table,",
+                  "                guard,",
+                  "                guard_reverse_idx,",
+                  "                md2_shift,",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let pattern = b\"abc\".to_vec();    ",
+                  "    let haystack = b\"abcdxyz\";",
+                  "    let window_end = 3;",
+                  "",
+                  "    let bms = BoyerMooreSearch::new_test(pattern);",
+                  "    ",
+                  "    // The guard condition is satisfied since the last character checked is 'c'",
+                  "    // which matches the guard, and this pattern does not match the haystack.",
+                  "    assert_eq!(bms.check_match(haystack, window_end), false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBoyerMooreSearch {",
+                  "        pattern: Vec<u8>,",
+                  "        guard: u8,",
+                  "        guard_reverse_idx: usize,",
+                  "    }",
+                  "    ",
+                  "    impl BoyerMooreSearch {",
+                  "        fn new_test(pattern: Vec<u8>) -> Self {",
+                  "            let guard = pattern[0];",
+                  "            let guard_reverse_idx = 0;",
+                  "            let skip_table = vec![0; pattern.len()];",
+                  "            let md2_shift = 0;",
+                  "            BoyerMooreSearch {",
+                  "                pattern,",
+                  "                skip_table,",
+                  "                guard,",
+                  "                guard_reverse_idx,",
+                  "                md2_shift,",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let pattern = b\"xyz\".to_vec();    ",
+                  "    let haystack = b\"abcdefgzyx\";",
+                  "    let window_end = 10; // To check against the 'z'",
+                  "",
+                  "    let bms = BoyerMooreSearch::new_test(pattern);",
+                  "",
+                  "    // In this case, the guard is 'x' but the characters don't match the pattern.",
+                  "    assert_eq!(bms.check_match(haystack, window_end), false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: haystack[window_end - self.guard_reverse_idx] != self.guard is false\n",
+        "// constraint: i in 0..self.pattern.len() is true\n",
+        "// may panic: self.pattern[i] may panic in certain situations\n",
+        "// constraint: self.pattern[i] != haystack[window_start + i] is false\n",
+        "// constraint: i in 0..self.pattern.len() is false\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBoyerMooreSearch {",
+                  "        boyer_moore: BoyerMooreSearch,",
+                  "    }",
+                  "",
+                  "    impl TestBoyerMooreSearch {",
+                  "        fn new(pattern: Vec<u8>) -> Self {",
+                  "            TestBoyerMooreSearch {",
+                  "                boyer_moore: BoyerMooreSearch::new(pattern),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let pattern = b\"abc\".to_vec();",
+                  "    let haystack = b\"xxabcxx\";",
+                  "    let searcher = TestBoyerMooreSearch::new(pattern.clone());",
+                  "",
+                  "    assert!(searcher.boyer_moore.check_match(haystack, 5)); // 5 is the index of 'c'",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBoyerMooreSearch {",
+                  "        boyer_moore: BoyerMooreSearch,",
+                  "    }",
+                  "",
+                  "    impl TestBoyerMooreSearch {",
+                  "        fn new(pattern: Vec<u8>) -> Self {",
+                  "            TestBoyerMooreSearch {",
+                  "                boyer_moore: BoyerMooreSearch::new(pattern),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let pattern = b\"abc\".to_vec();",
+                  "    let haystack = b\"xxabcyy\";",
+                  "    let searcher = TestBoyerMooreSearch::new(pattern.clone());",
+                  "",
+                  "    assert!(!searcher.boyer_moore.check_match(haystack, 6)); // 6 is the index of 'y'",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"index out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBoyerMooreSearch {",
+                  "        boyer_moore: BoyerMooreSearch,",
+                  "    }",
+                  "",
+                  "    impl TestBoyerMooreSearch {",
+                  "        fn new(pattern: Vec<u8>) -> Self {",
+                  "            TestBoyerMooreSearch {",
+                  "                boyer_moore: BoyerMooreSearch::new(pattern),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let pattern = b\"abc\".to_vec();",
+                  "    let haystack = b\"xxabcxx\";",
+                  "    let searcher = TestBoyerMooreSearch::new(pattern.clone());",
+                  "",
+                  "    // This should panic because the window_end is too small",
+                  "    searcher.boyer_moore.check_match(haystack, 2); // 2 is an invalid index in this context",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: haystack[window_end - self.guard_reverse_idx] != self.guard is false\n",
+        "// constraint: i in 0..self.pattern.len() is false\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let pattern = b\"abc\".to_vec();",
+                  "    let haystack = b\"xyzabc\".to_vec();",
+                  "    let window_end = 5; // points to the last character 'c' in \"xyzabc\"",
+                  "    ",
+                  "    let bms = BoyerMooreSearch::new(pattern.clone());",
+                  "    ",
+                  "    assert_eq!(bms.check_match(&haystack, window_end), true);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let pattern = b\"abc\".to_vec();",
+                  "    let haystack = b\"xyzabc\".to_vec();",
+                  "    let window_end = 6; // out of bounds; haystack[window_end - 1] should equal 'c', but it will access haystack[5]",
+                  "    ",
+                  "    let bms = BoyerMooreSearch::new(pattern.clone());",
+                  "",
+                  "    assert_eq!(bms.check_match(&haystack, window_end), false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let pattern = b\"abc\".to_vec();",
+                  "    let haystack = b\"xyzdef\".to_vec();",
+                  "    let window_end = 6; // haystack ends; no match",
+                  "    ",
+                  "    let bms = BoyerMooreSearch::new(pattern.clone());",
+                  "",
+                  "    assert_eq!(bms.check_match(&haystack, window_end), false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let pattern = b\"\".to_vec();",
+                  "    let haystack = b\"xyzabc\".to_vec();",
+                  "    let window_end = 3; // Ensure we don't panic on empty pattern",
+                  "    ",
+                  "    let bms = BoyerMooreSearch::new(pattern.clone());",
+                  "",
+                  "    assert_eq!(bms.check_match(&haystack, window_end), false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

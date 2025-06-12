@@ -1,0 +1,114 @@
+{
+  "name": "bytes::bytes::shared_clone",
+  "name_with_impl": "bytes::bytes::shared_clone",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1388:1:1391:2",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null_mut;",
+            "use core::sync::atomic::AtomicPtr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::AtomicPtr;",
+                  "",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let shared = Shared {",
+                  "        buf: null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(1), // Initial reference count set to 1",
+                  "    };",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(&shared as *const Shared as *mut Shared);",
+                  "    let ptr: *const u8 = null_mut(); // Example pointer, doesn't point to valid data",
+                  "    let len: usize = 0; // Example length",
+                  "",
+                  "    let cloned_bytes = unsafe { shared_clone(&atomic_ptr, ptr, len) };",
+                  "",
+                  "    assert_eq!(cloned_bytes.ptr, ptr);",
+                  "    assert_eq!(cloned_bytes.len, len);",
+                  "    assert_eq!(cloned_bytes.data.load(core::sync::atomic::Ordering::Relaxed), &shared as *const Shared as *mut Shared);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1707:46\n     |\n1707 |     let cloned_bytes = unsafe { shared_clone(&atomic_ptr, ptr, len) };\n     |                                 ------------ ^^^^^^^^^^^ expected `&AtomicPtr<()>`, found `&AtomicPtr<Shared>`\n     |                                 |\n     |                                 arguments to this function are incorrect\n     |\n     = note: expected reference `&AtomicPtr<()>`\n                found reference `&AtomicPtr<llmtests::test_shared_clone_00::Shared>`\nnote: function defined here\n    --> src/bytes.rs:1388:11\n     |\n1388 | unsafe fn shared_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Bytes {\n     |           ^^^^^^^^^^^^ --------------------\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1711:79\n     |\n1711 |     assert_eq!(cloned_bytes.data.load(core::sync::atomic::Ordering::Relaxed), &shared as *const Shared as *mut Shared);\n     |                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut ()`, found `*mut Shared`\n     |\n     = note: expected raw pointer `*mut ()`\n                found raw pointer `*mut llmtests::test_shared_clone_00::Shared`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::AtomicPtr;",
+                  "",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let mut shared = Shared {",
+                  "        buf: null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(usize::MAX), // Set to maximum to trigger panic",
+                  "    };",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(&mut shared as *mut Shared);",
+                  "    let ptr: *const u8 = null_mut(); // Example pointer, doesn't point to valid data",
+                  "    let len: usize = 0; // Example length",
+                  "",
+                  "    // This will panic when attempting to clone due to reference count exceeding limit",
+                  "    let _ = unsafe { shared_clone(&atomic_ptr, ptr, len) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1709:35\n     |\n1709 |     let _ = unsafe { shared_clone(&atomic_ptr, ptr, len) };\n     |                      ------------ ^^^^^^^^^^^ expected `&AtomicPtr<()>`, found `&AtomicPtr<Shared>`\n     |                      |\n     |                      arguments to this function are incorrect\n     |\n     = note: expected reference `&AtomicPtr<()>`\n                found reference `&AtomicPtr<llmtests::test_shared_clone_01::Shared>`\nnote: function defined here\n    --> src/bytes.rs:1388:11\n     |\n1388 | unsafe fn shared_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Bytes {\n     |           ^^^^^^^^^^^^ --------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

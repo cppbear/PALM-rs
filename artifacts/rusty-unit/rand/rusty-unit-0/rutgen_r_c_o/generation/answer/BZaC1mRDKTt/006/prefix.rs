@@ -1,0 +1,35 @@
+// Answer 0
+
+#[test]
+fn test_random_ratio_equal_n_d() {
+    use crate::seq::coin_flipper::CoinFlipper;
+    use crate::RngCore; // Assuming you have a fake RNG implementation for testing purposes
+
+    struct FakeRng;
+    impl RngCore for FakeRng {
+        fn next_u32(&mut self) -> u32 {
+            1 // Fixed randomness for testing
+        }
+
+        fn next_u64(&mut self) -> u64 {
+            1 // Fixed randomness for testing
+        }
+
+        fn fill_bytes(&mut self, dest: &mut [u8]) {
+            for byte in dest.iter_mut() {
+                *byte = 1; // Fixed randomness for testing
+            }
+        }
+        
+        fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), ()> {
+            self.fill_bytes(dest);
+            Ok(())
+        }
+    }
+
+    let mut rng = FakeRng;
+    let mut coin_flipper = CoinFlipper::new(rng);
+    
+    let result = coin_flipper.random_ratio(1, 1);
+}
+

@@ -1,0 +1,159 @@
+{
+  "name": "bytes::bytes::owned_box_and_drop",
+  "name_with_impl": "bytes::bytes::owned_box_and_drop",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1123:1:1126:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   // Creating a dummy struct to use with the Owned wrapper",
+                  "   struct Dummy {",
+                  "       value: usize,",
+                  "   }",
+                  "",
+                  "   use std::alloc::{alloc, Layout}; // Imported Alloc from std::alloc",
+                  "   let layout = Layout::new::<Owned<Dummy>>();",
+                  "   let ptr = unsafe { alloc(layout) as *mut Owned<Dummy> }; // Changed Alloc::alloc to alloc",
+                  "",
+                  "   // Initializing the owned structure",
+                  "   unsafe {",
+                  "       ptr.write(Owned { ",
+                  "           lifetime: OwnedLifetime {}, ",
+                  "           owner: Dummy { value: 42 } ",
+                  "       });",
+                  "",
+                  "       // Calling the function should not panic",
+                  "       owned_box_and_drop::<Dummy>(ptr as *mut ());",
+                  "   }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0063]: missing fields `drop` and `ref_cnt` in initializer of `bytes::OwnedLifetime`\n    --> src/bytes.rs:1703:22\n     |\n1703 |            lifetime: OwnedLifetime {}, \n     |                      ^^^^^^^^^^^^^ missing `drop` and `ref_cnt`\n\nFor more information about this error, try `rustc --explain E0063`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Attempting to drop a null pointer should trigger a panic",
+                  "    unsafe {",
+                  "        owned_box_and_drop::<usize>(core::ptr::null_mut());",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Allocating an invalid address and trying to drop it should panic",
+                  "    let invalid_ptr: *mut () = 0x12345678 as *mut (); // An invalid pointer",
+                  "    unsafe {",
+                  "        owned_box_and_drop::<usize>(invalid_ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "   fn test_owned_box_and_drop_01()  ",
+                  "   {  ",
+                  "       struct Dummy {  ",
+                  "           value: usize,  ",
+                  "       }  ",
+                  " ",
+                  "       let layout = Layout::new::<Owned<Dummy>>();  ",
+                  "       let ptr1 = unsafe { std::alloc::Global.alloc(layout) as *mut Owned<Dummy> };  ",
+                  "",
+                  "    unsafe {",
+                  "        ptr1.write(Owned {",
+                  "            lifetime: OwnedLifetime {},",
+                  "            owner: Dummy { value: 1 },",
+                  "        });",
+                  "",
+                  "        ptr2.write(Owned {",
+                  "            lifetime: OwnedLifetime {},",
+                  "            owner: Dummy { value: 2 },",
+                  "        });",
+                  "",
+                  "        // First call should succeed",
+                  "        owned_box_and_drop::<Dummy>(ptr1 as *mut ());",
+                  "        ",
+                  "        // Second call should also succeed",
+                  "        owned_box_and_drop::<Dummy>(ptr2 as *mut ());",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror: expected one of `->`, `where`, or `{`, found keyword `fn`\n    --> src/bytes.rs:1690:4\n     |\n1689 | fn test_owned_box_and_drop_01()\n     |                                - expected one of `->`, `where`, or `{`\n1690 |    fn test_owned_box_and_drop_01()  \n     |    ^^ unexpected token\n\nerror[E0432]: unresolved import `crate::bytes::Vtable`\n  --> src/bytes_mut.rs:16:5\n   |\n16 | use crate::bytes::Vtable;\n   |     ^^^^^^^^^^^^^^^^^^^^ no `Vtable` in `bytes`\n\nerror[E0432]: unresolved import `crate::bytes::Bytes`\n  --> src/lib.rs:86:9\n   |\n86 | pub use crate::bytes::Bytes;\n   |         ^^^^^^^^^^^^^^^^^^^ no `Bytes` in `bytes`\n   |\nhelp: consider importing one of these items instead\n   |\n86 | pub use std::io::Bytes;\n   |         ~~~~~~~~~~~~~~\n86 | pub use std::str::Bytes;\n   |         ~~~~~~~~~~~~~~~\n86 | pub use alloc::str::Bytes;\n   |         ~~~~~~~~~~~~~~~~~\n86 | pub use serde_test::Token::Bytes;\n   |         ~~~~~~~~~~~~~~~~~~~~~~~~\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0432`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 3 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

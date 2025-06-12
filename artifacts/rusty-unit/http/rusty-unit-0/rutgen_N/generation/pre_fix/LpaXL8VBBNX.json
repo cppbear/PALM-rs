@@ -1,0 +1,169 @@
+{
+  "name": "http::header::value::<header::value::HeaderValue as std::fmt::Debug>::fmt",
+  "name_with_impl": "http::header::value::{impl#2}::fmt",
+  "mod_info": {
+    "name": "header::value",
+    "loc": "src/header/mod.rs:75:1:75:11"
+  },
+  "visible": true,
+  "loc": "src/header/value.rs:386:5:410:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct HeaderValue {",
+            "    is_sensitive: bool,",
+            "    bytes: Vec<u8>,",
+            "}",
+            "",
+            "impl HeaderValue {",
+            "    fn as_bytes(&self) -> &[u8] {",
+            "        &self.bytes",
+            "    }",
+            "}",
+            "",
+            "fn is_visible_ascii(b: u8) -> bool {",
+            "    (0x20..=0x7E).contains(&b)",
+            "}",
+            "",
+            "impl std::fmt::Display for HeaderValue {",
+            "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {",
+            "        if self.is_sensitive {",
+            "            f.write_str(\"Sensitive\")",
+            "        } else {",
+            "            f.write_str(\"\\\"\")?;",
+            "            let mut from = 0;",
+            "            let bytes = self.as_bytes();",
+            "            for (i, &b) in bytes.iter().enumerate() {",
+            "                if !is_visible_ascii(b) || b == b'\"' {",
+            "                    if from != i {",
+            "                        f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..i]) })?;",
+            "                    }",
+            "                    if b == b'\"' {",
+            "                        f.write_str(\"\\\\\\\"\")?;",
+            "                    } else {",
+            "                        write!(f, \"\\\\x{:x}\", b)?;",
+            "                    }",
+            "                    from = i + 1;",
+            "                }",
+            "            }",
+            "            f.write_str(unsafe { std::str::from_utf8_unchecked(&bytes[from..]) })?;",
+            "            f.write_str(\"\\\"\")",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = HeaderValue {",
+                  "        is_sensitive: true,",
+                  "        bytes: vec![],",
+                  "    };",
+                  "    let result = format!(\"{}\", value);",
+                  "    assert_eq!(result, \"Sensitive\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Hello World!\".to_vec(),",
+                  "    };",
+                  "    let result = format!(\"{}\", value);",
+                  "    assert_eq!(result, \"\\\"Hello World!\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Hello \\\"World\\\"\".to_vec(),",
+                  "    };",
+                  "    let result = format!(\"{}\", value);",
+                  "    assert_eq!(result, \"\\\"Hello \\\\\\\"World\\\\\\\"\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = HeaderValue {",
+                  "        is_sensitive: false,",
+                  "        bytes: b\"Bytes\\x00\\x01\\x02\".to_vec(),",
+                  "    };",
+                  "    let result = format!(\"{}\", value);",
+                  "    assert_eq!(result, \"\\\"Bytes\\\\x00\\\\x1\\\\x2\\\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

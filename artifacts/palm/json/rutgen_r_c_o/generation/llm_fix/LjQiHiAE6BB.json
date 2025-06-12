@@ -1,0 +1,273 @@
+{
+  "name": "serde_json::read::peek_or_eof",
+  "name_with_impl": "serde_json::read::peek_or_eof",
+  "mod_info": {
+    "name": "read",
+    "loc": "src/lib.rs:434:1:434:10"
+  },
+  "visible": false,
+  "loc": "src/read.rs:850:1:858:2",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: read.peek() matches core::result::Result::Ok(val) is true\n",
+        "// constraint: read.peek() matches core::result::Result::Err(err) is true\n",
+        "// constraint: match $e {\n            core::result::Result::Ok(val) => val,\n            core::result::Result::Err(err) => return core::result::Result::Err(err),\n        } matches Some(b) is true\n",
+        "// expected return value/type: Ok(b)\n"
+      ],
+      "input_infer": "u8: 0..=255, Result: Ok, Result: Err, b: 0..=255\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct MockReader {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl MockReader {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            MockReader { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn peek(&mut self) -> Result<Option<u8>> {",
+                "            if self.position < self.data.len() {",
+                "                Ok(Some(self.data[self.position]))",
+                "            } else {",
+                "                Ok(None)",
+                "            }",
+                "        }",
+                "",
+                "        fn position(&self) -> (usize, usize) {",
+                "            (self.position + 1, 1) // Mocked line/column numbers",
+                "        }",
+                "    }",
+                "",
+                "    let mut reader = MockReader::new(vec![42]); // Example byte",
+                "    let result = peek_or_eof(&mut reader);",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let mut reader = MockReader::new(vec![42]);",
+                  "    let result = peek_or_eof(&mut reader);",
+                  "    assert_eq!(result, Ok(42));"
+                ],
+                [
+                  "    let mut reader = MockReader::new(vec![42]);",
+                  "    let result = peek_or_eof(&mut reader);",
+                  "    reader.position = 1;",
+                  "    let result_eof = peek_or_eof(&mut reader);",
+                  "    assert!(result_eof.is_err());"
+                ],
+                [
+                  "    let mut reader = MockReader::new(vec![42]);",
+                  "    let result = peek_or_eof(&mut reader);",
+                  "    reader.position = 1;",
+                  "    let result_eof = peek_or_eof(&mut reader);",
+                  "    assert_eq!(result_eof.unwrap_err().code, ErrorCode::EofWhileParsingString);"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "   struct MockReader {  ",
+                  "       data: Vec<u8>,  ",
+                  "       position: usize,  ",
+                  "   }  ",
+                  " ",
+                  "   impl MockReader {  ",
+                  "       fn new(data: Vec<u8>) -> Self {  ",
+                  "           MockReader { data, position: 0 }  ",
+                  "       }  ",
+                  "       ",
+                  "       fn peek(&mut self) -> Result<Option<u8>> {  ",
+                  "           if self.position < self.data.len() {  ",
+                  "               Ok(Some(self.data[self.position]))  ",
+                  "           } else {  ",
+                  "               Ok(None)  ",
+                  "           }  ",
+                  "       }  ",
+                  " ",
+                  "       fn position(&self) -> (usize, usize) {  ",
+                  "           (self.position + 1, 1) // Mocked line/column numbers  ",
+                  "       }  ",
+                  "   }  ",
+                  " ",
+                  "   impl read::Read<'_> for MockReader {  ",
+                  "       fn peek(&mut self) -> Result<Option<u8>> {  ",
+                  "           self.peek()  ",
+                  "       }  ",
+                  "   }  ",
+                  "}"
+                ],
+                [
+                  "{",
+                  "  use std::io::{Read, Result};  ",
+                  "  ",
+                  "  struct MockReader {  ",
+                  "      data: Vec<u8>,  ",
+                  "      position: usize,  ",
+                  "  }  ",
+                  "  ",
+                  "  impl MockReader {  ",
+                  "      fn new(data: Vec<u8>) -> Self {  ",
+                  "          MockReader { data, position: 0 }  ",
+                  "      }  ",
+                  "  }  ",
+                  "  ",
+                  "  impl Read for MockReader {  ",
+                  "      fn read(&mut self, buf: &mut [u8]) -> Result<usize> {  ",
+                  "          if self.position >= self.data.len() {  ",
+                  "              return Ok(0);  ",
+                  "          }  ",
+                  "          let bytes_to_read = std::cmp::min(buf.len(), self.data.len() - self.position);  ",
+                  "          buf[..bytes_to_read].copy_from_slice(&self.data[self.position..self.position + bytes_to_read]);  ",
+                  "          self.position += bytes_to_read;  ",
+                  "          Ok(bytes_to_read)  ",
+                  "      }  ",
+                  "     // fn position(&self) -> usize {  ",
+                  "     //     self.position  ",
+                  "     // }  ",
+                  "  }  ",
+                  " ",
+                  "  let mut reader = MockReader::new(vec![42]);  ",
+                  "   reader.position = 1;",
+                  "}"
+                ],
+                [
+                  "{",
+                  "   use std::io::{self, Read}; // Add necessary import",
+                  "   ",
+                  "   struct MockReader {",
+                  "       data: Vec<u8>,",
+                  "       position: usize,",
+                  "   }",
+                  "",
+                  "   impl MockReader {",
+                  "       fn new(data: Vec<u8>) -> Self {",
+                  "           MockReader { data, position: 0 }",
+                  "       }",
+                  "   }",
+                  "",
+                  "   impl Read for MockReader { // Implement Read trait",
+                  "       fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {",
+                  "           let mut count = 0;",
+                  "           while count < buf.len() && self.position < self.data.len() {",
+                  "               buf[count] = self.data[self.position];",
+                  "               self.position += 1;",
+                  "               count += 1;",
+                  "           }",
+                  "           Ok(count)",
+                  "       }",
+                  "   }",
+                  "",
+                  "   let mut reader = MockReader::new(vec![42]); // Example byte",
+                  "   let result = peek_or_eof(&mut reader);",
+                  "   let mut reader = MockReader::new(vec![42]);",
+                  "   let result = peek_or_eof(&mut reader);",
+                  "   reader.position = 1;",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0433]: failed to resolve: use of undeclared crate or module `read`\n    --> src/read.rs:1123:9\n     |\n1123 |    impl read::Read<'_> for MockReader {  \n     |         ^^^^ use of undeclared crate or module `read`\n     |\nhelp: a trait with a similar name exists\n     |\n1123 |    impl Read::Read<'_> for MockReader {  \n     |         ~~~~\nhelp: consider importing this module\n     |\n1092 +    use crate::read;\n     |\n\nFor more information about this error, try `rustc --explain E0433`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                },
+                {
+                  "Ok": null
+                },
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0277]: the trait bound `MockReader: read::Read<'_>` is not satisfied\n    --> src/read.rs:1126:29\n     |\n1126 |    let result = peek_or_eof(&mut reader);\n     |                 ----------- ^^^^^^^^^^^ the trait `read::Read<'_>` is not implemented for `MockReader`\n     |                 |\n     |                 required by a bound introduced by this call\n     |\n     = help: the following other types implement trait `read::Read<'de>`:\n               `&mut R` implements `read::Read<'de>`\n               `IoRead<R>` implements `read::Read<'de>`\n               `SliceRead<'a>` implements `read::Read<'a>`\n               `StrRead<'a>` implements `read::Read<'a>`\nnote: required by a bound in `read::peek_or_eof`\n    --> src/read.rs:852:17\n     |\n850  | fn peek_or_eof<'de, R>(read: &mut R) -> Result<u8>\n     |    ----------- required by a bound in this function\n851  | where\n852  |     R: ?Sized + Read<'de>,\n     |                 ^^^^^^^^^ required by this bound in `peek_or_eof`\n\nerror[E0277]: the trait bound `MockReader: read::Read<'_>` is not satisfied\n    --> src/read.rs:1128:29\n     |\n1128 |    let result = peek_or_eof(&mut reader);\n     |                 ----------- ^^^^^^^^^^^ the trait `read::Read<'_>` is not implemented for `MockReader`\n     |                 |\n     |                 required by a bound introduced by this call\n     |\n     = help: the following other types implement trait `read::Read<'de>`:\n               `&mut R` implements `read::Read<'de>`\n               `IoRead<R>` implements `read::Read<'de>`\n               `SliceRead<'a>` implements `read::Read<'a>`\n               `StrRead<'a>` implements `read::Read<'a>`\nnote: required by a bound in `read::peek_or_eof`\n    --> src/read.rs:852:17\n     |\n850  | fn peek_or_eof<'de, R>(read: &mut R) -> Result<u8>\n     |    ----------- required by a bound in this function\n851  | where\n852  |     R: ?Sized + Read<'de>,\n     |                 ^^^^^^^^^ required by this bound in `peek_or_eof`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `serde_json` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true,
+                true,
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct MockReader {",
+                "        data: Vec<u8>,",
+                "        position: usize,",
+                "    }",
+                "",
+                "    impl MockReader {",
+                "        fn new(data: Vec<u8>) -> Self {",
+                "            MockReader { data, position: 0 }",
+                "        }",
+                "        ",
+                "        fn peek(&mut self) -> Result<Option<u8>> {",
+                "            Ok(None) // Simulating EOF",
+                "        }",
+                "        ",
+                "        fn position(&self) -> (usize, usize) {",
+                "            (self.position + 1, 1) // Mocked line/column numbers",
+                "        }",
+                "    }",
+                "",
+                "    let mut reader = MockReader::new(vec![]);",
+                "    let result = peek_or_eof(&mut reader);",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let mut reader = MockReader::new(vec![]);",
+                  "    assert_eq!(result, Err(Error::syntax(ErrorCode::EofWhileParsingString, 1, 1)));"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockReader {",
+                  "        data: Vec<u8>,",
+                  "        position: usize,",
+                  "    }",
+                  "",
+                  "    impl MockReader {",
+                  "        fn new(data: Vec<u8>) -> Self {",
+                  "            MockReader { data, position: 0 }",
+                  "        }",
+                  "        ",
+                  "        fn peek(&mut self) -> Result<Option<u8>> {",
+                  "            Ok(None) // Simulating EOF",
+                  "        }",
+                  "        ",
+                  "        fn position(&self) -> (usize, usize) {",
+                  "            (self.position + 1, 1) // Mocked line/column numbers",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut reader = MockReader::new(vec![]);",
+                  "    let result = peek_or_eof(&mut reader);",
+                  "    let mut reader = MockReader::new(vec![]);",
+                  "    assert_eq!(result, Err(Error::syntax(ErrorCode::EofWhileParsingString, 1, 1)));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0277]: the trait bound `MockReader: read::Read<'_>` is not satisfied\n    --> src/read.rs:1120:30\n     |\n1120 |     let result = peek_or_eof(&mut reader);\n     |                  ----------- ^^^^^^^^^^^ the trait `read::Read<'_>` is not implemented for `MockReader`\n     |                  |\n     |                  required by a bound introduced by this call\n     |\n     = help: the following other types implement trait `read::Read<'de>`:\n               `&mut R` implements `read::Read<'de>`\n               `IoRead<R>` implements `read::Read<'de>`\n               `SliceRead<'a>` implements `read::Read<'a>`\n               `StrRead<'a>` implements `read::Read<'a>`\nnote: required by a bound in `read::peek_or_eof`\n    --> src/read.rs:852:17\n     |\n850  | fn peek_or_eof<'de, R>(read: &mut R) -> Result<u8>\n     |    ----------- required by a bound in this function\n851  | where\n852  |     R: ?Sized + Read<'de>,\n     |                 ^^^^^^^^^ required by this bound in `peek_or_eof`\n\nerror[E0369]: binary operation `==` cannot be applied to type `std::result::Result<u8, error::Error>`\n    --> src/read.rs:1122:5\n     |\n1122 |     assert_eq!(result, Err(Error::syntax(ErrorCode::EofWhileParsingString, 1, 1)));\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     std::result::Result<u8, error::Error>\n     |     std::result::Result<u8, error::Error>\n     |\nnote: an implementation of `PartialEq` might be missing for `error::Error`\n    --> src/error.rs:17:1\n     |\n17   | pub struct Error {\n     | ^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `error::Error` with `#[derive(PartialEq)]`\n    -->  src/error.rs:17:1\n     |\n17   + #[derive(PartialEq)]\n18   | pub struct Error {\n     |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `serde_json` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

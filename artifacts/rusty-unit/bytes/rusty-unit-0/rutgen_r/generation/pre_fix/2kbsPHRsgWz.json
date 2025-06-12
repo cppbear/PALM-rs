@@ -1,0 +1,141 @@
+{
+  "name": "bytes::bytes::promotable_is_unique",
+  "name_with_impl": "bytes::bytes::promotable_is_unique",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1338:1:1348:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is true\n",
+        "// expected return value/type: ref_cnt == 1\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::ptr;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use std::ptr;",
+                  "",
+                  "    const KIND_MASK: usize = 0b11; // Example mask",
+                  "    const KIND_ARC: usize = 0b01; // Example value for ARC kind",
+                  "",
+                  "    struct Shared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    // Creating a test case where the AtomicPtr points to a Shared instance",
+                  "    let ref_count = AtomicUsize::new(1); // Set reference count to 1",
+                  "    let shared_instance = Box::into_raw(Box::new(Shared { ref_cnt }));",
+                  "    let data = AtomicPtr::new((shared_instance as usize | KIND_ARC) as *mut ());",
+                  "",
+                  "    // Safety: We are creating the pointers and ensuring we are within the owning scope",
+                  "    assert_eq!(unsafe { promotable_is_unique(&data) }, true);",
+                  "",
+                  "    // Clean up",
+                  "    unsafe {",
+                  "        let _ = Box::from_raw(shared_instance); // This will drop the Shared instance",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0425]: cannot find value `ref_cnt` in this scope\n    --> src/bytes.rs:1700:59\n     |\n1700 |     let shared_instance = Box::into_raw(Box::new(Shared { ref_cnt }));\n     |                                                           ^^^^^^^ help: a local variable with a similar name exists: `ref_count`\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `Ordering`\n    --> src/bytes.rs:1688:40\n     |\n1688 |     use std::sync::atomic::{AtomicPtr, Ordering};\n     |                                        ^^^^^^^^\n\nwarning: unused import: `std::ptr`\n    --> src/bytes.rs:1689:9\n     |\n1689 |     use std::ptr;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0425`.\nwarning: `bytes` (lib test) generated 4 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::Ordering;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::ptr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use std::ptr;",
+                  "",
+                  "    const KIND_ARC: usize = 1; // assuming KIND_ARC mask is defined",
+                  "    const KIND_MASK: usize = 0b11; // assuming a mask for kind to isolate the bits",
+                  "",
+                  "    struct Shared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let shared_data = Shared {",
+                  "        ref_cnt: AtomicUsize::new(2), // ref_cnt is set to 2 to simulate a non-unique scenario",
+                  "    };",
+                  "",
+                  "    let shared_ptr = Box::into_raw(Box::new(shared_data));",
+                  "    let kind_value: usize = 0; // kind != KIND_ARC",
+                  "",
+                  "    let data = AtomicPtr::new((shared_ptr as usize | kind_value) as *mut ());",
+                  "",
+                  "    // Call the function",
+                  "    let result = unsafe { promotable_is_unique(&data) };",
+                  "",
+                  "    // Clean up",
+                  "    let _ = unsafe { Box::from_raw(shared_ptr) };",
+                  "",
+                  "    // Verify the result",
+                  "    assert!(result); // Expect true since kind != KIND_ARC",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

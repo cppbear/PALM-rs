@@ -1,0 +1,180 @@
+{
+  "name": "bytes::bytes_mut::shared_v_to_mut",
+  "name_with_impl": "bytes::bytes_mut::shared_v_to_mut",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1815:1:1842:2",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::slice;",
+            "use std::ptr;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::mem;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use std::mem;",
+                  "    use std::slice;",
+                  "    use std::ptr;",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    struct BytesMut {",
+                  "        ptr: *mut u8,",
+                  "        len: usize,",
+                  "        cap: usize,",
+                  "        data: *mut Shared,",
+                  "    }",
+                  "",
+                  "    impl BytesMut {",
+                  "        fn from_vec(vec: Vec<u8>) -> Self {",
+                  "            let len = vec.len();",
+                  "            let cap = vec.capacity();",
+                  "            let ptr = vec.as_mut_ptr();",
+                  "            mem::forget(vec); // Prevent dropping the Vec",
+                  "            BytesMut { ptr, len, cap, data: ptr::null_mut() }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    unsafe fn offset_from(ptr: *mut u8, base: *mut u8) -> usize {",
+                  "        (ptr as usize).wrapping_sub(base as usize)",
+                  "    }",
+                  "",
+                  "    unsafe fn release_shared(shared: *mut Shared) {",
+                  "        // Logic to release shared memory (stub for the test)",
+                  "    }",
+                  "",
+                  "    unsafe fn vptr(ptr: *mut u8) -> *mut u8 {",
+                  "        ptr",
+                  "    }",
+                  "",
+                  "    // Initialize shared memory data",
+                  "    let vec = vec![1, 2, 3, 4, 5];",
+                  "    let shared = Box::into_raw(Box::new(Shared { vec }));",
+                  "    let data = AtomicPtr::new(shared as *mut _);",
+                  "    ",
+                  "    let ptr = data.load(Ordering::Relaxed).cast::<Shared>().as_ref().unwrap().vec.as_ptr();",
+                  "    let len = 5;",
+                  "",
+                  "    let bytes_mut = unsafe { shared_v_to_mut(&data, ptr, len) };",
+                  "",
+                  "    assert_eq!(bytes_mut.len, len);",
+                  "    assert_eq!(bytes_mut.cap, len);",
+                  "    assert!(!bytes_mut.ptr.is_null());",
+                  "    assert_eq!(unsafe { slice::from_raw_parts(bytes_mut.ptr, bytes_mut.len) }, [1, 2, 3, 4, 5]);",
+                  "",
+                  "    unsafe { release_shared(shared) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "    Blocking waiting for file lock on package cache\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes_mut.rs:1925:8\n     |\n1925 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed for `AtomicPtr<_>`\n    --> src/bytes_mut.rs:1970:9\n     |\n1970 |     let data = AtomicPtr::new(shared as *mut _);\n     |         ^^^^\n1971 |     \n1972 |     let ptr = data.load(Ordering::Relaxed).cast::<Shared>().as_ref().unwrap().vec.as_ptr();\n     |                                            ---- cannot call a method on a raw pointer with an unknown pointee type\n     |\nhelp: consider giving `data` an explicit type, where the type for type parameter `T` is specified\n     |\n1970 |     let data: AtomicPtr<T> = AtomicPtr::new(shared as *mut _);\n     |             ++++++++++++++\n\nerror[E0599]: no method named `is_null` found for struct `NonNull` in the current scope\n    --> src/bytes_mut.rs:1979:28\n     |\n1979 |     assert!(!bytes_mut.ptr.is_null());\n     |                            ^^^^^^^ method not found in `NonNull<u8>`\n\nerror[E0308]: mismatched types\n    --> src/bytes_mut.rs:1980:47\n     |\n1980 |     assert_eq!(unsafe { slice::from_raw_parts(bytes_mut.ptr, bytes_mut.len) }, [1, 2, 3, 4, 5]);\n     |                         --------------------- ^^^^^^^^^^^^^ expected `*const _`, found `NonNull<u8>`\n     |                         |\n     |                         arguments to this function are incorrect\n     |\n     = note: expected raw pointer `*const _`\n                     found struct `NonNull<u8>`\nnote: function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/raw.rs:125:21\n     |\n125  | pub const unsafe fn from_raw_parts<'a, T>(data: *const T, len: usize) -> &'a [T] {\n     |                     ^^^^^^^^^^^^^^\n\nerror[E0596]: cannot borrow `vec` as mutable, as it is not declared as mutable\n    --> src/bytes_mut.rs:1949:23\n     |\n1949 |             let ptr = vec.as_mut_ptr();\n     |                       ^^^ cannot borrow as mutable\n     |\nhelp: consider changing this to be mutable\n     |\n1946 |         fn from_vec(mut vec: Vec<u8>) -> Self {\n     |                     +++\n\nwarning: unused variable: `shared`\n    --> src/bytes_mut.rs:1959:30\n     |\n1959 |     unsafe fn release_shared(shared: *mut Shared) {\n     |                              ^^^^^^ help: if this is intentional, prefix it with an underscore: `_shared`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nSome errors have detailed explanations: E0282, E0308, E0596, E0599.\nFor more information about an error, try `rustc --explain E0282`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 4 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use std::mem;",
+                  "    use std::slice;",
+                  "    use std::ptr;",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    struct BytesMut {",
+                  "        ptr: *mut u8,",
+                  "        len: usize,",
+                  "        cap: usize,",
+                  "        data: *mut Shared,",
+                  "    }",
+                  "",
+                  "    impl BytesMut {",
+                  "        fn from_vec(vec: Vec<u8>) -> Self {",
+                  "            let len = vec.len();",
+                  "            let cap = vec.capacity();",
+                  "            let ptr = vec.as_mut_ptr();",
+                  "            mem::forget(vec); // Prevent dropping the Vec",
+                  "            BytesMut { ptr, len, cap, data: ptr::null_mut() }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    unsafe fn offset_from(ptr: *mut u8, base: *mut u8) -> usize {",
+                  "        (ptr as usize).wrapping_sub(base as usize)",
+                  "    }",
+                  "",
+                  "    unsafe fn release_shared(shared: *mut Shared) {",
+                  "        // Logic to release shared memory (stub for the test)",
+                  "    }",
+                  "",
+                  "    unsafe fn vptr(ptr: *mut u8) -> *mut u8 {",
+                  "        ptr",
+                  "    }",
+                  "",
+                  "    // Initialize shared memory data",
+                  "    let vec = vec![1, 2, 3, 4, 5];",
+                  "    let shared_ptr = Box::into_raw(Box::new(Shared { vec }));",
+                  "    let data = AtomicPtr::new(shared_ptr as *mut _);",
+                  "",
+                  "    // Simulate non-unique case by not freeing it (could be mocked or handled based on your context).",
+                  "    // For simplicity, we are using the same shared pointer here directly.",
+                  "    let ptr = data.load(Ordering::Relaxed).cast::<Shared>().as_ref().unwrap().vec.as_ptr();",
+                  "    let len = 5;",
+                  "",
+                  "    let bytes_mut = unsafe { shared_v_to_mut(&data, ptr, len) };",
+                  "",
+                  "    assert_eq!(bytes_mut.len, len);",
+                  "    assert!(bytes_mut.cap >= len); // Capacity could be more than len, verify boundary case.",
+                  "    assert!(!bytes_mut.ptr.is_null());",
+                  "    assert_eq!(unsafe { slice::from_raw_parts(bytes_mut.ptr, bytes_mut.len) }, [1, 2, 3, 4, 5]);",
+                  "",
+                  "    unsafe { release_shared(shared_ptr) }; // Release after test",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes_mut.rs:1925:8\n     |\n1925 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed for `AtomicPtr<_>`\n    --> src/bytes_mut.rs:1970:9\n     |\n1970 |     let data = AtomicPtr::new(shared_ptr as *mut _);\n     |         ^^^^\n...\n1974 |     let ptr = data.load(Ordering::Relaxed).cast::<Shared>().as_ref().unwrap().vec.as_ptr();\n     |                                            ---- cannot call a method on a raw pointer with an unknown pointee type\n     |\nhelp: consider giving `data` an explicit type, where the type for type parameter `T` is specified\n     |\n1970 |     let data: AtomicPtr<T> = AtomicPtr::new(shared_ptr as *mut _);\n     |             ++++++++++++++\n\nerror[E0599]: no method named `is_null` found for struct `NonNull` in the current scope\n    --> src/bytes_mut.rs:1981:28\n     |\n1981 |     assert!(!bytes_mut.ptr.is_null());\n     |                            ^^^^^^^ method not found in `NonNull<u8>`\n\nerror[E0308]: mismatched types\n    --> src/bytes_mut.rs:1982:47\n     |\n1982 |     assert_eq!(unsafe { slice::from_raw_parts(bytes_mut.ptr, bytes_mut.len) }, [1, 2, 3, 4, 5]);\n     |                         --------------------- ^^^^^^^^^^^^^ expected `*const _`, found `NonNull<u8>`\n     |                         |\n     |                         arguments to this function are incorrect\n     |\n     = note: expected raw pointer `*const _`\n                     found struct `NonNull<u8>`\nnote: function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/slice/raw.rs:125:21\n     |\n125  | pub const unsafe fn from_raw_parts<'a, T>(data: *const T, len: usize) -> &'a [T] {\n     |                     ^^^^^^^^^^^^^^\n\nerror[E0596]: cannot borrow `vec` as mutable, as it is not declared as mutable\n    --> src/bytes_mut.rs:1949:23\n     |\n1949 |             let ptr = vec.as_mut_ptr();\n     |                       ^^^ cannot borrow as mutable\n     |\nhelp: consider changing this to be mutable\n     |\n1946 |         fn from_vec(mut vec: Vec<u8>) -> Self {\n     |                     +++\n\nwarning: unused variable: `shared`\n    --> src/bytes_mut.rs:1959:30\n     |\n1959 |     unsafe fn release_shared(shared: *mut Shared) {\n     |                              ^^^^^^ help: if this is intentional, prefix it with an underscore: `_shared`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nSome errors have detailed explanations: E0282, E0308, E0596, E0599.\nFor more information about an error, try `rustc --explain E0282`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 4 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

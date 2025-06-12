@@ -1,0 +1,124 @@
+{
+  "name": "bytes::bytes::owned_drop",
+  "name_with_impl": "bytes::bytes::owned_drop",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1177:1:1180:2",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::Ordering;",
+            "use core::sync::atomic::AtomicPtr;",
+            "use core::ptr::null_mut;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    struct OwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        drop: fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    unsafe extern \"C\" fn drop_fn(ptr: *mut ()) {",
+                  "        // Mock drop function that does nothing",
+                  "    }",
+                  "",
+                  "    // Initialize an AtomicPtr with a valid OwnedLifetime",
+                  "    let owned_lifetime = Box::into_raw(Box::new(OwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "        drop: drop_fn,",
+                  "    }));",
+                  "",
+                  "    let mut data = AtomicPtr::new(owned_lifetime as *mut ());",
+                  "",
+                  "    // Call the owned_drop function",
+                  "    unsafe {",
+                  "        owned_drop(&mut data, null_mut(), 0);",
+                  "    }",
+                  "",
+                  "    // Ensure that the reference count has decremented properly",
+                  "    assert_eq!(owned_lifetime.as_ref().unwrap().ref_cnt.load(Ordering::Relaxed), 0);",
+                  "    unsafe {",
+                  "        drop(Box::from_raw(owned_lifetime)); // Clean up the mock allocation",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1703:15\n     |\n1703 |         drop: drop_fn,\n     |               ^^^^^^^ expected safe fn, found unsafe fn\n     |\n     = note: expected fn pointer `fn(_)`\n                   found fn item `unsafe extern \"C\" fn(_) {drop_fn}`\n     = note: unsafe functions cannot be coerced into safe function pointers\n\nwarning: unused variable: `ptr`\n    --> src/bytes.rs:1696:34\n     |\n1696 |     unsafe extern \"C\" fn drop_fn(ptr: *mut ()) {\n     |                                  ^^^ help: if this is intentional, prefix it with an underscore: `_ptr`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"expected non-zero refcount and no underflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    struct OwnedLifetime {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        drop: fn(*mut ()),",
+                  "    }",
+                  "",
+                  "    unsafe extern \"C\" fn drop_fn(ptr: *mut ()) {",
+                  "        // Mock drop function that does nothing",
+                  "    }",
+                  "",
+                  "    // Initialize an AtomicPtr with a valid OwnedLifetime ",
+                  "    let owned_lifetime = Box::into_raw(Box::new(OwnedLifetime {",
+                  "        ref_cnt: AtomicUsize::new(0), // Setting it to 0 to induce underflow",
+                  "        drop: drop_fn,",
+                  "    }));",
+                  "",
+                  "    let mut data = AtomicPtr::new(owned_lifetime as *mut ());",
+                  "",
+                  "    // Call the owned_drop function which should panic",
+                  "    unsafe {",
+                  "        owned_drop(&mut data, null_mut(), 0);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `Ordering`\n    --> src/bytes.rs:1690:41\n     |\n1690 |     use core::sync::atomic::{AtomicPtr, Ordering};\n     |                                         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1704:15\n     |\n1704 |         drop: drop_fn,\n     |               ^^^^^^^ expected safe fn, found unsafe fn\n     |\n     = note: expected fn pointer `fn(_)`\n                   found fn item `unsafe extern \"C\" fn(_) {drop_fn}`\n     = note: unsafe functions cannot be coerced into safe function pointers\n\nwarning: unused variable: `ptr`\n    --> src/bytes.rs:1697:34\n     |\n1697 |     unsafe extern \"C\" fn drop_fn(ptr: *mut ()) {\n     |                                  ^^^ help: if this is intentional, prefix it with an underscore: `_ptr`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 4 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

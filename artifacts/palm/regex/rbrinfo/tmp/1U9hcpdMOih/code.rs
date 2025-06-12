@@ -1,0 +1,1 @@
+fn eq(&self, other: &char) -> bool { self.0 == *other as u32 }

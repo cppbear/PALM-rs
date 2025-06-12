@@ -1,0 +1,184 @@
+{
+  "name": "serde_json::read::read::SliceRead<'a>::skip_to_escape",
+  "name_with_impl": "serde_json::read::{impl#5}::skip_to_escape",
+  "mod_info": {
+    "name": "read",
+    "loc": "src/lib.rs:434:1:434:10"
+  },
+  "visible": false,
+  "loc": "src/read.rs:432:5:481:6",
+  "doc": "",
+  "code": [
+    "fn skip_to_escape(&mut self, forbid_control_characters: bool) {",
+    "    // Immediately bail-out on empty strings and consecutive escapes (e.g. \\u041b\\u0435)",
+    "    if self.index == self.slice.len()",
+    "        || is_escape(self.slice[self.index], forbid_control_characters)",
+    "    {",
+    "        return;",
+    "    }",
+    "    self.index += 1;",
+    "",
+    "    let rest = &self.slice[self.index..];",
+    "",
+    "    if !forbid_control_characters {",
+    "        self.index += memchr::memchr2(b'\"', b'\\\\', rest).unwrap_or(rest.len());",
+    "        return;",
+    "    }",
+    "",
+    "    // We wish to find the first byte in range 0x00..=0x1F or \" or \\. Ideally, we'd use",
+    "    // something akin to memchr3, but the memchr crate does not support this at the moment.",
+    "    // Therefore, we use a variation on Mycroft's algorithm [1] to provide performance better",
+    "    // than a naive loop. It runs faster than equivalent two-pass memchr2+SWAR code on",
+    "    // benchmarks and it's cross-platform, so probably the right fit.",
+    "    // [1]: https://groups.google.com/forum/#!original/comp.lang.c/2HtQXvg7iKc/xOJeipH6KLMJ",
+    "",
+    "    #[cfg(fast_arithmetic = \"64\")]",
+    "    type Chunk = u64;",
+    "    #[cfg(fast_arithmetic = \"32\")]",
+    "    type Chunk = u32;",
+    "",
+    "    const STEP: usize = mem::size_of::<Chunk>();",
+    "    const ONE_BYTES: Chunk = Chunk::MAX / 255; // 0x0101...01",
+    "",
+    "    for chunk in rest.chunks_exact(STEP) {",
+    "        let chars = Chunk::from_le_bytes(chunk.try_into().unwrap());",
+    "        let contains_ctrl = chars.wrapping_sub(ONE_BYTES * 0x20) & !chars;",
+    "        let chars_quote = chars ^ (ONE_BYTES * Chunk::from(b'\"'));",
+    "        let contains_quote = chars_quote.wrapping_sub(ONE_BYTES) & !chars_quote;",
+    "        let chars_backslash = chars ^ (ONE_BYTES * Chunk::from(b'\\\\'));",
+    "        let contains_backslash = chars_backslash.wrapping_sub(ONE_BYTES) & !chars_backslash;",
+    "        let masked = (contains_ctrl | contains_quote | contains_backslash) & (ONE_BYTES << 7);",
+    "        if masked != 0 {",
+    "            // SAFETY: chunk is in-bounds for slice",
+    "            self.index = unsafe { chunk.as_ptr().offset_from(self.slice.as_ptr()) } as usize",
+    "                + masked.trailing_zeros() as usize / 8;",
+    "            return;",
+    "        }",
+    "    }",
+    "",
+    "    self.index += rest.len() / STEP * STEP;",
+    "    self.skip_to_escape_slow();",
+    "}"
+  ],
+  "size": {
+    "chain": 3,
+    "contra": 0,
+    "min_set": 3
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "self.index == self.slice.len()",
+          "norm": null,
+          "value": "true",
+          "line": 434,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        7,
+        52
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "self.index == self.slice.len()",
+          "norm": null,
+          "value": "false",
+          "line": 434,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_escape(self.slice[self.index], forbid_control_characters)",
+          "norm": null,
+          "value": "true",
+          "line": 435,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        6,
+        7,
+        52
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "self.index == self.slice.len()",
+          "norm": null,
+          "value": "false",
+          "line": 434,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "is_escape(self.slice[self.index], forbid_control_characters)",
+          "norm": null,
+          "value": "false",
+          "line": 435,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.slice[self.index..]",
+          "norm": null,
+          "value": "",
+          "line": 441,
+          "bound": null,
+          "may_panic": true
+        },
+        {
+          "cond": "forbid_control_characters",
+          "norm": null,
+          "value": "false",
+          "line": 443,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        51,
+        52
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

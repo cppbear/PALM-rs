@@ -1,0 +1,411 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Default)]",
+      "struct MockResults {",
+      "    data: Vec<u8>,",
+      "}",
+      "",
+      "impl AsRef<[u8]> for MockResults {",
+      "    fn as_ref(&self) -> &[u8] {",
+      "        &self.data",
+      "    }",
+      "}",
+      "",
+      "impl AsMut<[u8]> for MockResults {",
+      "    fn as_mut(&mut self) -> &mut [u8] {",
+      "        &mut self.data",
+      "    }",
+      "}",
+      "",
+      "impl Default for MockResults {",
+      "    fn default() -> Self {",
+      "        Self { data: Vec::new() }",
+      "    }",
+      "}",
+      "",
+      "struct MockBlockRngCore {",
+      "    results: MockResults,",
+      "}",
+      "",
+      "impl BlockRngCore for MockBlockRngCore {",
+      "    type Item = u8;",
+      "    type Results = MockResults;",
+      "",
+      "    fn generate(&mut self, results: &mut Self::Results) {",
+      "        results.data.extend_from_slice(&[1, 2, 3, 4]); // sample data",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut core = MockBlockRngCore {",
+          "        results: MockResults::default(),",
+          "    };",
+          "    let mut rng = BlockRng::new(core);",
+          "    rng.reset();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults::default() };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    assert_eq!(rng.index(), 0);"
+          ],
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults::default() };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), rng.results.as_ref().len());"
+          ],
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults::default() };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    rng.results.data.extend_from_slice(&[5, 6, 7]);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 3);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults::default(),",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let mut core = MockBlockRngCore { results: MockResults::default() };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    assert_eq!(rng.index(), 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults::default(),",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let mut core = MockBlockRngCore { results: MockResults::default() };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), rng.results.as_ref().len());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults::default(),",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let mut core = MockBlockRngCore { results: MockResults::default() };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    rng.results.data.extend_from_slice(&[5, 6, 7]);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 3);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut core = MockBlockRngCore {",
+          "        results: MockResults { data: vec![1, 2, 3] },",
+          "    };",
+          "    let mut rng = BlockRng::new(core);",
+          "    rng.reset();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![1, 2, 3] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    let initial_index = rng.index();",
+            "    rng.reset();",
+            "    assert!(rng.index() == initial_index + 3);  // Assuming the length of results was 3 before reset."
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults { data: vec![1, 2, 3] },",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![1, 2, 3] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    let initial_index = rng.index();",
+            "    rng.reset();",
+            "    assert!(rng.index() == initial_index + 3);  // Assuming the length of results was 3 before reset.",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut core = MockBlockRngCore {",
+          "        results: MockResults { data: vec![1, 2, 3] },",
+          "    };",
+          "    let mut rng = BlockRng::new(core);",
+          "    rng.reset();",
+          "    let index = rng.index();",
+          "    assert_eq!(index, 3); // checking after reset",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![1, 2, 3] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let index = rng.index();",
+            "    assert_eq!(index, 3);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults { data: vec![1, 2, 3] },",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let index = rng.index();",
+            "    assert_eq!(index, 3); // checking after reset",
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![1, 2, 3] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let index = rng.index();",
+            "    assert_eq!(index, 3);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut core = MockBlockRngCore {",
+          "        results: MockResults { data: vec![0] },",
+          "    };",
+          "    let mut rng = BlockRng::new(core);",
+          "    rng.reset();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![0] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    assert_eq!(rng.index(), 4);"
+          ],
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![0] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 4);"
+          ],
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![0] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    rng.generate(&mut rng.results);",
+            "    assert_eq!(rng.index(), 4);"
+          ],
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![0] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    rng.generate(&mut rng.results);",
+            "    rng.results.data.clear();",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 0);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults { data: vec![0] },",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![0] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    assert_eq!(rng.index(), 4);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults { data: vec![0] },",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![0] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 4);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults { data: vec![0] },",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![0] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    rng.generate(&mut rng.results);",
+            "    assert_eq!(rng.index(), 4);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults { data: vec![0] },",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.reset();",
+            "    let mut core = MockBlockRngCore { results: MockResults { data: vec![0] } };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    rng.generate(&mut rng.results);",
+            "    rng.results.data.clear();",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 0);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut core = MockBlockRngCore {",
+          "        results: MockResults::default(),",
+          "    };",
+          "    let mut rng = BlockRng::new(core);",
+          "    rng.core.generate(&mut rng.results);",
+          "    rng.reset();",
+          "    assert_eq!(rng.index(), 4); // should equal generated results length",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut core = MockBlockRngCore { results: MockResults::default() };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.core.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 4);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut core = MockBlockRngCore {",
+            "        results: MockResults::default(),",
+            "    };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.core.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 4); // should equal generated results length",
+            "    let mut core = MockBlockRngCore { results: MockResults::default() };",
+            "    let mut rng = BlockRng::new(core);",
+            "    rng.core.generate(&mut rng.results);",
+            "    rng.reset();",
+            "    assert_eq!(rng.index(), 4);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,131 @@
+{
+  "name": "bytes::bytes::free_boxed_slice",
+  "name_with_impl": "bytes::bytes::free_boxed_slice",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1350:1:1353:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// may panic: Layout::from_size_align(cap, 1).unwrap() may panic in certain situations\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::alloc::Layout;",
+            "use std::ptr;",
+            "use std::alloc::dealloc;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::alloc::{dealloc, Layout};",
+                  "    use std::ptr;",
+                  "",
+                  "    unsafe {",
+                  "        let len = 10;",
+                  "        let buf: *mut u8 = std::alloc::alloc(Layout::from_size_align(len, 1).unwrap());",
+                  "        let offset: *const u8 = buf.add(2); // Offset within the allocated buffer",
+                  "",
+                  "        // Ensure that the allocated buffer is valid and contains enough space",
+                  "        for i in 0..len {",
+                  "            *buf.add(i) = i as u8;",
+                  "        }",
+                  "",
+                  "        // Free the boxed slice without panic",
+                  "        free_boxed_slice(buf, offset, 5);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::alloc::{dealloc, Layout};",
+                  "    use std::ptr;",
+                  "",
+                  "    unsafe {",
+                  "        let len = 10;",
+                  "        let buf: *mut u8 = std::alloc::alloc(Layout::from_size_align(len, 1).unwrap());",
+                  "        let offset: *const u8 = buf.add(11); // Invalid offset, out of bounds",
+                  "",
+                  "        // This should cause a panic in Layout::from_size_align",
+                  "        free_boxed_slice(buf, offset, 5);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::alloc::{dealloc, Layout};",
+                  "    use std::ptr;",
+                  "",
+                  "    unsafe {",
+                  "        let len = 0;",
+                  "        let buf: *mut u8 = std::alloc::alloc(Layout::from_size_align(1, 1).unwrap());",
+                  "        let offset: *const u8 = buf; // Valid offset at the start",
+                  "",
+                  "        // This should cause a panic in Layout::from_size_align when cap is invalid",
+                  "        free_boxed_slice(buf, offset, len);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

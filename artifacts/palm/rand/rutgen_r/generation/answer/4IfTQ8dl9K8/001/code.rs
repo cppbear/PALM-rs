@@ -1,0 +1,87 @@
+// Answer 0
+
+#[test]
+fn test_fill_bytes_with_non_empty_dest() {
+    struct DummyRandom {
+        state: u64,
+    }
+    
+    // This dummy struct simulates a random number generator
+    // Initialize the state to a known value
+    impl DummyRandom {
+        fn new(state: u64) -> Self {
+            DummyRandom { state }
+        }
+        
+        fn fill_bytes(&mut self, dest: &mut [u8]) {
+            // Here we should implement the logic that fills the bytes
+            for byte in dest.iter_mut() {
+                *byte = (self.state % 256) as u8; // Simple byte filling based on state
+                self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345); // Simple RNG Update
+            }
+        }
+    }
+    
+    let mut rng = DummyRandom::new(42);
+    let mut buffer = [0u8; 10];
+    
+    rng.fill_bytes(&mut buffer);
+    
+    assert_eq!(buffer, [42, 42, 42, 42, 42, 42, 42, 42, 42, 42]);
+}
+
+#[test]
+fn test_fill_bytes_with_empty_dest() {
+    struct DummyRandom {
+        state: u64,
+    }
+    
+    impl DummyRandom {
+        fn new(state: u64) -> Self {
+            DummyRandom { state }
+        }
+
+        fn fill_bytes(&mut self, dest: &mut [u8]) {
+            // Implement byte filling logic
+            for byte in dest.iter_mut() {
+                *byte = (self.state % 256) as u8;
+                self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
+            }
+        }
+    }
+    
+    let mut rng = DummyRandom::new(100);
+    let mut buffer: [u8; 0] = [];
+    
+    rng.fill_bytes(&mut buffer);
+    
+    // Expect no panic and no changes, since buffer is empty
+}
+
+#[should_panic]
+#[test]
+fn test_fill_bytes_with_null_dest() {
+    struct DummyRandom {
+        state: u64,
+    }
+    
+    impl DummyRandom {
+        fn new(state: u64) -> Self {
+            DummyRandom { state }
+        }
+
+        fn fill_bytes(&mut self, dest: &mut [u8]) {
+            for byte in dest.iter_mut() {
+                *byte = (self.state % 256) as u8;
+                self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
+            }
+        }
+    }
+    
+    let mut rng = DummyRandom::new(1);
+    
+    // This will panic because the reference to a null slice is invalid
+    let buffer: Option<&mut [u8]> = None;
+    rng.fill_bytes(buffer.unwrap()); // This will cause a panic
+}
+

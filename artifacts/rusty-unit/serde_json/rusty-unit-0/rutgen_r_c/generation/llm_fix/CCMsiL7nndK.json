@@ -1,0 +1,301 @@
+{
+  "name": "serde_json::ser::format_escaped_str",
+  "name_with_impl": "serde_json::ser::format_escaped_str",
+  "mod_info": {
+    "name": "ser",
+    "loc": "src/lib.rs:423:1:423:13"
+  },
+  "visible": false,
+  "loc": "src/ser.rs:2081:1:2089:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: formatter.begin_string(writer) matches core::result::Result::Err(err) is true\n",
+        "// expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockWriter;",
+                  "",
+                  "    impl io::Write for MockWriter {",
+                  "        fn write(&mut self, _: &[u8]) -> io::Result<usize> {",
+                  "            Ok(0)",
+                  "        }",
+                  "",
+                  "        fn flush(&mut self) -> io::Result<()> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockFormatter {",
+                  "        should_err: bool,",
+                  "    }",
+                  "",
+                  "    impl MockFormatter {",
+                  "        fn new(should_err: bool) -> Self {",
+                  "            MockFormatter { should_err }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Formatter for MockFormatter {",
+                  "        fn begin_string<W>(&mut self, _: &mut W) -> io::Result<()>",
+                  "        where",
+                  "            W: ?Sized + io::Write,",
+                  "        {",
+                  "            if self.should_err {",
+                  "                Err(io::Error::new(io::ErrorKind::Other, \"begin_string error\"))",
+                  "            } else {",
+                  "                Ok(())",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn end_string<W>(&mut self, _: &mut W) -> io::Result<()> ",
+                  "        where",
+                  "            W: ?Sized + io::Write,",
+                  "        {",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn write_string_fragment<W>(&mut self, _: &mut W, _: &str) -> io::Result<()>",
+                  "        where",
+                  "            W: ?Sized + io::Write,",
+                  "        {",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn write_char_escape<W>(&mut self, _: &mut W, _: CharEscape) -> io::Result<()>",
+                  "        where",
+                  "            W: ?Sized + io::Write,",
+                  "        {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = MockWriter;",
+                  "    let mut formatter_err = MockFormatter::new(true);",
+                  "    ",
+                  "    let result = format_escaped_str(&mut writer, &mut formatter_err, \"test\");",
+                  "    ",
+                  "    assert!(result.is_err());",
+                  "",
+                  "    let mut formatter_ok = MockFormatter::new(false);",
+                  "    let result_ok = format_escaped_str(&mut writer, &mut formatter_ok, \"test\");",
+                  "    ",
+                  "    assert!(result_ok.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: formatter.begin_string(writer) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: format_escaped_str_contents(writer, formatter, value) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: format_escaped_str_contents(writer, formatter, value) matches core::result::Result::Err(err) is true\n",
+        "// expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockWriter {",
+                  "        output: String,",
+                  "    }",
+                  "",
+                  "    impl io::Write for MockWriter {",
+                  "        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {",
+                  "            self.output.push_str(std::str::from_utf8(buf).unwrap());",
+                  "            Ok(buf.len())",
+                  "        }",
+                  "        fn flush(&mut self) -> io::Result<()> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockFormatter {",
+                  "        begin_called: bool,",
+                  "    }",
+                  "",
+                  "    impl MockFormatter {",
+                  "        fn new() -> Self {",
+                  "            MockFormatter { begin_called: false }",
+                  "        }",
+                  "    }",
+                  "",
+                  "       impl Formatter for MockFormatter {",
+                  "           fn begin_string<W>(&mut self, _writer: &mut W) -> io::Result<()>",
+                  "           where",
+                  "               W: ?Sized + io::Write,",
+                  "           {",
+                  "               self.begin_called = true;",
+                  "               Ok(())",
+                  "           }",
+                  "           fn end_string<W>(&mut self, _writer: &mut W) -> io::Result<()>",
+                  "           where",
+                  "               W: ?Sized + io::Write,",
+                  "           {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = MockWriter { output: String::new() };",
+                  "    let mut formatter = MockFormatter::new();",
+                  "    let result = format_escaped_str(&mut writer, &mut formatter, \"test\\\\nvalue\");",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    assert!(formatter.begin_called);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockFailingWriter;",
+                  "",
+                  "    impl io::Write for MockFailingWriter {",
+                  "        fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {",
+                  "            Err(io::Error::new(io::ErrorKind::Other, \"write error\"))",
+                  "        }",
+                  "        fn flush(&mut self) -> io::Result<()> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockFormatter {",
+                  "        begin_called: bool,",
+                  "    }",
+                  "",
+                  "    impl MockFormatter {",
+                  "        fn new() -> Self {",
+                  "            MockFormatter { begin_called: false }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Formatter for MockFormatter {",
+                  "      fn begin_string<W>(&mut self, _writer: &mut W) -> io::Result<()>  ",
+                  "      where  ",
+                  "          W: ?Sized + io::Write,  ",
+                  "      {  ",
+                  "          self.begin_called = true;  ",
+                  "          Ok(())  ",
+                  "      }  ",
+                  "      fn end_string<W>(&mut self, _writer: &mut W) -> io::Result<()>   ",
+                  "      where  ",
+                  "          W: ?Sized + io::Write,  ",
+                  "      {  ",
+                  "           Ok(())  ",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = MockFailingWriter;",
+                  "    let mut formatter = MockFormatter::new();",
+                  "    let result = format_escaped_str(&mut writer, &mut formatter, \"test\\\\nvalue\");",
+                  "    ",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct PanicFormatter;",
+                  "",
+                  "   impl Formatter for PanicFormatter {  ",
+                  "       fn begin_string<W>(&mut self, _writer: &mut W) -> io::Result<()>  ",
+                  "       where  ",
+                  "           W: ?Sized + io::Write,  ",
+                  "       {  ",
+                  "           panic!(\"Panic in begin string\");  ",
+                  "       }  ",
+                  "       fn end_string<W>(&mut self, _writer: &mut W) -> io::Result<()>  ",
+                  "       where  ",
+                  "           W: ?Sized + io::Write,  ",
+                  "       {  ",
+                  "           Ok(())  ",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = vec![];",
+                  "    let mut formatter = PanicFormatter;",
+                  "    let _ = format_escaped_str(&mut writer, &mut formatter, \"test panic\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

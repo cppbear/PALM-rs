@@ -1,0 +1,1 @@
+pub fn available() -> bool { false }

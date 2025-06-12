@@ -1,0 +1,336 @@
+{
+  "name": "once_cell::sync::sync::Lazy<T, F>::force_mut",
+  "name_with_impl": "once_cell::sync::{impl#11}::force_mut",
+  "mod_info": {
+    "name": "sync",
+    "loc": "src/lib.rs:863:1:1409:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:1327:9:1336:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: this.cell.get_mut().is_none() is true\n",
+        "// constraint: this.init.get_mut().take() matches Some(f) is true\n",
+        "// constraint: this.init.get_mut().take() matches Some(f) is true\n",
+        "// expected return value/type: this.cell.get_mut().unwrap_or_else(|| unreachable!())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::cell::Cell;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::cell::Cell;",
+                  "",
+                  "    struct TestLazy {",
+                  "        cell: OnceCell<i32>,",
+                  "        init: Cell<Option<fn() -> i32>>,",
+                  "    }",
+                  "",
+                  "    impl TestLazy {",
+                  "        fn new(init_fn: fn() -> i32) -> Self {",
+                  "            TestLazy {",
+                  "                cell: OnceCell::new(),",
+                  "                init: Cell::new(Some(init_fn)),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut lazy = TestLazy::new(|| 42);",
+                  "    let result = Lazy::<i32>::force_mut(&mut lazy);",
+                  "    assert_eq!(*result, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0308]: mismatched types\n    --> src/lib.rs:1437:41\n     |\n1437 |     let result = Lazy::<i32>::force_mut(&mut lazy);\n     |                  ---------------------- ^^^^^^^^^ expected `&mut Lazy<i32>`, found `&mut TestLazy`\n     |                  |\n     |                  arguments to this function are incorrect\n     |\n     = note: expected mutable reference `&mut sync::Lazy<i32>`\n                found mutable reference `&mut TestLazy`\nnote: associated function defined here\n    --> src/lib.rs:1327:16\n     |\n1327 |         pub fn force_mut(this: &mut Lazy<T, F>) -> &mut T {\n     |                ^^^^^^^^^ ---------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestLazy {",
+                  "        cell: OnceCell<i32>,",
+                  "        init: Cell<Option<fn() -> i32>>,",
+                  "    }",
+                  "",
+                  "    impl TestLazy {",
+                  "        fn new(init_fn: Option<fn() -> i32>) -> Self {",
+                  "            TestLazy {",
+                  "                cell: OnceCell::new(),",
+                  "                init: Cell::new(init_fn),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut lazy = TestLazy::new(None);",
+                  "    let _result = Lazy::<i32>::force_mut(&mut lazy);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0308]: mismatched types\n    --> src/lib.rs:1436:42\n     |\n1436 |     let _result = Lazy::<i32>::force_mut(&mut lazy);\n     |                   ---------------------- ^^^^^^^^^ expected `&mut Lazy<i32>`, found `&mut TestLazy`\n     |                   |\n     |                   arguments to this function are incorrect\n     |\n     = note: expected mutable reference `&mut sync::Lazy<i32>`\n                found mutable reference `&mut TestLazy`\nnote: associated function defined here\n    --> src/lib.rs:1327:16\n     |\n1327 |         pub fn force_mut(this: &mut Lazy<T, F>) -> &mut T {\n     |                ^^^^^^^^^ ---------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestLazy {",
+                  "       cell: OnceCell<i32>,",
+                  "       init: Cell<Option<fn() -> i32>>,",
+                  "   }",
+                  "   ",
+                  "   impl TestLazy {",
+                  "       fn new(init_fn: fn() -> i32) -> Self {",
+                  "           TestLazy {",
+                  "               cell: OnceCell::new(),",
+                  "               init: Cell::new(Some(init_fn)),",
+                  "           }",
+                  "       }",
+                  "   }",
+                  "   ",
+                  "   let mut lazy: Lazy<i32, fn() -> i32> = Lazy::new(|| 100);",
+                  "   let first_result = Lazy::<i32, fn() -> i32>::force_mut(&mut lazy);",
+                  "   assert_eq!(*first_result, 100);",
+                  "   ",
+                  "   let second_result = Lazy::<i32, fn() -> i32>::force_mut(&mut lazy);",
+                  "   assert_eq!(first_result as *mut _, second_result as *mut _); // Ensure same reference is returned",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0499]: cannot borrow `lazy` as mutable more than once at a time\n    --> src/lib.rs:1438:60\n     |\n1435 |    let first_result = Lazy::<i32, fn() -> i32>::force_mut(&mut lazy);\n     |                                                           --------- first mutable borrow occurs here\n...\n1438 |    let second_result = Lazy::<i32, fn() -> i32>::force_mut(&mut lazy);\n     |                                                            ^^^^^^^^^ second mutable borrow occurs here\n1439 |    assert_eq!(first_result as *mut _, second_result as *mut _); // Ensure same reference is returned\n     |               ------------ first borrow later used here\n\nFor more information about this error, try `rustc --explain E0499`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: this.cell.get_mut().is_none() is true\n",
+        "// constraint: this.init.get_mut().take() matches None is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestLazy {",
+                  "       cell: OnceCell<i32>,",
+                  "       init: Cell<Option<fn() -> i32>>,",
+                  "   }",
+                  "   ",
+                  "   impl TestLazy {",
+                  "       fn new(f: fn() -> i32) -> Self {",
+                  "           TestLazy {",
+                  "               cell: OnceCell::new(),",
+                  "               init: Cell::new(Some(f)),",
+                  "           }",
+                  "       }",
+                  "   }",
+                  "   ",
+                  "   let mut lazy = Lazy::new(|| 42);",
+                  "   let result: &mut i32 = Lazy::force_mut(&mut lazy);",
+                  "   assert_eq!(*result, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   struct TestLazy {",
+                  "       cell: OnceCell<i32>,",
+                  "       init: Cell<Option<fn() -> i32>>,",
+                  "   }",
+                  "",
+                  "   impl TestLazy {",
+                  "       fn new() -> Self {",
+                  "           TestLazy {",
+                  "               cell: OnceCell::new(),",
+                  "               init: Cell::new(None),",
+                  "           }",
+                  "       }",
+                  "   }",
+                  "",
+                  "   let mut lazy = Lazy::new(|| TestLazy::new());",
+                  "   Lazy::force_mut(&mut lazy);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: this.cell.get_mut().is_none() is false\n",
+        "// expected return value/type: this.cell.get_mut().unwrap_or_else(|| unreachable!())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::with_value(42),",
+                  "        init: Cell::new(Some(|| 0)), // Init function will not be called",
+                  "    };",
+                  "    ",
+                  "    let value: &mut i32 = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let mut lazy: Lazy<(), fn() -> ()> = Lazy {",
+                  "       cell: OnceCell::new(),",
+                  "       init: Cell::new(None), // No function to initialize, will cause panic",
+                  "   };",
+                  "",
+                  "   Lazy::force_mut(&mut lazy);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(|| 99)), // Init function that will be called",
+                  "    };",
+                  "",
+                  "    let value_before = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value_before, 99); // First call initializes the value",
+                  "",
+                  "    let value_after = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value_after, 99); // Call again should still return the same value",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,634 @@
+{
+  "name": "bytes::buf::chain::<buf::chain::Chain<T, U> as buf::buf_impl::Buf>::copy_to_bytes",
+  "name_with_impl": "bytes::buf::chain::{impl#1}::copy_to_bytes",
+  "mod_info": {
+    "name": "buf::chain",
+    "loc": "src/buf/mod.rs:19:1:19:11"
+  },
+  "visible": true,
+  "loc": "src/buf/chain.rs:172:5:188:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: a_rem >= len is true, with bound a_rem == len\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockA {",
+                  "        remaining: usize,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "    ",
+                  "    impl MockA {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "        ",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            self.data.split_off(len).into()",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    struct MockB {",
+                  "        remaining: usize,",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "    ",
+                  "    impl MockB {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "        ",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            self.data.split_off(len).into()",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    struct MockChain {",
+                  "        a: MockA,",
+                  "        b: MockB,",
+                  "    }",
+                  "    ",
+                  "    impl MockChain {",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            let a_rem = self.a.remaining();",
+                  "            if a_rem >= len {",
+                  "                self.a.copy_to_bytes(len)",
+                  "            } else if a_rem == 0 {",
+                  "                self.b.copy_to_bytes(len)",
+                  "            } else {",
+                  "                assert!(",
+                  "                    len - a_rem <= self.b.remaining(),",
+                  "                    \"`len` greater than remaining\"",
+                  "                );",
+                  "                let mut ret = crate::BytesMut::with_capacity(len);",
+                  "                ret.put(&mut self.a);",
+                  "                ret.put((&mut self.b).take(len - a_rem));",
+                  "                ret.freeze()",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    let a_data = vec![1, 2, 3, 4];",
+                  "    let b_data = vec![5, 6, 7, 8];",
+                  "    ",
+                  "    let mut chain = MockChain {",
+                  "        a: MockA {",
+                  "            remaining: 4,",
+                  "            data: a_data,",
+                  "        },",
+                  "        b: MockB {",
+                  "            remaining: 4,",
+                  "            data: b_data,",
+                  "        },",
+                  "    };",
+                  "",
+                  "    let result = chain.copy_to_bytes(4);",
+                  "    ",
+                  "    assert_eq!(result.len(), 4);",
+                  "    assert_eq!(result.as_ref(), &[1, 2, 3, 4]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n   --> src/buf/chain.rs:244:8\n    |\n244 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0277]: the trait bound `MockA: buf_impl::Buf` is not satisfied\n    --> src/buf/chain.rs:296:30\n     |\n296  |                 ret.put(&mut self.a);\n     |                     ---      ^^^^^^ the trait `buf_impl::Buf` is not implemented for `MockA`, which is required by `&mut MockA: buf_impl::Buf`\n     |                     |\n     |                     required by a bound introduced by this call\n     |\n     = help: the following other types implement trait `buf_impl::Buf`:\n               &[u8]\n               &mut T\n               Box<T>\n               BytesMut\n               VecDeque<u8>\n               bytes::Bytes\n               chain::Chain<T, U>\n               std::io::Cursor<T>\n               take::Take<T>\nnote: required for `&mut MockA` to implement `buf_impl::Buf`\n    --> src/buf/buf_impl.rs:2881:23\n     |\n2881 | impl<T: Buf + ?Sized> Buf for &mut T {\n     |         ---           ^^^     ^^^^^^\n     |         |\n     |         unsatisfied trait bound introduced here\nnote: required by a bound in `buf_mut::BufMut::put`\n    --> src/buf/buf_mut.rs:202:15\n     |\n202  |     fn put<T: super::Buf>(&mut self, mut src: T)\n     |               ^^^^^^^^^^ required by this bound in `BufMut::put`\n\nerror[E0599]: the method `take` exists for mutable reference `&mut MockB`, but its trait bounds were not satisfied\n    --> src/buf/chain.rs:297:39\n     |\n263  |     struct MockB {\n     |     ------------ doesn't satisfy `MockB: Iterator` or `MockB: buf_impl::Buf`\n...\n297  |                 ret.put((&mut self.b).take(len - a_rem));\n     |                                       ^^^^ method cannot be called on `&mut MockB` due to unsatisfied trait bounds\n     |\nnote: the following trait bounds were not satisfied:\n      `&mut MockB: buf_impl::Buf`\n      `MockB: buf_impl::Buf`\n    --> src/buf/buf_impl.rs:2881:9\n     |\n2881 | impl<T: Buf + ?Sized> Buf for &mut T {\n     |         ^^^           ---     ------\n     |         |\n     |         unsatisfied trait bound introduced here\n     = note: the following trait bounds were not satisfied:\n             `MockB: Iterator`\n             which is required by `&mut MockB: Iterator`\n             `&mut MockB: Iterator`\n             which is required by `&mut &mut MockB: Iterator`\nnote: the traits `Iterator` and `buf_impl::Buf` must be implemented\n    --> src/buf/buf_impl.rs:117:1\n     |\n117  | pub trait Buf {\n     | ^^^^^^^^^^^^^\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/iter/traits/iterator.rs:44:1\n     |\n44   | pub trait Iterator {\n     | ^^^^^^^^^^^^^^^^^^\n     = help: items from traits can only be used if the trait is implemented and in scope\n     = note: the following traits define an item `take`, perhaps you need to implement one of them:\n             candidate #1: `buf_impl::Buf`\n             candidate #2: `std::io::Read`\n     = note: the trait `Iterator` defines an item `take`, but is explicitly unimplemented\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"`len` greater than remaining\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockA {",
+                  "        remaining: usize,",
+                  "    }",
+                  "    ",
+                  "    impl MockA {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "        ",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            // Implementation not needed for this test",
+                  "            crate::Bytes::new()",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    struct MockB {",
+                  "        remaining: usize,",
+                  "    }",
+                  "    ",
+                  "    impl MockB {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "        ",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            // Implementation not needed for this test",
+                  "            crate::Bytes::new()",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    struct MockChain {",
+                  "        a: MockA,",
+                  "        b: MockB,",
+                  "    }",
+                  "    ",
+                  "    impl MockChain {",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            let a_rem = self.a.remaining();",
+                  "            if a_rem >= len {",
+                  "                self.a.copy_to_bytes(len)",
+                  "            } else if a_rem == 0 {",
+                  "                self.b.copy_to_bytes(len)",
+                  "            } else {",
+                  "                assert!(",
+                  "                    len - a_rem <= self.b.remaining(),",
+                  "                    \"`len` greater than remaining\"",
+                  "                );",
+                  "                crate::Bytes::new()",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "    ",
+                  "    let mut chain = MockChain {",
+                  "        a: MockA { remaining: 2 },",
+                  "        b: MockB { remaining: 1 },",
+                  "    };",
+                  "    ",
+                  "    chain.copy_to_bytes(4);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: a_rem >= len is false\n",
+        "// constraint: a_rem == 0 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct A {",
+                  "        remaining: usize,",
+                  "    }",
+                  "    ",
+                  "    impl A {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            // Mock implementation",
+                  "            crate::Bytes::from(vec![0; len])",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct B {",
+                  "        remaining: usize,",
+                  "    }",
+                  "    ",
+                  "    impl B {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            // Mock implementation",
+                  "            crate::Bytes::from(vec![1; len])",
+                  "        }",
+                  "",
+                  "        fn take(&mut self, len: usize) -> B {",
+                  "            if len > self.remaining {",
+                  "                len = self.remaining;",
+                  "            }",
+                  "            self.remaining -= len;",
+                  "            B { remaining: len }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Chain {",
+                  "        a: A,",
+                  "        b: B,",
+                  "    }",
+                  "",
+                  "    impl Chain {",
+                  "        fn new(a_remaining: usize, b_remaining: usize) -> Self {",
+                  "            Self {",
+                  "                a: A { remaining: a_remaining },",
+                  "                b: B { remaining: b_remaining },",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            let a_rem = self.a.remaining();",
+                  "            if a_rem >= len {",
+                  "                self.a.copy_to_bytes(len)",
+                  "            } else if a_rem == 0 {",
+                  "                self.b.copy_to_bytes(len)",
+                  "            } else {",
+                  "                assert!(",
+                  "                    len - a_rem <= self.b.remaining(),",
+                  "                    \"`len` greater than remaining\"",
+                  "                );",
+                  "                let mut ret = crate::BytesMut::with_capacity(len);",
+                  "                ret.put(&mut self.a);",
+                  "                ret.put((&mut self.b).take(len - a_rem));",
+                  "                ret.freeze()",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Test case: a_rem is less than len and greater than 0",
+                  "    let mut chain = Chain::new(2, 5);",
+                  "    let result = chain.copy_to_bytes(4);",
+                  "    assert_eq!(result.len(), 4); // Expecting total length of 4 after merging",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "    Blocking waiting for file lock on package cache\n   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n   --> src/buf/chain.rs:244:8\n    |\n244 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0277]: the trait bound `A: buf_impl::Buf` is not satisfied\n    --> src/buf/chain.rs:311:30\n     |\n311  |                 ret.put(&mut self.a);\n     |                     ---      ^^^^^^ the trait `buf_impl::Buf` is not implemented for `A`, which is required by `&mut A: buf_impl::Buf`\n     |                     |\n     |                     required by a bound introduced by this call\n     |\n     = help: the following other types implement trait `buf_impl::Buf`:\n               &[u8]\n               &mut T\n               Box<T>\n               BytesMut\n               VecDeque<u8>\n               bytes::Bytes\n               chain::Chain<T, U>\n               std::io::Cursor<T>\n               take::Take<T>\nnote: required for `&mut A` to implement `buf_impl::Buf`\n    --> src/buf/buf_impl.rs:2881:23\n     |\n2881 | impl<T: Buf + ?Sized> Buf for &mut T {\n     |         ---           ^^^     ^^^^^^\n     |         |\n     |         unsatisfied trait bound introduced here\nnote: required by a bound in `buf_mut::BufMut::put`\n    --> src/buf/buf_mut.rs:202:15\n     |\n202  |     fn put<T: super::Buf>(&mut self, mut src: T)\n     |               ^^^^^^^^^^ required by this bound in `BufMut::put`\n\nerror[E0277]: the trait bound `B: buf_impl::Buf` is not satisfied\n   --> src/buf/chain.rs:312:25\n    |\n312 |                 ret.put((&mut self.b).take(len - a_rem));\n    |                     --- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `buf_impl::Buf` is not implemented for `B`\n    |                     |\n    |                     required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `buf_impl::Buf`:\n              &[u8]\n              &mut T\n              Box<T>\n              BytesMut\n              VecDeque<u8>\n              bytes::Bytes\n              chain::Chain<T, U>\n              std::io::Cursor<T>\n              take::Take<T>\nnote: required by a bound in `buf_mut::BufMut::put`\n   --> src/buf/buf_mut.rs:202:15\n    |\n202 |     fn put<T: super::Buf>(&mut self, mut src: T)\n    |               ^^^^^^^^^^ required by this bound in `BufMut::put`\n\nerror[E0384]: cannot assign to immutable argument `len`\n   --> src/buf/chain.rs:279:17\n    |\n279 |                 len = self.remaining;\n    |                 ^^^^^^^^^^^^^^^^^^^^ cannot assign to immutable argument\n    |\nhelp: consider making this binding mutable\n    |\n277 |         fn take(&mut self, mut len: usize) -> B {\n    |                            +++\n\nSome errors have detailed explanations: E0277, E0384.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 3 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct A {",
+                  "        remaining: usize,",
+                  "    }",
+                  "    ",
+                  "    impl A {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            crate::Bytes::from(vec![0; len])",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct B {",
+                  "        remaining: usize,",
+                  "    }",
+                  "    ",
+                  "    impl B {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.remaining",
+                  "        }",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            crate::Bytes::from(vec![1; len])",
+                  "        }",
+                  "",
+                  "        fn take(&mut self, len: usize) -> B {",
+                  "            if len > self.remaining {",
+                  "                len = self.remaining;",
+                  "            }",
+                  "            self.remaining -= len;",
+                  "            B { remaining: len }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Chain {",
+                  "        a: A,",
+                  "        b: B,",
+                  "    }",
+                  "",
+                  "    impl Chain {",
+                  "        fn new(a_remaining: usize, b_remaining: usize) -> Self {",
+                  "            Self {",
+                  "                a: A { remaining: a_remaining },",
+                  "                b: B { remaining: b_remaining },",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            let a_rem = self.a.remaining();",
+                  "            if a_rem >= len {",
+                  "                self.a.copy_to_bytes(len)",
+                  "            } else if a_rem == 0 {",
+                  "                self.b.copy_to_bytes(len)",
+                  "            } else {",
+                  "                assert!(",
+                  "                    len - a_rem <= self.b.remaining(),",
+                  "                    \"`len` greater than remaining\"",
+                  "                );",
+                  "                let mut ret = crate::BytesMut::with_capacity(len);",
+                  "                ret.put(&mut self.a);",
+                  "                ret.put((&mut self.b).take(len - a_rem));",
+                  "                ret.freeze()",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Test case: a_rem is less than len but greater than 0, b_remaining sufficient",
+                  "    let mut chain = Chain::new(3, 2);",
+                  "    let result = chain.copy_to_bytes(5);",
+                  "    assert_eq!(result.len(), 5); // Expecting total length of 5 after merging",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n   --> src/buf/chain.rs:244:8\n    |\n244 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0277]: the trait bound `A: buf_impl::Buf` is not satisfied\n    --> src/buf/chain.rs:309:30\n     |\n309  |                 ret.put(&mut self.a);\n     |                     ---      ^^^^^^ the trait `buf_impl::Buf` is not implemented for `A`, which is required by `&mut A: buf_impl::Buf`\n     |                     |\n     |                     required by a bound introduced by this call\n     |\n     = help: the following other types implement trait `buf_impl::Buf`:\n               &[u8]\n               &mut T\n               Box<T>\n               BytesMut\n               VecDeque<u8>\n               bytes::Bytes\n               chain::Chain<T, U>\n               std::io::Cursor<T>\n               take::Take<T>\nnote: required for `&mut A` to implement `buf_impl::Buf`\n    --> src/buf/buf_impl.rs:2881:23\n     |\n2881 | impl<T: Buf + ?Sized> Buf for &mut T {\n     |         ---           ^^^     ^^^^^^\n     |         |\n     |         unsatisfied trait bound introduced here\nnote: required by a bound in `buf_mut::BufMut::put`\n    --> src/buf/buf_mut.rs:202:15\n     |\n202  |     fn put<T: super::Buf>(&mut self, mut src: T)\n     |               ^^^^^^^^^^ required by this bound in `BufMut::put`\n\nerror[E0277]: the trait bound `B: buf_impl::Buf` is not satisfied\n   --> src/buf/chain.rs:310:25\n    |\n310 |                 ret.put((&mut self.b).take(len - a_rem));\n    |                     --- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `buf_impl::Buf` is not implemented for `B`\n    |                     |\n    |                     required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `buf_impl::Buf`:\n              &[u8]\n              &mut T\n              Box<T>\n              BytesMut\n              VecDeque<u8>\n              bytes::Bytes\n              chain::Chain<T, U>\n              std::io::Cursor<T>\n              take::Take<T>\nnote: required by a bound in `buf_mut::BufMut::put`\n   --> src/buf/buf_mut.rs:202:15\n    |\n202 |     fn put<T: super::Buf>(&mut self, mut src: T)\n    |               ^^^^^^^^^^ required by this bound in `BufMut::put`\n\nerror[E0384]: cannot assign to immutable argument `len`\n   --> src/buf/chain.rs:277:17\n    |\n277 |                 len = self.remaining;\n    |                 ^^^^^^^^^^^^^^^^^^^^ cannot assign to immutable argument\n    |\nhelp: consider making this binding mutable\n    |\n275 |         fn take(&mut self, mut len: usize) -> B {\n    |                            +++\n\nSome errors have detailed explanations: E0277, E0384.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 3 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{ ",
+                  "    struct A { ",
+                  "        remaining: usize, ",
+                  "    } ",
+                  "",
+                  "    impl A { ",
+                  "        fn remaining(&self) -> usize { ",
+                  "            self.remaining ",
+                  "        } ",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes { ",
+                  "            crate::Bytes::from(vec![0; len]) ",
+                  "        }",
+                  "    } ",
+                  "",
+                  "    struct B { ",
+                  "        remaining: usize, ",
+                  "    } ",
+                  "",
+                  "    impl B { ",
+                  "        fn remaining(&self) -> usize { ",
+                  "            self.remaining ",
+                  "        } ",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes { ",
+                  "            crate::Bytes::from(vec![1; len]) ",
+                  "        } ",
+                  "",
+                  "        fn take(&mut self, len: usize) -> B { ",
+                  "            if len > self.remaining { ",
+                  "                len = self.remaining; ",
+                  "            } ",
+                  "            self.remaining -= len; ",
+                  "            B { remaining: len } ",
+                  "        }",
+                  "    } ",
+                  "",
+                  "    struct Chain { ",
+                  "        a: A, ",
+                  "        b: B, ",
+                  "    } ",
+                  "",
+                  "    impl Chain { ",
+                  "        fn new(a_remaining: usize, b_remaining: usize) -> Self { ",
+                  "            Self { ",
+                  "                a: A { remaining: a_remaining }, ",
+                  "                b: B { remaining: b_remaining }, ",
+                  "            } ",
+                  "        }",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes { ",
+                  "            let a_rem = self.a.remaining(); ",
+                  "            if a_rem >= len { ",
+                  "                self.a.copy_to_bytes(len) ",
+                  "            } else if a_rem == 0 { ",
+                  "                self.b.copy_to_bytes(len) ",
+                  "            } else { ",
+                  "                assert!(len - a_rem <= self.b.remaining(), \"`len` greater than remaining\"); ",
+                  "                let mut ret = crate::BytesMut::with_capacity(len); ",
+                  "                ret.put(&mut self.a); ",
+                  "                ret.put((&mut self.b).take(len - a_rem)); ",
+                  "                ret.freeze() ",
+                  "            } ",
+                  "        } ",
+                  "    } ",
+                  "",
+                  "    // Trigger panic by ensuring `len - a_rem` exceeds b.remaining",
+                  "    let mut chain = Chain::new(2, 1);",
+                  "    let _result = chain.copy_to_bytes(4); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n   --> src/buf/chain.rs:244:8\n    |\n244 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0277]: the trait bound `A: buf_impl::Buf` is not satisfied\n    --> src/buf/chain.rs:307:30\n     |\n307  |                 ret.put(&mut self.a); \n     |                     ---      ^^^^^^ the trait `buf_impl::Buf` is not implemented for `A`, which is required by `&mut A: buf_impl::Buf`\n     |                     |\n     |                     required by a bound introduced by this call\n     |\n     = help: the following other types implement trait `buf_impl::Buf`:\n               &[u8]\n               &mut T\n               Box<T>\n               BytesMut\n               VecDeque<u8>\n               bytes::Bytes\n               chain::Chain<T, U>\n               std::io::Cursor<T>\n               take::Take<T>\nnote: required for `&mut A` to implement `buf_impl::Buf`\n    --> src/buf/buf_impl.rs:2881:23\n     |\n2881 | impl<T: Buf + ?Sized> Buf for &mut T {\n     |         ---           ^^^     ^^^^^^\n     |         |\n     |         unsatisfied trait bound introduced here\nnote: required by a bound in `buf_mut::BufMut::put`\n    --> src/buf/buf_mut.rs:202:15\n     |\n202  |     fn put<T: super::Buf>(&mut self, mut src: T)\n     |               ^^^^^^^^^^ required by this bound in `BufMut::put`\n\nerror[E0277]: the trait bound `B: buf_impl::Buf` is not satisfied\n   --> src/buf/chain.rs:308:25\n    |\n308 |                 ret.put((&mut self.b).take(len - a_rem)); \n    |                     --- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `buf_impl::Buf` is not implemented for `B`\n    |                     |\n    |                     required by a bound introduced by this call\n    |\n    = help: the following other types implement trait `buf_impl::Buf`:\n              &[u8]\n              &mut T\n              Box<T>\n              BytesMut\n              VecDeque<u8>\n              bytes::Bytes\n              chain::Chain<T, U>\n              std::io::Cursor<T>\n              take::Take<T>\nnote: required by a bound in `buf_mut::BufMut::put`\n   --> src/buf/buf_mut.rs:202:15\n    |\n202 |     fn put<T: super::Buf>(&mut self, mut src: T)\n    |               ^^^^^^^^^^ required by this bound in `BufMut::put`\n\nerror[E0384]: cannot assign to immutable argument `len`\n   --> src/buf/chain.rs:278:17\n    |\n278 |                 len = self.remaining; \n    |                 ^^^^^^^^^^^^^^^^^^^^ cannot assign to immutable argument\n    |\nhelp: consider making this binding mutable\n    |\n276 |         fn take(&mut self, mut len: usize) -> B { \n    |                            +++\n\nSome errors have detailed explanations: E0277, E0384.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 3 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: a_rem >= len is false\n",
+        "// constraint: a_rem == 0 is true\n",
+        "// constraint: len - a_rem <= self.b.remaining() is true, with bound len - a_rem == self.b.remaining()\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockA {",
+                  "        data: Vec<u8>,",
+                  "        position: usize,",
+                  "    }",
+                  "",
+                  "    impl MockA {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.data.len() - self.position",
+                  "        }",
+                  "        ",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            let result = self.data[self.position..self.position + len].to_vec();",
+                  "            self.position += len;",
+                  "            crate::Bytes::from(result)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockB {",
+                  "        data: Vec<u8>,",
+                  "        position: usize,",
+                  "    }",
+                  "",
+                  "    impl MockB {",
+                  "        fn remaining(&self) -> usize {",
+                  "            self.data.len() - self.position",
+                  "        }",
+                  "",
+                  "        fn copy_to_bytes(&mut self, len: usize) -> crate::Bytes {",
+                  "            let result = self.data[self.position..self.position + len].to_vec();",
+                  "            self.position += len;",
+                  "            crate::Bytes::from(result)",
+                  "        }",
+                  "        ",
+                  "        fn take(&mut self, len: usize) -> Vec<u8> {",
+                  "            let take_len = len.min(self.remaining());",
+                  "            let result = self.data[self.position..self.position + take_len].to_vec();",
+                  "            self.position += take_len;",
+                  "            result",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut a = MockA { data: vec![1, 2, 3], position: 3 }; // a_rem is 0",
+                  "    let mut b = MockB { data: vec![4, 5, 6, 7, 8], position: 0 };",
+                  "    ",
+                  "    let mut chain = Chain { a, b }; // Assume Chain is a struct with a and b of types MockA and MockB",
+                  "    ",
+                  "    let len = 5; // len - a_rem == self.b.remaining() is satisfied as a_rem is 0 and b.remaining() is 5",
+                  "    ",
+                  "    let bytes = chain.copy_to_bytes(len);",
+                  "    ",
+                  "    assert_eq!(bytes, crate::Bytes::from(vec![4, 5, 6, 7, 8]));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n   --> src/buf/chain.rs:244:8\n    |\n244 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: the method `copy_to_bytes` exists for struct `Chain<MockA, MockB>`, but its trait bounds were not satisfied\n   --> src/buf/chain.rs:296:23\n    |\n30  | pub struct Chain<T, U> {\n    | ---------------------- method `copy_to_bytes` not found for this struct because it doesn't satisfy `chain::Chain<MockA, MockB>: buf_impl::Buf`\n...\n248 |     struct MockA {\n    |     ------------ doesn't satisfy `MockA: buf_impl::Buf`\n...\n265 |     struct MockB {\n    |     ------------ doesn't satisfy `MockB: buf_impl::Buf`\n...\n296 |     let bytes = chain.copy_to_bytes(len);\n    |                       ^^^^^^^^^^^^^ method cannot be called on `Chain<MockA, MockB>` due to unsatisfied trait bounds\n    |\nnote: the following trait bounds were not satisfied:\n      `MockA: buf_impl::Buf`\n      `MockB: buf_impl::Buf`\n   --> src/buf/chain.rs:132:8\n    |\n130 | impl<T, U> Buf for Chain<T, U>\n    |            ---     -----------\n131 | where\n132 |     T: Buf,\n    |        ^^^ unsatisfied trait bound introduced here\n133 |     U: Buf,\n    |        ^^^ unsatisfied trait bound introduced here\nnote: the trait `buf_impl::Buf` must be implemented\n   --> src/buf/buf_impl.rs:117:1\n    |\n117 | pub trait Buf {\n    | ^^^^^^^^^^^^^\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buf_impl::Buf` defines an item `copy_to_bytes`, perhaps you need to implement it\n   --> src/buf/buf_impl.rs:117:1\n    |\n117 | pub trait Buf {\n    | ^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: a_rem >= len is false\n",
+        "// constraint: a_rem == 0 is true\n",
+        "// constraint: len - a_rem <= self.b.remaining() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"`len` greater than remaining\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct {",
+                  "        a: crate::BytesMut,",
+                  "        b: crate::BytesMut,",
+                  "    }",
+                  "",
+                  "    let mut a = crate::BytesMut::with_capacity(0); // a_rem == 0",
+                  "    let mut b = crate::BytesMut::with_capacity(5); // b.remaining() = 5",
+                  "    ",
+                  "    // Fill b to ensure it has data",
+                  "    b.extend_from_slice(&[1, 2, 3, 4, 5]);",
+                  "",
+                  "    let mut test_struct = TestStruct { a, b };",
+                  "",
+                  "    // len = 10 (a_rem = 0, b.remaining() = 5, so len - a_rem > self.b.remaining())",
+                  "    let len = 10;",
+                  "",
+                  "    // This should trigger a panic",
+                  "    let _ = test_struct.copy_to_bytes(len);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n   --> src/buf/chain.rs:244:8\n    |\n244 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: no method named `copy_to_bytes` found for struct `TestStruct` in the current scope\n   --> src/buf/chain.rs:266:25\n    |\n249 |     struct TestStruct {\n    |     ----------------- method `copy_to_bytes` not found for this struct\n...\n266 |     let _ = test_struct.copy_to_bytes(len);\n    |                         ^^^^^^^^^^^^^ method not found in `TestStruct`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buf_impl::Buf` defines an item `copy_to_bytes`, perhaps you need to implement it\n   --> src/buf/buf_impl.rs:117:1\n    |\n117 | pub trait Buf {\n    | ^^^^^^^^^^^^^\nhelp: some of the expressions' fields have a method of the same name\n    |\n266 |     let _ = test_struct.a.copy_to_bytes(len);\n    |                         ++\n266 |     let _ = test_struct.b.copy_to_bytes(len);\n    |                         ++\n\nwarning: unused import: `super`\n   --> src/buf/chain.rs:243:8\n    |\n243 |    use super::*;\n    |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

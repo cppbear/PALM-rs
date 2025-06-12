@@ -1,0 +1,23 @@
+use std::fmt;
+use std::iter::repeat;
+#[derive(Clone, PartialEq)]
+pub enum Error {
+    /// A syntax error.
+    Syntax(String),
+    /// The compiled program exceeded the set size limit.
+    /// The argument is the size limit imposed.
+    CompiledTooBig(usize),
+    /// Hints that destructuring should not be exhaustive.
+    ///
+    /// This enum may grow additional variants, so this makes sure clients
+    /// don't count on exhaustive matching. (Otherwise, adding a new variant
+    /// could break existing code.)
+    #[doc(hidden)]
+    __Nonexhaustive,
+}
+impl ::std::error::Error for Error {
+    fn description(&self) -> &str {}
+    fn cause(&self) -> Option<&::std::error::Error> {
+        None
+    }
+}

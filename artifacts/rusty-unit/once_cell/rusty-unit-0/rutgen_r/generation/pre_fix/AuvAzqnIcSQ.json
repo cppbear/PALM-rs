@@ -1,0 +1,195 @@
+{
+  "name": "once_cell::race::once_box::race::once_box::OnceBox<T>::get",
+  "name_with_impl": "once_cell::race::once_box::{impl#3}::get",
+  "mod_info": {
+    "name": "race::once_box",
+    "loc": "src/race.rs:354:1:498:2"
+  },
+  "visible": true,
+  "loc": "src/race.rs:399:9:405:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: ptr.is_null() is true\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::Ordering;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use core::ptr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use core::ptr;",
+                  "",
+                  "    struct OnceCell<T> {",
+                  "        inner: AtomicPtr<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> OnceCell<T> {",
+                  "        pub fn get(&self) -> Option<&T> {",
+                  "            let ptr = self.inner.load(Ordering::Acquire);",
+                  "            if ptr.is_null() {",
+                  "                return None;",
+                  "            }",
+                  "            Some(unsafe { &*ptr })",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell: OnceCell<i32> = OnceCell {",
+                  "        inner: AtomicPtr::new(ptr::null_mut()),",
+                  "    };",
+                  "",
+                  "    let result = cell.get();",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: ptr.is_null() is false\n",
+        "// expected return value/type: Some(unsafe { &*ptr })\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use super::*;",
+            "use std::sync::atomic::Ordering;",
+            "use std::sync::atomic::AtomicPtr;"
+          ],
+          "has_test_mod": true,
+          "common": [
+            "    struct MyValue {",
+            "        data: i32,",
+            "    }",
+            "",
+            "    struct MyWrapper {",
+            "        inner: AtomicPtr<MyValue>,",
+            "    }",
+            "",
+            "    impl MyWrapper {",
+            "        pub fn new(value: MyValue) -> Self {",
+            "            let boxed = Box::new(value);",
+            "            let ptr = Box::into_raw(boxed);",
+            "            MyWrapper {",
+            "                inner: AtomicPtr::new(ptr),",
+            "            }",
+            "        }",
+            "",
+            "        pub fn get(&self) -> Option<&MyValue> {",
+            "            let ptr = self.inner.load(Ordering::Acquire);",
+            "            if ptr.is_null() {",
+            "                return None;",
+            "            }",
+            "            Some(unsafe { &*ptr })",
+            "        }",
+            "    }"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = MyValue { data: 42 };",
+                  "    let wrapper = MyWrapper::new(value);",
+                  "    let result = wrapper.get();",
+                  "    assert!(result.is_some());",
+                  "    assert_eq!(result.unwrap().data, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = MyValue { data: 100 };",
+                  "    let wrapper = MyWrapper::new(value);",
+                  "    std::mem::drop(wrapper.inner.load(Ordering::Acquire)); // Simulate dropping the inner ptr.",
+                  "    let result = wrapper.get();",
+                  "    assert!(result.is_none());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let wrapper = MyWrapper {",
+                  "        inner: AtomicPtr::new(std::ptr::null_mut()),",
+                  "    };",
+                  "    wrapper.get(); // This should panic if we dereference the null pointer in implementation, but expected to return None.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

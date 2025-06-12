@@ -1,0 +1,151 @@
+{
+  "name": "hashbrown::raw::raw::RawTableInner::fix_insert_slot",
+  "name_with_impl": "hashbrown::raw::{impl#13}::fix_insert_slot",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:1661:5:1688:6",
+  "doc": "/// Fixes up an insertion slot returned by the [`RawTableInner::find_insert_slot_in_group`] method.\n///\n/// In tables smaller than the group width (`self.buckets() < Group::WIDTH`), trailing control\n/// bytes outside the range of the table are filled with [`Tag::EMPTY`] entries. These will unfortunately\n/// trigger a match of [`RawTableInner::find_insert_slot_in_group`] function. This is because\n/// the `Some(bit)` returned by `group.match_empty_or_deleted().lowest_set_bit()` after masking\n/// (`(probe_seq.pos + bit) & self.bucket_mask`) may point to a full bucket that is already occupied.\n/// We detect this situation here and perform a second scan starting at the beginning of the table.\n/// This second scan is guaranteed to find an empty slot (due to the load factor) before hitting the\n/// trailing control bytes (containing [`Tag::EMPTY`] bytes).\n///\n/// If this function is called correctly, it is guaranteed to return [`InsertSlot`] with an\n/// index of an empty or deleted bucket in the range `0..self.buckets()` (see `Warning` and\n/// `Safety`).\n///\n/// # Warning\n///\n/// The table must have at least 1 empty or deleted `bucket`, otherwise if the table is less than\n/// the group width (`self.buckets() < Group::WIDTH`) this function returns an index outside of the\n/// table indices range `0..self.buckets()` (`0..=self.bucket_mask`). Attempt to write data at that\n/// index will cause immediate [`undefined behavior`].\n///\n/// # Safety\n///\n/// The safety rules are directly derived from the safety rules for [`RawTableInner::ctrl`] method.\n/// Thus, in order to uphold those safety contracts, as well as for the correct logic of the work\n/// of this crate, the following rules are necessary and sufficient:\n///\n/// * The [`RawTableInner`] must have properly initialized control bytes otherwise calling this\n///   function results in [`undefined behavior`].\n///\n/// * This function must only be used on insertion slots found by [`RawTableInner::find_insert_slot_in_group`]\n///   (after the `find_insert_slot_in_group` function, but before insertion into the table).\n///\n/// * The `index` must not be greater than the `self.bucket_mask`, i.e. `(index + 1) <= self.buckets()`\n///   (this one is provided by the [`RawTableInner::find_insert_slot_in_group`] function).\n///\n/// Calling this function with an index not provided by [`RawTableInner::find_insert_slot_in_group`]\n/// may result in [`undefined behavior`] even if the index satisfies the safety rules of the\n/// [`RawTableInner::ctrl`] function (`index < self.bucket_mask + 1 + Group::WIDTH`).\n///\n/// [`RawTableInner::ctrl`]: RawTableInner::ctrl\n/// [`RawTableInner::find_insert_slot_in_group`]: RawTableInner::find_insert_slot_in_group\n/// [`undefined behavior`]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html\n",
+  "code": [
+    "unsafe fn fix_insert_slot(&self, mut index: usize) -> InsertSlot {",
+    "    // SAFETY: The caller of this function ensures that `index` is in the range `0..=self.bucket_mask`.",
+    "    if unlikely(self.is_bucket_full(index)) {",
+    "        debug_assert!(self.bucket_mask < Group::WIDTH);",
+    "        // SAFETY:",
+    "        //",
+    "        // * Since the caller of this function ensures that the control bytes are properly",
+    "        //   initialized and `ptr = self.ctrl(0)` points to the start of the array of control",
+    "        //   bytes, therefore: `ctrl` is valid for reads, properly aligned to `Group::WIDTH`",
+    "        //   and points to the properly initialized control bytes (see also",
+    "        //   `TableLayout::calculate_layout_for` and `ptr::read`);",
+    "        //",
+    "        // * Because the caller of this function ensures that the index was provided by the",
+    "        //   `self.find_insert_slot_in_group()` function, so for for tables larger than the",
+    "        //   group width (self.buckets() >= Group::WIDTH), we will never end up in the given",
+    "        //   branch, since `(probe_seq.pos + bit) & self.bucket_mask` in `find_insert_slot_in_group`",
+    "        //   cannot return a full bucket index. For tables smaller than the group width, calling",
+    "        //   the `unwrap_unchecked` function is also safe, as the trailing control bytes outside",
+    "        //   the range of the table are filled with EMPTY bytes (and we know for sure that there",
+    "        //   is at least one FULL bucket), so this second scan either finds an empty slot (due to",
+    "        //   the load factor) or hits the trailing control bytes (containing EMPTY).",
+    "        index = Group::load_aligned(self.ctrl(0))",
+    "            .match_empty_or_deleted()",
+    "            .lowest_set_bit()",
+    "            .unwrap_unchecked();",
+    "    }",
+    "    InsertSlot { index }",
+    "}"
+  ],
+  "size": {
+    "chain": 3,
+    "contra": 0,
+    "min_set": 3
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "unlikely(self.is_bucket_full(index))",
+          "norm": null,
+          "value": "true",
+          "line": 1663,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.bucket_mask < Group::WIDTH",
+          "norm": "Group::WIDTH > self.bucket_mask",
+          "value": "true",
+          "line": 1664,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "Group::load_aligned(self.ctrl(0))\n                .match_empty_or_deleted()\n                .lowest_set_bit()\n                .unwrap_unchecked()",
+          "norm": null,
+          "value": "",
+          "line": 1682,
+          "bound": null,
+          "may_panic": true
+        }
+      ],
+      "ret": "InsertSlot { index }",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "unlikely(self.is_bucket_full(index))",
+          "norm": null,
+          "value": "true",
+          "line": 1663,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "self.bucket_mask < Group::WIDTH",
+          "norm": "Group::WIDTH > self.bucket_mask",
+          "value": "false",
+          "line": 1664,
+          "bound": "self.bucket_mask == Group::WIDTH",
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        16
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "unlikely(self.is_bucket_full(index))",
+          "norm": null,
+          "value": "false",
+          "line": 1663,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "InsertSlot { index }",
+      "path": [
+        0,
+        1,
+        2,
+        14,
+        15
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

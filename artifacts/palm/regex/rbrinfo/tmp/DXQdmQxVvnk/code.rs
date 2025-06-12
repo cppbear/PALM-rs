@@ -1,0 +1,1 @@
+fn as_bytes_bytes(text: &[u8]) -> &[u8] { text }

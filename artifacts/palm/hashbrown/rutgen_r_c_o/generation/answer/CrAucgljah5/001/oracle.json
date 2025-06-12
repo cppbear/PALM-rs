@@ -1,0 +1,485 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: HashMap<&str, i32> = HashMap::new();",
+          "    map.insert(\"a\", 100);",
+          "    map.raw_entry_mut();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut map: HashMap<&str, i32> = HashMap::new();",
+            "    map.insert(\"a\", 100);",
+            "    let raw_entry_builder = map.raw_entry_mut();",
+            "    assert_eq!(raw_entry_builder.map, &mut map);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut map: HashMap<&str, i32> = HashMap::new();",
+            "    map.insert(\"a\", 100);",
+            "    map.raw_entry_mut();",
+            "    let mut map: HashMap<&str, i32> = HashMap::new();",
+            "    map.insert(\"a\", 100);",
+            "    let raw_entry_builder = map.raw_entry_mut();",
+            "    assert_eq!(raw_entry_builder.map, &mut map);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct CustomHashBuilder;",
+          "    impl BuildHasher for CustomHashBuilder {",
+          "        fn build_hasher(&self) -> std::hash::Hasher {",
+          "            // Implement a custom hasher",
+          "        }",
+          "    }",
+          "",
+          "    let mut map: HashMap<&str, i32, CustomHashBuilder> = HashMap::new();",
+          "    map.insert(\"b\", 200);",
+          "    map.raw_entry_mut();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut map: HashMap<&str, i32, CustomHashBuilder> = HashMap::new();",
+            "    map.insert(\"b\", 200);",
+            "    let raw_entry_builder = map.raw_entry_mut();",
+            "    assert!(raw_entry_builder.map == &mut map);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct CustomHashBuilder;",
+            "    impl BuildHasher for CustomHashBuilder {",
+            "        fn build_hasher(&self) -> std::hash::Hasher {",
+            "            // Implement a custom hasher",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, CustomHashBuilder> = HashMap::new();",
+            "    map.insert(\"b\", 200);",
+            "    map.raw_entry_mut();",
+            "    let mut map: HashMap<&str, i32, CustomHashBuilder> = HashMap::new();",
+            "    map.insert(\"b\", 200);",
+            "    let raw_entry_builder = map.raw_entry_mut();",
+            "    assert!(raw_entry_builder.map == &mut map);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct CustomAllocator;",
+          "",
+          "    unsafe impl Allocator for CustomAllocator {",
+          "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+          "            // Implementation for allocate",
+          "        }",
+          "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+          "            // Implementation for deallocate",
+          "        }",
+          "    }",
+          "",
+          "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+          "    map.insert(\"c\", 300);",
+          "    map.raw_entry_mut();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    assert_eq!(map.len(), 0);"
+          ],
+          [
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    assert_eq!(map.len(), 1);"
+          ],
+          [
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    assert_eq!(map.get(\"c\"), Some(&300));"
+          ],
+          [
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    let builder = map.raw_entry_mut();",
+            "    assert!(!std::ptr::null::<RawEntryBuilderMut<&str, i32, DefaultHashBuilder, CustomAllocator>>() == builder);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+            "            // Implementation for allocate",
+            "        }",
+            "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+            "            // Implementation for deallocate",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    map.raw_entry_mut();",
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    assert_eq!(map.len(), 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+            "            // Implementation for allocate",
+            "        }",
+            "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+            "            // Implementation for deallocate",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    map.raw_entry_mut();",
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    assert_eq!(map.len(), 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+            "            // Implementation for allocate",
+            "        }",
+            "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+            "            // Implementation for deallocate",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    map.raw_entry_mut();",
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    assert_eq!(map.get(\"c\"), Some(&300));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+            "            // Implementation for allocate",
+            "        }",
+            "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+            "            // Implementation for deallocate",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    map.raw_entry_mut();",
+            "    let mut map: HashMap<&str, i32, DefaultHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"c\", 300);",
+            "    let builder = map.raw_entry_mut();",
+            "    assert!(!std::ptr::null::<RawEntryBuilderMut<&str, i32, DefaultHashBuilder, CustomAllocator>>() == builder);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    struct CustomHashBuilder;",
+          "    impl BuildHasher for CustomHashBuilder {",
+          "        fn build_hasher(&self) -> std::hash::Hasher {",
+          "            // Implement a custom hasher",
+          "        }",
+          "    }",
+          "",
+          "    struct CustomAllocator;",
+          "",
+          "    unsafe impl Allocator for CustomAllocator {",
+          "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+          "            // Implementation for allocate",
+          "        }",
+          "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+          "            // Implementation for deallocate",
+          "        }",
+          "    }",
+          "",
+          "    let mut map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+          "    map.insert(\"d\", 400);",
+          "    map.raw_entry_mut();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut custom_map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    assert_eq!(custom_map.len(), 0);"
+          ],
+          [
+            "    let mut custom_map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    custom_map.insert(\"d\", 400);",
+            "    assert_eq!(custom_map.len(), 1);"
+          ],
+          [
+            "    let mut custom_map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    custom_map.insert(\"d\", 400);",
+            "    let raw_entry_builder = custom_map.raw_entry_mut();",
+            "    assert!(!std::ptr::eq(raw_entry_builder.map, &custom_map));"
+          ],
+          [
+            "    let mut custom_map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    custom_map.insert(\"d\", 400);",
+            "    let raw_entry_builder = custom_map.raw_entry_mut();",
+            "    let entry = custom_map.raw_entry_mut();",
+            "    assert_eq!(entry.map.table.table.get(\"d\"), Some(&400));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct CustomHashBuilder;",
+            "    impl BuildHasher for CustomHashBuilder {",
+            "        fn build_hasher(&self) -> std::hash::Hasher {",
+            "            // Implement a custom hasher",
+            "        }",
+            "    }",
+            "",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+            "            // Implementation for allocate",
+            "        }",
+            "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+            "            // Implementation for deallocate",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"d\", 400);",
+            "    map.raw_entry_mut();",
+            "    let mut custom_map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    assert_eq!(custom_map.len(), 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct CustomHashBuilder;",
+            "    impl BuildHasher for CustomHashBuilder {",
+            "        fn build_hasher(&self) -> std::hash::Hasher {",
+            "            // Implement a custom hasher",
+            "        }",
+            "    }",
+            "",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+            "            // Implementation for allocate",
+            "        }",
+            "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+            "            // Implementation for deallocate",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"d\", 400);",
+            "    map.raw_entry_mut();",
+            "    let mut custom_map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    custom_map.insert(\"d\", 400);",
+            "    assert_eq!(custom_map.len(), 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    struct CustomHashBuilder;",
+            "    impl BuildHasher for CustomHashBuilder {",
+            "        fn build_hasher(&self) -> std::hash::Hasher {",
+            "            // Implement a custom hasher",
+            "        }",
+            "    }",
+            "",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+            "            // Implementation for allocate",
+            "        }",
+            "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+            "            // Implementation for deallocate",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"d\", 400);",
+            "    map.raw_entry_mut();",
+            "    let mut custom_map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    custom_map.insert(\"d\", 400);",
+            "    let raw_entry_builder = custom_map.raw_entry_mut();",
+            "    assert!(!std::ptr::eq(raw_entry_builder.map, &custom_map));",
+            "}"
+          ],
+          [
+            "{",
+            "    struct CustomHashBuilder;",
+            "    impl BuildHasher for CustomHashBuilder {",
+            "        fn build_hasher(&self) -> std::hash::Hasher {",
+            "            // Implement a custom hasher",
+            "        }",
+            "    }",
+            "",
+            "    struct CustomAllocator;",
+            "",
+            "    unsafe impl Allocator for CustomAllocator {",
+            "        fn allocate(&self, layout: std::alloc::Layout) -> Result<std::ptr::NonNull<u8>, ()> {",
+            "            // Implementation for allocate",
+            "        }",
+            "        unsafe fn deallocate(&self, ptr: std::ptr::NonNull<u8>, layout: std::alloc::Layout) {",
+            "            // Implementation for deallocate",
+            "        }",
+            "    }",
+            "",
+            "    let mut map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    map.insert(\"d\", 400);",
+            "    map.raw_entry_mut();",
+            "    let mut custom_map: HashMap<&str, i32, CustomHashBuilder, CustomAllocator> = HashMap::new();",
+            "    custom_map.insert(\"d\", 400);",
+            "    let raw_entry_builder = custom_map.raw_entry_mut();",
+            "    let entry = custom_map.raw_entry_mut();",
+            "    assert_eq!(entry.map.table.table.get(\"d\"), Some(&400));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map: HashMap<&str, i32> = HashMap::new();",
+          "    map.insert(\"e\", 500);",
+          "    map.insert(\"f\", 600);",
+          "    map.insert(\"g\", 700);",
+          "    map.raw_entry_mut();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut map: HashMap<&str, i32> = HashMap::new();",
+            "    map.insert(\"e\", 500);",
+            "    map.insert(\"f\", 600);",
+            "    map.insert(\"g\", 700);",
+            "    let entry_builder = map.raw_entry_mut();",
+            "    assert!(entry_builder.map as *const _ == &map as *const _);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut map: HashMap<&str, i32> = HashMap::new();",
+            "    map.insert(\"e\", 500);",
+            "    map.insert(\"f\", 600);",
+            "    map.insert(\"g\", 700);",
+            "    map.raw_entry_mut();",
+            "    let mut map: HashMap<&str, i32> = HashMap::new();",
+            "    map.insert(\"e\", 500);",
+            "    map.insert(\"f\", 600);",
+            "    map.insert(\"g\", 700);",
+            "    let entry_builder = map.raw_entry_mut();",
+            "    assert!(entry_builder.map as *const _ == &map as *const _);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,339 @@
+{
+  "name": "http::header::map::header::map::HeaderMap<T>::reinsert_entry_in_order",
+  "name_with_impl": "http::header::map::{impl#1}::reinsert_entry_in_order",
+  "mod_info": {
+    "name": "header::map",
+    "loc": "src/header/mod.rs:73:1:73:9"
+  },
+  "visible": false,
+  "loc": "src/header/map.rs:1679:5:1692:6",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: let Some((_, entry_hash)) = pos.resolve() is true\n",
+        "// constraint: $len > 0 is true\n",
+        "// constraint: $probe_var is true\n",
+        "// constraint: self.indices[probe].resolve().is_none() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Given",
+                  "    let mut header_map = HeaderMap::<HeaderValue>::with_capacity(512);",
+                  "    let pos = Pos::new(1, HashValue(0)); // Valid position",
+                  "",
+                  "    // Ensure that header_map.indices has at least one element",
+                  "    header_map.indices = vec![Pos::none().into(); 512].into_boxed_slice();",
+                  "",
+                  "    // When",
+                  "    header_map.reinsert_entry_in_order(pos);",
+                  "",
+                  "    // Then",
+                  "    assert_eq!(header_map.indices[desired_pos(header_map.mask, pos.hash)].resolve(), Some((1, HashValue(0))));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Given",
+                  "    let mut header_map = HeaderMap::<HeaderValue>::with_capacity(512);",
+                  "    let pos1 = Pos::new(1, HashValue(0)); // Valid position",
+                  "    let pos2 = Pos::new(2, HashValue(1)); // Another valid position",
+                  "    ",
+                  "    // Ensure that header_map.indices has at least two elements",
+                  "    header_map.indices = vec![Pos::none().into(); 512].into_boxed_slice();",
+                  "    ",
+                  "    // Insert the first position",
+                  "    header_map.indices[desired_pos(header_map.mask, pos1.hash)] = pos1;",
+                  "",
+                  "    // When",
+                  "    header_map.reinsert_entry_in_order(pos2);",
+                  "",
+                  "    // Then",
+                  "    assert_eq!(header_map.indices[desired_pos(header_map.mask, pos2.hash)].resolve(), Some((2, HashValue(1))));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: let Some((_, entry_hash)) = pos.resolve() is true\n",
+        "// constraint: $len > 0 is true\n",
+        "// constraint: $probe_var is false, with bound $probe_var == self.indices.len()\n",
+        "// constraint: $probe_var is true\n",
+        "// constraint: self.indices[probe].resolve().is_none() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestValue;",
+                  "",
+                  "    let mut header_map = HeaderMap::<TestValue>::with_capacity(10);",
+                  "    ",
+                  "    // Set up initial state by filling some buckets",
+                  "    header_map.indices = Box::new([",
+                  "        Pos::none(), // Bucket 0",
+                  "        Pos::new(1, HashValue(1)), // Bucket 1 filled",
+                  "        Pos::none(), // Bucket 2",
+                  "        Pos::new(3, HashValue(3)), // Bucket 3 filled",
+                  "        Pos::none(), // Bucket 4",
+                  "        Pos::none(), // Bucket 5",
+                  "        Pos::none(), // Bucket 6",
+                  "        Pos::none(), // Bucket 7",
+                  "        Pos::none(), // Bucket 8",
+                  "        Pos::none(), // Bucket 9",
+                  "    ]);",
+                  "    ",
+                  "    // Prepare a position to reinsert",
+                  "    let pos = Pos::new(2, HashValue(1)); // This generated hash will conflict with entry in Bucket 1",
+                  "    ",
+                  "    // Call the reinsert_entry_in_order function",
+                  "    header_map.reinsert_entry_in_order(pos);",
+                  "    ",
+                  "    // After reinserting, Bucket 2 should now hold the pos",
+                  "    assert_eq!(header_map.indices[2], pos);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `map::Pos`\n    --> src/header/map.rs:3939:5\n     |\n3939 |     assert_eq!(header_map.indices[2], pos);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     map::Pos\n     |     map::Pos\n     |\nnote: an implementation of `PartialEq` might be missing for `map::Pos`\n    --> src/header/map.rs:248:1\n     |\n248  | struct Pos {\n     | ^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `map::Pos` with `#[derive(PartialEq)]`\n     |\n248  + #[derive(PartialEq)]\n249  | struct Pos {\n     |\n\nerror[E0277]: `map::Pos` doesn't implement `Debug`\n    --> src/header/map.rs:3939:5\n     |\n3939 |     assert_eq!(header_map.indices[2], pos);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `map::Pos` cannot be formatted using `{:?}`\n     |\n     = help: the trait `Debug` is not implemented for `map::Pos`\n     = note: add `#[derive(Debug)]` to `map::Pos` or manually `impl Debug for map::Pos`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `map::Pos` with `#[derive(Debug)]`\n     |\n248  + #[derive(Debug)]\n249  | struct Pos {\n     |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 14 warnings\nerror: could not compile `http` (lib test) due to 3 previous errors; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestValue;",
+                  "",
+                  "    let mut header_map = HeaderMap::<TestValue>::with_capacity(5);",
+                  "    ",
+                  "    // Fill all buckets",
+                  "    header_map.indices = Box::new([",
+                  "        Pos::new(0, HashValue(0)), // Bucket 0 filled",
+                  "        Pos::new(1, HashValue(1)), // Bucket 1 filled",
+                  "        Pos::new(2, HashValue(2)), // Bucket 2 filled",
+                  "        Pos::new(3, HashValue(3)), // Bucket 3 filled",
+                  "        Pos::new(4, HashValue(4)), // Bucket 4 filled",
+                  "    ]);",
+                  "",
+                  "    // Prepare a position to reinsert",
+                  "    let pos = Pos::new(5, HashValue(5)); // New hash",
+                  "    ",
+                  "    // Try inserting again to trigger a full bucket scenario",
+                  "    header_map.reinsert_entry_in_order(pos);",
+                  "    ",
+                  "    // since all buckets are filled, no change in state should occur",
+                  "    assert_eq!(header_map.indices, [",
+                  "        Pos::new(0, HashValue(0)),",
+                  "        Pos::new(1, HashValue(1)),",
+                  "        Pos::new(2, HashValue(2)),",
+                  "        Pos::new(3, HashValue(3)),",
+                  "        Pos::new(4, HashValue(4)),",
+                  "    ]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `Box<[map::Pos]>`\n    --> src/header/map.rs:3934:5\n     |\n3934 | /     assert_eq!(header_map.indices, [\n3935 | |         Pos::new(0, HashValue(0)),\n3936 | |         Pos::new(1, HashValue(1)),\n3937 | |         Pos::new(2, HashValue(2)),\n3938 | |         Pos::new(3, HashValue(3)),\n3939 | |         Pos::new(4, HashValue(4)),\n3940 | |     ]);\n     | |      ^\n     | |      |\n     | |______Box<[map::Pos]>\n     |        [map::Pos; 5]\n     |\nnote: the foreign item type `Box<[map::Pos]>` doesn't implement `PartialEq<[map::Pos; 5]>`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/boxed.rs:238:1\n     |\n238  | / pub struct Box<\n239  | |     T: ?Sized,\n240  | |     #[unstable(feature = \"allocator_api\", issue = \"32838\")] A: Allocator = Global,\n241  | | >(Unique<T>, A);\n     | |_^ not implement `PartialEq<[map::Pos; 5]>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nerror[E0277]: `map::Pos` doesn't implement `Debug`\n    --> src/header/map.rs:3934:5\n     |\n3934 | /     assert_eq!(header_map.indices, [\n3935 | |         Pos::new(0, HashValue(0)),\n3936 | |         Pos::new(1, HashValue(1)),\n3937 | |         Pos::new(2, HashValue(2)),\n3938 | |         Pos::new(3, HashValue(3)),\n3939 | |         Pos::new(4, HashValue(4)),\n3940 | |     ]);\n     | |______^ `map::Pos` cannot be formatted using `{:?}`\n     |\n     = help: the trait `Debug` is not implemented for `map::Pos`, which is required by `Box<[map::Pos]>: Debug`\n     = note: add `#[derive(Debug)]` to `map::Pos` or manually `impl Debug for map::Pos`\n     = help: the trait `Debug` is implemented for `Box<T, A>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `map::Pos` with `#[derive(Debug)]`\n     |\n248  + #[derive(Debug)]\n249  | struct Pos {\n     |\n\nerror[E0277]: `map::Pos` doesn't implement `Debug`\n    --> src/header/map.rs:3934:5\n     |\n3934 | /     assert_eq!(header_map.indices, [\n3935 | |         Pos::new(0, HashValue(0)),\n3936 | |         Pos::new(1, HashValue(1)),\n3937 | |         Pos::new(2, HashValue(2)),\n3938 | |         Pos::new(3, HashValue(3)),\n3939 | |         Pos::new(4, HashValue(4)),\n3940 | |     ]);\n     | |______^ `map::Pos` cannot be formatted using `{:?}`\n     |\n     = help: the trait `Debug` is not implemented for `map::Pos`, which is required by `[map::Pos; 5]: Debug`\n     = note: add `#[derive(Debug)]` to `map::Pos` or manually `impl Debug for map::Pos`\n     = help: the following other types implement trait `Debug`:\n               [T; N]\n               [T]\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `map::Pos` with `#[derive(Debug)]`\n     |\n248  + #[derive(Debug)]\n249  | struct Pos {\n     |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 14 warnings\nerror: could not compile `http` (lib test) due to 3 previous errors; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestValue;",
+                  "",
+                  "    let mut header_map = HeaderMap::<TestValue>::with_capacity(5);",
+                  "    ",
+                  "    // Set up the indices with all buckets empty",
+                  "    header_map.indices = Box::new([",
+                  "        Pos::none(), // Bucket 0",
+                  "        Pos::none(), // Bucket 1",
+                  "        Pos::none(), // Bucket 2",
+                  "        Pos::none(), // Bucket 3",
+                  "        Pos::none(), // Bucket 4",
+                  "    ]);",
+                  "    ",
+                  "    // Prepare a position to reinsert",
+                  "    let pos = Pos::new(0, HashValue(1)); // Hash that will point to Bucket 1",
+                  "    ",
+                  "    // Call the reinsert_entry_in_order function",
+                  "    header_map.reinsert_entry_in_order(pos);",
+                  "    ",
+                  "    // Now Bucket 1 should contain the pos",
+                  "    assert_eq!(header_map.indices[desired_pos(header_map.mask, HashValue(1))], pos);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `map::Pos`\n    --> src/header/map.rs:3934:5\n     |\n3934 |     assert_eq!(header_map.indices[desired_pos(header_map.mask, HashValue(1))], pos);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     map::Pos\n     |     map::Pos\n     |\nnote: an implementation of `PartialEq` might be missing for `map::Pos`\n    --> src/header/map.rs:248:1\n     |\n248  | struct Pos {\n     | ^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `map::Pos` with `#[derive(PartialEq)]`\n     |\n248  + #[derive(PartialEq)]\n249  | struct Pos {\n     |\n\nerror[E0277]: `map::Pos` doesn't implement `Debug`\n    --> src/header/map.rs:3934:5\n     |\n3934 |     assert_eq!(header_map.indices[desired_pos(header_map.mask, HashValue(1))], pos);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `map::Pos` cannot be formatted using `{:?}`\n     |\n     = help: the trait `Debug` is not implemented for `map::Pos`\n     = note: add `#[derive(Debug)]` to `map::Pos` or manually `impl Debug for map::Pos`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `map::Pos` with `#[derive(Debug)]`\n     |\n248  + #[derive(Debug)]\n249  | struct Pos {\n     |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 14 warnings\nerror: could not compile `http` (lib test) due to 3 previous errors; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: let Some((_, entry_hash)) = pos.resolve() is true\n",
+        "// constraint: $len > 0 is false, with bound self.indices.len() == 0\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestHeaderMap {",
+                  "        mask: Size,",
+                  "        indices: Box<[Pos]>,",
+                  "    }",
+                  "",
+                  "    let mut header_map = TestHeaderMap {",
+                  "        mask: 0,",
+                  "        indices: Box::new([]), // This simulates an empty indices array",
+                  "    };",
+                  "",
+                  "    // Create a Pos instance to use for the test",
+                  "    let pos = Pos::new(0, HashValue(1)); // entry_hash will be 1",
+                  "",
+                  "    // Call the method to be tested",
+                  "    header_map.reinsert_entry_in_order(pos);",
+                  "",
+                  "    // The function should not panic, but since indices is empty, it should not do anything.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: no method named `reinsert_entry_in_order` found for struct `TestHeaderMap` in the current scope\n    --> src/header/map.rs:3928:16\n     |\n3914 |     struct TestHeaderMap {\n     |     -------------------- method `reinsert_entry_in_order` not found for this struct\n...\n3928 |     header_map.reinsert_entry_in_order(pos);\n     |                ^^^^^^^^^^^^^^^^^^^^^^^ method not found in `TestHeaderMap`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `http` (lib test) generated 14 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestHeaderMap {",
+                  "        mask: Size,",
+                  "        indices: Box<[Pos]>,",
+                  "    }",
+                  "",
+                  "    let mut header_map = TestHeaderMap {",
+                  "        mask: 0,",
+                  "        indices: Box::new([Pos::none()]), // This simulates a valid but empty bucket",
+                  "    };",
+                  "",
+                  "    // Create a Pos instance, but it will resolve to None",
+                  "    let pos = Pos::none();",
+                  "",
+                  "    // Call the method to be tested",
+                  "    header_map.reinsert_entry_in_order(pos);",
+                  "",
+                  "    // The function should panic because pos.resolve() will return None",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0599]: no method named `reinsert_entry_in_order` found for struct `TestHeaderMap` in the current scope\n    --> src/header/map.rs:3929:16\n     |\n3915 |     struct TestHeaderMap {\n     |     -------------------- method `reinsert_entry_in_order` not found for this struct\n...\n3929 |     header_map.reinsert_entry_in_order(pos);\n     |                ^^^^^^^^^^^^^^^^^^^^^^^ method not found in `TestHeaderMap`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `http` (lib test) generated 14 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

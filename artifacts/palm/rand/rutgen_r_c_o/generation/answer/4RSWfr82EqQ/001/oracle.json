@@ -1,0 +1,203 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Default)]",
+      "struct TestRng {",
+      "    state: u64,",
+      "}",
+      "",
+      "impl RngCore for TestRng {",
+      "    fn next_u32(&mut self) -> u32 {",
+      "        self.state += 1;",
+      "        self.state as u32",
+      "    }",
+      "    ",
+      "    fn next_u64(&mut self) -> u64 {",
+      "        self.state += 1;",
+      "        self.state",
+      "    }",
+      "    ",
+      "    fn fill_bytes(&mut self, dst: &mut [u8]) {",
+      "        for byte in dst.iter_mut() {",
+      "            *byte = self.next_u32() as u8;",
+      "        }",
+      "    }",
+      "}",
+      "",
+      "#[derive(Default)]",
+      "struct BlockRngCoreImpl;",
+      "",
+      "impl BlockRngCore for BlockRngCoreImpl {",
+      "    type Item = u8;",
+      "    type Results = Vec<u8>;",
+      "    ",
+      "    fn generate(&mut self, results: &mut Self::Results) {",
+      "        results.extend_from_slice(&[1, 2, 3, 4]);",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = TestRng::default();",
+          "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut seed = TestRng::default();",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut seed).unwrap();",
+            "    assert_eq!(result.core.results, vec![1, 2, 3, 4]);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut rng = TestRng::default();",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    let mut seed = TestRng::default();",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut seed).unwrap();",
+            "    assert_eq!(result.core.results, vec![1, 2, 3, 4]);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut rng = TestRng { state: 1000 }; // Start with a state that would simulate a high initialization.",
+          "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut rng = TestRng { state: 1000 };",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    assert_eq!(result.index, 0);"
+          ],
+          [
+            "    let mut rng = TestRng { state: 1000 };",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    assert_eq!(result.results.len(), 0);"
+          ],
+          [
+            "    let mut rng = TestRng { state: 1000 };",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    assert!(rng.state > 1000);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut rng = TestRng { state: 1000 }; // Start with a state that would simulate a high initialization.",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    let mut rng = TestRng { state: 1000 };",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    assert_eq!(result.index, 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { state: 1000 }; // Start with a state that would simulate a high initialization.",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    let mut rng = TestRng { state: 1000 };",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    assert_eq!(result.results.len(), 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut rng = TestRng { state: 1000 }; // Start with a state that would simulate a high initialization.",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    let mut rng = TestRng { state: 1000 };",
+            "    let result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut rng).unwrap();",
+            "    assert!(rng.state > 1000);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    struct FailingRng;",
+          "",
+          "    impl RngCore for FailingRng {",
+          "        fn next_u32(&mut self) -> u32 { panic!(\"Failing Rng\") }",
+          "        fn next_u64(&mut self) -> u64 { panic!(\"Failing Rng\") }",
+          "        fn fill_bytes(&mut self, _dst: &mut [u8]) { panic!(\"Failing Rng\") }",
+          "    }",
+          "",
+          "    let mut failing_rng = FailingRng;",
+          "    let _result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut failing_rng).unwrap();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut failing_rng = FailingRng;",
+            "    let _result = BlockRng::try_from_rng(&mut failing_rng);",
+            "    assert!(matches!(_result, Err(_)));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    struct FailingRng;",
+            "",
+            "    impl RngCore for FailingRng {",
+            "        fn next_u32(&mut self) -> u32 { panic!(\"Failing Rng\") }",
+            "        fn next_u64(&mut self) -> u64 { panic!(\"Failing Rng\") }",
+            "        fn fill_bytes(&mut self, _dst: &mut [u8]) { panic!(\"Failing Rng\") }",
+            "    }",
+            "",
+            "    let mut failing_rng = FailingRng;",
+            "    let _result: BlockRng<BlockRngCoreImpl> = BlockRng::try_from_rng(&mut failing_rng).unwrap();",
+            "    let mut failing_rng = FailingRng;",
+            "    let _result = BlockRng::try_from_rng(&mut failing_rng);",
+            "    assert!(matches!(_result, Err(_)));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      }
+    ]
+  }
+]

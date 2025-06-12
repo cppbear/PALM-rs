@@ -1,0 +1,89 @@
+// Answer 0
+
+#[test]
+fn test_reset_function() {
+    struct MockBlockRngCore {
+        results: Vec<u32>,
+    }
+
+    impl Default for MockBlockRngCore {
+        fn default() -> Self {
+            Self { results: vec![0; 10] } // Initialize with 10 zeroed elements
+        }
+    }
+
+    impl AsRef<[u32]> for MockBlockRngCore {
+        fn as_ref(&self) -> &[u32] {
+            &self.results
+        }
+    }
+
+    impl AsMut<[u32]> for MockBlockRngCore {
+        fn as_mut(&mut self) -> &mut [u32] {
+            &mut self.results
+        }
+    }
+
+    impl BlockRngCore for MockBlockRngCore {
+        type Item = u32;
+        type Results = Self;
+
+        fn generate(&mut self, _: &mut Self::Results) {
+            // Mock implementation; does nothing
+        }
+    }
+
+    let mut core = MockBlockRngCore::default();
+    let mut block_rng = BlockRng64::new(core);
+    
+    // Initial state before reset
+    assert_eq!(block_rng.index(), 10); // Check the index is initialized to the length of results
+    assert_eq!(block_rng.half_used, false); // Ensure half_used is false
+
+    block_rng.reset(); // Call reset function
+
+    // State after reset
+    assert_eq!(block_rng.index(), 10); // After reset, index should again be the length of results
+    assert_eq!(block_rng.half_used, false); // After reset, half_used should still be false
+
+    // Further test with less elements
+    struct MockBlockRngCoreShort {
+        results: Vec<u32>,
+    }
+
+    impl Default for MockBlockRngCoreShort {
+        fn default() -> Self {
+            Self { results: vec![0; 5] } // Initialize with 5 zeroed elements
+        }
+    }
+
+    impl AsRef<[u32]> for MockBlockRngCoreShort {
+        fn as_ref(&self) -> &[u32] {
+            &self.results
+        }
+    }
+
+    impl AsMut<[u32]> for MockBlockRngCoreShort {
+        fn as_mut(&mut self) -> &mut [u32] {
+            &mut self.results
+        }
+    }
+
+    impl BlockRngCore for MockBlockRngCoreShort {
+        type Item = u32;
+        type Results = Self;
+
+        fn generate(&mut self, _: &mut Self::Results) {
+            // Mock implementation; does nothing
+        }
+    }
+
+    let mut core_short = MockBlockRngCoreShort::default();
+    let mut block_rng_short = BlockRng64::new(core_short);
+    
+    assert_eq!(block_rng_short.index(), 5); // Initialized to the length of short results
+    block_rng_short.reset(); // Calling reset again
+    assert_eq!(block_rng_short.index(), 5); // Index should stay at the length of results
+    assert_eq!(block_rng_short.half_used, false); // half_used should remain false
+}
+

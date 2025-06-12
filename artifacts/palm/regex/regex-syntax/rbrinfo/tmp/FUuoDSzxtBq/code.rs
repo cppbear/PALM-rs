@@ -1,0 +1,1 @@
+fn as_ref(&self) -> &[u8] { &self.v }

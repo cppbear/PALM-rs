@@ -1,0 +1,299 @@
+{
+  "name": "bytes::buf::buf_mut::BufMut::put_bytes",
+  "name_with_impl": "bytes::buf::buf_mut::BufMut::put_bytes",
+  "mod_info": {
+    "name": "buf::buf_mut",
+    "loc": "src/buf/mod.rs:18:1:18:13"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_mut.rs:292:5:309:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.remaining_mut() < cnt is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = &mut [core::mem::MaybeUninit::<u8>::uninit(); 3];",
+                  "    unsafe {",
+                  "        let buf_mut: &mut [u8] = core::slice::from_raw_parts_mut(buf.as_mut_ptr() as *mut u8, buf.len());",
+                  "        buf_mut.put_bytes(b'a', 5);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: variable does not need to be mutable\n    --> src/buf/buf_mut.rs:1680:9\n     |\n1680 |     let mut buf = &mut [core::mem::MaybeUninit::<u8>::uninit(); 3];\n     |         ----^^^\n     |         |\n     |         help: remove this `mut`\n     |\n     = note: `#[warn(unused_mut)]` on by default\n\nerror[E0596]: cannot borrow `buf_mut` as mutable, as it is not declared as mutable\n    --> src/buf/buf_mut.rs:1683:9\n     |\n1683 |         buf_mut.put_bytes(b'a', 5);\n     |         ^^^^^^^ cannot borrow as mutable\n     |\nhelp: consider making the binding mutable\n     |\n1682 |         let mut buf_mut: &mut [u8] = core::slice::from_raw_parts_mut(buf.as_mut_ptr() as *mut u8, buf.len());\n     |             +++\n\nFor more information about this error, try `rustc --explain E0596`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [core::mem::MaybeUninit::<u8>::uninit(); 6];",
+                  "    unsafe {",
+                  "        let buf = &mut UninitSlice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u8, dst.len());",
+                  "        buf.put_bytes(b'a', 4);",
+                  "",
+                  "        assert_eq!(4, buf.remaining_mut());",
+                  "        assert_eq!(b\"aaaa\\0\\0\", &dst[..]);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: the method `put_bytes` exists for mutable reference `&mut &mut UninitSlice`, but its trait bounds were not satisfied\n    --> src/buf/buf_mut.rs:1682:13\n     |\n1682 |         buf.put_bytes(b'a', 4);\n     |             ^^^^^^^^^ method cannot be called on `&mut &mut UninitSlice` due to unsatisfied trait bounds\n     |\n    ::: src/buf/uninit_slice.rs:22:1\n     |\n22   | pub struct UninitSlice([MaybeUninit<u8>]);\n     | ---------------------- doesn't satisfy `uninit_slice::UninitSlice: buf_mut::BufMut`\n     |\nnote: the following trait bounds were not satisfied:\n      `&mut uninit_slice::UninitSlice: buf_mut::BufMut`\n      `uninit_slice::UninitSlice: buf_mut::BufMut`\n    --> src/buf/buf_mut.rs:1477:16\n     |\n1477 | unsafe impl<T: BufMut + ?Sized> BufMut for &mut T {\n     |                ^^^^^^           ------     ------\n     |                |\n     |                unsatisfied trait bound introduced here\nnote: the trait `buf_mut::BufMut` must be implemented\n    --> src/buf/buf_mut.rs:30:1\n     |\n30   | pub unsafe trait BufMut {\n     | ^^^^^^^^^^^^^^^^^^^^^^^\n     = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buf_mut::BufMut` defines an item `put_bytes`, perhaps you need to implement it\n    --> src/buf/buf_mut.rs:30:1\n     |\n30   | pub unsafe trait BufMut {\n     | ^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: the method `remaining_mut` exists for mutable reference `&mut &mut UninitSlice`, but its trait bounds were not satisfied\n    --> src/buf/buf_mut.rs:1684:27\n     |\n1684 |         assert_eq!(4, buf.remaining_mut());\n     |                           ^^^^^^^^^^^^^ method cannot be called on `&mut &mut UninitSlice` due to unsatisfied trait bounds\n     |\n    ::: src/buf/uninit_slice.rs:22:1\n     |\n22   | pub struct UninitSlice([MaybeUninit<u8>]);\n     | ---------------------- doesn't satisfy `uninit_slice::UninitSlice: buf_mut::BufMut`\n     |\nnote: the following trait bounds were not satisfied:\n      `&mut uninit_slice::UninitSlice: buf_mut::BufMut`\n      `uninit_slice::UninitSlice: buf_mut::BufMut`\n    --> src/buf/buf_mut.rs:1477:16\n     |\n1477 | unsafe impl<T: BufMut + ?Sized> BufMut for &mut T {\n     |                ^^^^^^           ------     ------\n     |                |\n     |                unsatisfied trait bound introduced here\nnote: the trait `buf_mut::BufMut` must be implemented\n    --> src/buf/buf_mut.rs:30:1\n     |\n30   | pub unsafe trait BufMut {\n     | ^^^^^^^^^^^^^^^^^^^^^^^\n     = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buf_mut::BufMut` defines an item `remaining_mut`, perhaps you need to implement it\n    --> src/buf/buf_mut.rs:30:1\n     |\n30   | pub unsafe trait BufMut {\n     | ^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0277]: can't compare `u8` with `MaybeUninit<u8>`\n    --> src/buf/buf_mut.rs:1685:9\n     |\n1685 |         assert_eq!(b\"aaaa\\0\\0\", &dst[..]);\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no implementation for `u8 == MaybeUninit<u8>`\n     |\n     = help: the trait `PartialEq<MaybeUninit<u8>>` is not implemented for `u8`, which is required by `&[u8; 6]: PartialEq<&[MaybeUninit<u8>]>`\n     = help: the trait `PartialEq` is implemented for `u8`\n     = help: for that trait implementation, expected `u8`, found `MaybeUninit<u8>`\n     = note: required for `[u8; 6]` to implement `PartialEq<[MaybeUninit<u8>]>`\n     = note: 1 redundant requirement hidden\n     = note: required for `&[u8; 6]` to implement `PartialEq<&[MaybeUninit<u8>]>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 3 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [core::mem::MaybeUninit::<u8>::uninit(); 6];",
+                  "    unsafe {",
+                  "        let buf = &mut UninitSlice::from_raw_parts_mut(dst.as_mut_ptr() as *mut u8, dst.len());",
+                  "        buf.put_bytes(b'a', 6);",
+                  "        ",
+                  "        assert_eq!(0, buf.remaining_mut());",
+                  "        assert_eq!(b\"aaaaaa\", &dst[..]);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: the method `put_bytes` exists for mutable reference `&mut &mut UninitSlice`, but its trait bounds were not satisfied\n    --> src/buf/buf_mut.rs:1682:13\n     |\n1682 |         buf.put_bytes(b'a', 6);\n     |             ^^^^^^^^^ method cannot be called on `&mut &mut UninitSlice` due to unsatisfied trait bounds\n     |\n    ::: src/buf/uninit_slice.rs:22:1\n     |\n22   | pub struct UninitSlice([MaybeUninit<u8>]);\n     | ---------------------- doesn't satisfy `uninit_slice::UninitSlice: buf_mut::BufMut`\n     |\nnote: the following trait bounds were not satisfied:\n      `&mut uninit_slice::UninitSlice: buf_mut::BufMut`\n      `uninit_slice::UninitSlice: buf_mut::BufMut`\n    --> src/buf/buf_mut.rs:1477:16\n     |\n1477 | unsafe impl<T: BufMut + ?Sized> BufMut for &mut T {\n     |                ^^^^^^           ------     ------\n     |                |\n     |                unsatisfied trait bound introduced here\nnote: the trait `buf_mut::BufMut` must be implemented\n    --> src/buf/buf_mut.rs:30:1\n     |\n30   | pub unsafe trait BufMut {\n     | ^^^^^^^^^^^^^^^^^^^^^^^\n     = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buf_mut::BufMut` defines an item `put_bytes`, perhaps you need to implement it\n    --> src/buf/buf_mut.rs:30:1\n     |\n30   | pub unsafe trait BufMut {\n     | ^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0599]: the method `remaining_mut` exists for mutable reference `&mut &mut UninitSlice`, but its trait bounds were not satisfied\n    --> src/buf/buf_mut.rs:1684:27\n     |\n1684 |         assert_eq!(0, buf.remaining_mut());\n     |                           ^^^^^^^^^^^^^ method cannot be called on `&mut &mut UninitSlice` due to unsatisfied trait bounds\n     |\n    ::: src/buf/uninit_slice.rs:22:1\n     |\n22   | pub struct UninitSlice([MaybeUninit<u8>]);\n     | ---------------------- doesn't satisfy `uninit_slice::UninitSlice: buf_mut::BufMut`\n     |\nnote: the following trait bounds were not satisfied:\n      `&mut uninit_slice::UninitSlice: buf_mut::BufMut`\n      `uninit_slice::UninitSlice: buf_mut::BufMut`\n    --> src/buf/buf_mut.rs:1477:16\n     |\n1477 | unsafe impl<T: BufMut + ?Sized> BufMut for &mut T {\n     |                ^^^^^^           ------     ------\n     |                |\n     |                unsatisfied trait bound introduced here\nnote: the trait `buf_mut::BufMut` must be implemented\n    --> src/buf/buf_mut.rs:30:1\n     |\n30   | pub unsafe trait BufMut {\n     | ^^^^^^^^^^^^^^^^^^^^^^^\n     = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buf_mut::BufMut` defines an item `remaining_mut`, perhaps you need to implement it\n    --> src/buf/buf_mut.rs:30:1\n     |\n30   | pub unsafe trait BufMut {\n     | ^^^^^^^^^^^^^^^^^^^^^^^\n\nerror[E0277]: can't compare `u8` with `MaybeUninit<u8>`\n    --> src/buf/buf_mut.rs:1685:9\n     |\n1685 |         assert_eq!(b\"aaaaaa\", &dst[..]);\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no implementation for `u8 == MaybeUninit<u8>`\n     |\n     = help: the trait `PartialEq<MaybeUninit<u8>>` is not implemented for `u8`, which is required by `&[u8; 6]: PartialEq<&[MaybeUninit<u8>]>`\n     = help: the trait `PartialEq` is implemented for `u8`\n     = help: for that trait implementation, expected `u8`, found `MaybeUninit<u8>`\n     = note: required for `[u8; 6]` to implement `PartialEq<[MaybeUninit<u8>]>`\n     = note: 1 redundant requirement hidden\n     = note: required for `&[u8; 6]` to implement `PartialEq<&[MaybeUninit<u8>]>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nSome errors have detailed explanations: E0277, E0599.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 3 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.remaining_mut() < cnt is false, with bound self.remaining_mut() == cnt\n",
+        "// constraint: cnt > 0 is true\n",
+        "// constraint: cnt > 0 is false, with bound cnt == 0\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 6];",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_bytes(b'a', 6);",
+                  "        assert_eq!(buf.remaining_mut(), 0);",
+                  "    }",
+                  "    assert_eq!(dst, [b'a'; 6]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 4];",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_bytes(b'a', 6);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 5];",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_bytes(b'a', 0);",
+                  "        assert_eq!(buf.remaining_mut(), 5);",
+                  "    }",
+                  "    assert_eq!(dst, [0; 5]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.remaining_mut() < cnt is false, with bound self.remaining_mut() == cnt\n",
+        "// constraint: cnt > 0 is false, with bound cnt == 0\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 6];",
+                  "    {",
+                  "        let mut buf: &mut [core::mem::MaybeUninit<u8>] = &mut dst[..].map(core::mem::MaybeUninit::new);",
+                  "        buf.put_bytes(b'a', 6);",
+                  "        assert_eq!(2, buf.remaining_mut()); // remaining_mut should be 2 (after writing 4 bytes)",
+                  "    }",
+                  "    assert_eq!(b\"aaaaaa\", &dst); // Verify that the bytes have been written correctly",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: `[{integer}]` is not an iterator\n    --> src/buf/buf_mut.rs:1681:71\n     |\n1681 |         let mut buf: &mut [core::mem::MaybeUninit<u8>] = &mut dst[..].map(core::mem::MaybeUninit::new);\n     |                                                                       ^^^ `[{integer}]` is not an iterator\n     |\n     = note: the following trait bounds were not satisfied:\n             `[{integer}]: Iterator`\n             which is required by `&mut [{integer}]: Iterator`\n\nwarning: unused import: `super`\n    --> src/buf/buf_mut.rs:1674:8\n     |\n1674 |    use super::*;\n     |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"advance out of bounds: the len is 0 but advancing by 1\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 4];",
+                  "    {",
+                  "        let mut buf: &mut [core::mem::MaybeUninit<u8>] = &mut dst[..].map(core::mem::MaybeUninit::new);",
+                  "        buf.put_bytes(b'a', 5); // This should panic since remaining is 4",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: `[{integer}]` is not an iterator\n    --> src/buf/buf_mut.rs:1682:71\n     |\n1682 |         let mut buf: &mut [core::mem::MaybeUninit<u8>] = &mut dst[..].map(core::mem::MaybeUninit::new);\n     |                                                                       ^^^ `[{integer}]` is not an iterator\n     |\n     = note: the following trait bounds were not satisfied:\n             `[{integer}]: Iterator`\n             which is required by `&mut [{integer}]: Iterator`\n\nwarning: unused import: `super`\n    --> src/buf/buf_mut.rs:1674:8\n     |\n1674 |    use super::*;\n     |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 6];",
+                  "    {",
+                  "        let mut buf: &mut [core::mem::MaybeUninit<u8>] = &mut dst[..].map(core::mem::MaybeUninit::new);",
+                  "        buf.put_bytes(b'a', 0); // Should not panic and do nothing",
+                  "        assert_eq!(4, buf.remaining_mut()); // remaining should still be 4 (unchanged)",
+                  "    }",
+                  "    assert_eq!(b\"\\0\\0\\0\\0\\0\\0\", &dst); // Verify that the buffer is unchanged",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: `[{integer}]` is not an iterator\n    --> src/buf/buf_mut.rs:1681:71\n     |\n1681 |         let mut buf: &mut [core::mem::MaybeUninit<u8>] = &mut dst[..].map(core::mem::MaybeUninit::new);\n     |                                                                       ^^^ `[{integer}]` is not an iterator\n     |\n     = note: the following trait bounds were not satisfied:\n             `[{integer}]: Iterator`\n             which is required by `&mut [{integer}]: Iterator`\n\nwarning: unused import: `super`\n    --> src/buf/buf_mut.rs:1674:8\n     |\n1674 |    use super::*;\n     |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

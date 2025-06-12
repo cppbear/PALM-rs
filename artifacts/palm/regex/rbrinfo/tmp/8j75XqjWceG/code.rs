@@ -1,0 +1,1 @@
+fn byte(b: u8) -> Self { Byte(b as u16) }

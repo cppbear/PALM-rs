@@ -1,0 +1,50 @@
+// Answer 0
+
+#[test]
+fn test_put_slice_empty() {
+    let mut bytes_mut = BytesMut::new();
+    let input: &[u8] = &[];
+    bytes_mut.put_slice(input);
+    assert_eq!(bytes_mut.len(), 0);
+}
+
+#[test]
+fn test_put_slice_non_empty() {
+    let mut bytes_mut = BytesMut::with_capacity(10);
+    let input: &[u8] = &[1, 2, 3, 4, 5];
+    bytes_mut.put_slice(input);
+    assert_eq!(bytes_mut.len(), 5);
+}
+
+#[test]
+fn test_put_slice_large_capacity() {
+    let mut bytes_mut = BytesMut::with_capacity(20);
+    let input: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    bytes_mut.put_slice(input);
+    assert_eq!(bytes_mut.len(), 11);
+}
+
+#[test]
+fn test_put_slice_resizing() {
+    let mut bytes_mut = BytesMut::with_capacity(5);
+    let input: &[u8] = &[1, 2, 3, 4, 5, 6, 7];
+    bytes_mut.put_slice(input);
+    assert_eq!(bytes_mut.len(), 7);
+}
+
+#[test]
+fn test_put_slice_edge_case() {
+    let mut bytes_mut = BytesMut::new();
+    let input: &[u8] = &[0];
+    bytes_mut.put_slice(input);
+    assert_eq!(bytes_mut.len(), 1);
+}
+
+#[should_panic]
+fn test_put_slice_exceeding_capacity() {
+    // Simulating an exceeding condition; we will perform an operation resulting in panic
+    let mut bytes_mut = BytesMut::with_capacity(1);
+    let input: &[u8] = &[1, 2]; // too many bytes for the current capacity
+    bytes_mut.put_slice(input); 
+}
+

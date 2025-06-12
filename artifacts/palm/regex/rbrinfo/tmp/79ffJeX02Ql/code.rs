@@ -1,0 +1,1 @@
+pub fn approximate_size(&self) -> usize { 0 }

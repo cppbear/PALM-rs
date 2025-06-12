@@ -1,0 +1,1 @@
+fn previous_char(&self, at: InputAt) -> Char { (**self).previous_char(at) }

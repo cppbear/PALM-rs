@@ -1,0 +1,1 @@
+fn at(&self, i: usize) -> InputAt { (**self).at(i) }

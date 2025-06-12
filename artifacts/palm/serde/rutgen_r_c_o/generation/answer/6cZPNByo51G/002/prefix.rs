@@ -1,0 +1,62 @@
+// Answer 0
+
+#[test]
+fn test_deserialize_option_some() {
+    struct MockVisitor {
+        state: usize,
+    }
+    impl<'de> Visitor<'de> for MockVisitor {
+        type Value = Content<'de>;
+
+        fn __private_visit_untagged_option<D>(self, deserializer: D) -> Result<Self::Value, ()>
+        where
+            D: Deserializer<'de>,
+        {
+            if self.state == 0 {
+                Ok(Content::Some(Box::new(Content::Bool(true))))
+            } else {
+                Err(())
+            }
+        }
+
+        fn visit_unit(self) -> Result<Self::Value, ()> {
+            Ok(Content::Unit)
+        }
+    }
+
+    let mut content = vec![Some((Content::Bool(true), Content::Unit))];
+    let deserializer = FlatMapDeserializer(&mut content, PhantomData::<()>);
+    let visitor = MockVisitor { state: 0 };
+    let result = deserializer.deserialize_option(visitor);
+}
+
+#[test]
+fn test_deserialize_option_none() {
+    struct MockVisitor {
+        state: usize,
+    }
+    impl<'de> Visitor<'de> for MockVisitor {
+        type Value = Content<'de>;
+
+        fn __private_visit_untagged_option<D>(self, deserializer: D) -> Result<Self::Value, ()>
+        where
+            D: Deserializer<'de>,
+        {
+            if self.state == 1 {
+                Err(())
+            } else {
+                Ok(Content::Some(Box::new(Content::Bool(false))))
+            }
+        }
+
+        fn visit_unit(self) -> Result<Self::Value, ()> {
+            Ok(Content::Unit)
+        }
+    }
+
+    let mut content = vec![None];
+    let deserializer = FlatMapDeserializer(&mut content, PhantomData::<()>);
+    let visitor = MockVisitor { state: 1 };
+    let result = deserializer.deserialize_option(visitor);
+}
+

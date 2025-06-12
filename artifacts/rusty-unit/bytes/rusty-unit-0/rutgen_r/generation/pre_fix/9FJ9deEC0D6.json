@@ -1,0 +1,214 @@
+{
+  "name": "bytes::buf::limit::<buf::limit::Limit<T> as buf::buf_mut::BufMut>::advance_mut",
+  "name_with_impl": "bytes::buf::limit::{impl#1}::advance_mut",
+  "mod_info": {
+    "name": "buf::limit",
+    "loc": "src/buf/mod.rs:21:1:21:11"
+  },
+  "visible": true,
+  "loc": "src/buf/limit.rs:70:5:74:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: cnt <= self.limit is true, with bound cnt == self.limit\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "struct Buffer {",
+            "    limit: usize,",
+            "    inner: InnerBuffer,",
+            "}",
+            "",
+            "struct InnerBuffer {",
+            "    data: Vec<u8>,",
+            "}",
+            "",
+            "impl InnerBuffer {",
+            "    fn advance_mut(&mut self, cnt: usize) {",
+            "        // Simulating advancing the internal buffer",
+            "        self.data.drain(0..cnt);",
+            "    }",
+            "}",
+            "",
+            "impl Buffer {",
+            "    unsafe fn advance_mut(&mut self, cnt: usize) {",
+            "        assert!(cnt <= self.limit);",
+            "        self.inner.advance_mut(cnt);",
+            "        self.limit -= cnt;",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Setup",
+                  "    let limit = 10;",
+                  "    let data = vec![0u8; limit];",
+                  "    let mut inner_buffer = InnerBuffer { data };",
+                  "    let mut buffer = Buffer { limit, inner: inner_buffer };",
+                  "",
+                  "    // Execute",
+                  "    unsafe {",
+                  "        buffer.advance_mut(limit); // cnt is equal to self.limit",
+                  "    }",
+                  "",
+                  "    // Verify",
+                  "    assert_eq!(buffer.limit, 0); // limit should be decremented to 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Setup",
+                  "    let limit = 5;",
+                  "    let data = vec![0u8; limit];",
+                  "    let mut inner_buffer = InnerBuffer { data };",
+                  "    let mut buffer = Buffer { limit, inner: inner_buffer };",
+                  "",
+                  "    // Execute",
+                  "    unsafe {",
+                  "        buffer.advance_mut(limit + 1); // cnt exceeds self.limit",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Setup",
+                  "    let limit = 0;",
+                  "    let data = vec![];",
+                  "    let mut inner_buffer = InnerBuffer { data };",
+                  "    let mut buffer = Buffer { limit, inner: inner_buffer };",
+                  "",
+                  "    // Execute",
+                  "    unsafe {",
+                  "        buffer.advance_mut(0); // cnt is zero",
+                  "    }",
+                  "",
+                  "    // Verify",
+                  "    assert_eq!(buffer.limit, 0); // limit should remain 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: cnt <= self.limit is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Inner {",
+                  "        data: Vec<u8>,",
+                  "        position: usize,",
+                  "    }",
+                  "",
+                  "    impl Inner {",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            self.position += cnt;",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Buf {",
+                  "        inner: Inner,",
+                  "        limit: usize,",
+                  "    }",
+                  "",
+                  "    let mut inner = Inner {",
+                  "        data: vec![0; 10],",
+                  "        position: 0,",
+                  "    };",
+                  "    ",
+                  "    let mut buf = Buf {",
+                  "        inner,",
+                  "        limit: 5,",
+                  "    };",
+                  "",
+                  "    // Attempt to advance beyond the limit",
+                  "    unsafe {",
+                  "        buf.advance_mut(6);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n  --> src/buf/limit.rs:79:8\n   |\n79 |    use ntest::timeout;\n   |        ^^^^^^^^^^^^^^\n   |\n   = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: no method named `advance_mut` found for struct `llmtests::test_advance_mut_03::Buf` in the current scope\n   --> src/buf/limit.rs:112:13\n    |\n95  |     struct Buf {\n    |     ---------- method `advance_mut` not found for this struct\n...\n112 |         buf.advance_mut(6);\n    |             ^^^^^^^^^^^ method not found in `Buf`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buf_mut::BufMut` defines an item `advance_mut`, perhaps you need to implement it\n   --> src/buf/buf_mut.rs:30:1\n    |\n30  | pub unsafe trait BufMut {\n    | ^^^^^^^^^^^^^^^^^^^^^^^\nhelp: one of the expressions' fields has a method of the same name\n    |\n112 |         buf.inner.advance_mut(6);\n    |             ++++++\n\nwarning: unused import: `super`\n  --> src/buf/limit.rs:78:8\n   |\n78 |    use super::*;\n   |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+// Answer 0
+
+#[test]
+fn test_step() {
+    const MULTIPLIER: u64 = 6364136223846793005;
+    
+    struct Pcg {
+        state: u64,
+        increment: u64,
+    }
+
+    impl Pcg {
+        fn new(state: u64, increment: u64) -> Self {
+            Pcg { state, increment }
+        }
+
+        fn step(&mut self) {
+            self.state = self.state.wrapping_mul(MULTIPLIER).wrapping_add(self.increment);
+        }
+    }
+
+    // Test case 1: Normal step execution
+    let mut pcg = Pcg::new(1, 1);
+    pcg.step();
+    assert_eq!(pcg.state, 6364136223846793006); // 1 * MULTIPLIER + 1
+
+    // Test case 2: State wrapping
+    let mut pcg_wrap = Pcg::new(u64::MAX, 1);
+    pcg_wrap.step();
+    assert_eq!(pcg_wrap.state, 6364136223846793005); // MAX * MULTIPLIER wraps to a lower value + 1
+
+    // Test case 3: Increment zero does not change state after first step
+    let mut pcg_no_increment = Pcg::new(5, 0);
+    let initial_state = pcg_no_increment.state;
+    pcg_no_increment.step();
+    assert_ne!(pcg_no_increment.state, initial_state); // State should change
+}
+

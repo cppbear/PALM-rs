@@ -1,0 +1,222 @@
+{
+  "name": "bytes::bytes_mut::shared_v_to_vec",
+  "name_with_impl": "bytes::bytes_mut::shared_v_to_vec",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:1793:1:1813:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: (*shared).is_unique() is true\n",
+        "// expected return value/type: vec\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::ptr::null_mut;",
+            "use std::sync::Arc;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::sync::atomic::Ordering;",
+            "use std::mem;",
+            "use std::ptr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::{self, null_mut};",
+                  "    use std::sync::{Arc, atomic::{AtomicPtr, Ordering}};",
+                  "    use std::mem;",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    unsafe fn release_shared(shared: &mut Shared) {",
+                  "        // Dummy implementation for the cleanup",
+                  "    }",
+                  "",
+                  "    let initial_vec = vec![1, 2, 3, 4, 5];",
+                  "    let len = initial_vec.len();",
+                  "    let mut shared = Shared {",
+                  "        vec: initial_vec.clone(),",
+                  "    };",
+                  "",
+                  "    let shared_ptr = Arc::new(AtomicPtr::new(&mut shared as *mut _));",
+                  "    let data = shared_ptr.clone();",
+                  "",
+                  "    // Ensuring the `shared` is unique",
+                  "    let unique_ptr = data.load(Ordering::Relaxed);",
+                  "    assert!(!unique_ptr.is_null()); // Ensure there is a valid pointer",
+                  "",
+                  "    let result = unsafe {",
+                  "        shared_v_to_vec(&data, initial_vec.as_ptr(), len)",
+                  "    };",
+                  "",
+                  "    assert_eq!(result, initial_vec);",
+                  "    assert!(shared.vec.is_empty()); // Verify the original shared.vec has been replaced",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes_mut.rs:1925:8\n     |\n1925 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `null_mut` and `self`\n    --> src/bytes_mut.rs:1929:20\n     |\n1929 |     use std::ptr::{self, null_mut};\n     |                    ^^^^  ^^^^^^^^\n\nwarning: unused import: `std::mem`\n    --> src/bytes_mut.rs:1931:9\n     |\n1931 |     use std::mem;\n     |         ^^^^^^^^\n\nerror[E0282]: type annotations needed for `*mut _`\n    --> src/bytes_mut.rs:1951:9\n     |\n1951 |     let unique_ptr = data.load(Ordering::Relaxed);\n     |         ^^^^^^^^^^\n1952 |     assert!(!unique_ptr.is_null()); // Ensure there is a valid pointer\n     |                         ------- cannot call a method on a raw pointer with an unknown pointee type\n     |\nhelp: consider giving `unique_ptr` an explicit type, where the type for type parameter `T` is specified\n     |\n1951 |     let unique_ptr: *mut T = data.load(Ordering::Relaxed);\n     |                   ++++++++\n\nwarning: unused variable: `shared`\n    --> src/bytes_mut.rs:1937:30\n     |\n1937 |     unsafe fn release_shared(shared: &mut Shared) {\n     |                              ^^^^^^ help: if this is intentional, prefix it with an underscore: `_shared`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nFor more information about this error, try `rustc --explain E0282`.\nwarning: `bytes` (lib test) generated 5 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 5 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::{self, null_mut};",
+                  "    use std::sync::{Arc, atomic::{AtomicPtr, Ordering}};",
+                  "    use std::mem;",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    let shared = Shared {",
+                  "        vec: vec![1, 2, 3],",
+                  "    };",
+                  "",
+                  "    let shared_ptr = Arc::new(AtomicPtr::new(&shared as *const _ as *mut _)); // Not unique",
+                  "",
+                  "    let len = 3;",
+                  "    let initial_data = vec![4, 5, 6];",
+                  "",
+                  "    unsafe {",
+                  "        let _ = shared_v_to_vec(&shared_ptr, initial_data.as_ptr(), len);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: (*shared).is_unique() is false\n",
+        "// expected return value/type: v\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::slice;",
+            "use std::ptr;",
+            "use std::mem;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use std::ptr;",
+                  "    use std::slice;",
+                  "    use std::mem;",
+                  "",
+                  "    struct Shared {",
+                  "        vec: Vec<u8>,",
+                  "        unique: bool,",
+                  "    }",
+                  "",
+                  "    impl Shared {",
+                  "        fn is_unique(&self) -> bool {",
+                  "            self.unique",
+                  "        }",
+                  "    }",
+                  "",
+                  "    fn release_shared(_shared: *mut Shared) {}",
+                  "",
+                  "    unsafe fn shared_v_to_vec(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Vec<u8> {",
+                  "        let shared: *mut Shared = data.load(Ordering::Relaxed).cast();",
+                  "",
+                  "        if (*shared).is_unique() {",
+                  "            let shared = &mut *shared;",
+                  "",
+                  "            // Drop shared",
+                  "            let mut vec = mem::replace(&mut shared.vec, Vec::new());",
+                  "            release_shared(shared);",
+                  "",
+                  "            // Copy back buffer",
+                  "            ptr::copy(ptr, vec.as_mut_ptr(), len);",
+                  "            vec.set_len(len);",
+                  "",
+                  "            vec",
+                  "        } else {",
+                  "            let v = slice::from_raw_parts(ptr, len).to_vec();",
+                  "            release_shared(shared);",
+                  "            v",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let unique_data = Shared {",
+                  "        vec: vec![1, 2, 3],",
+                  "        unique: false,",
+                  "    };",
+                  "",
+                  "    let data = AtomicPtr::new(&unique_data as *const Shared as *mut Shared);",
+                  "    ",
+                  "    let input_data: [u8; 5] = [4, 5, 6, 7, 8];",
+                  "    let input_ptr = input_data.as_ptr();",
+                  "",
+                  "    let result = unsafe { shared_v_to_vec(&data, input_ptr, input_data.len()) };",
+                  "",
+                  "    assert_eq!(result, input_data.to_vec());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes_mut.rs:1925:8\n     |\n1925 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes_mut.rs:1979:43\n     |\n1979 |     let result = unsafe { shared_v_to_vec(&data, input_ptr, input_data.len()) };\n     |                           --------------- ^^^^^ expected `&AtomicPtr<()>`, found `&AtomicPtr<Shared>`\n     |                           |\n     |                           arguments to this function are incorrect\n     |\n     = note: expected reference `&AtomicPtr<()>`\n                found reference `&AtomicPtr<llmtests::test_shared_v_to_vec_02::Shared>`\nnote: function defined here\n    --> src/bytes_mut.rs:1947:15\n     |\n1947 |     unsafe fn shared_v_to_vec(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Vec<u8> {\n     |               ^^^^^^^^^^^^^^^ --------------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

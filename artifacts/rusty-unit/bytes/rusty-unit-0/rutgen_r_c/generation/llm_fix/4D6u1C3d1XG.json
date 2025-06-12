@@ -1,0 +1,202 @@
+{
+  "name": "bytes::bytes_mut::bytes_mut::BytesMut::split_to",
+  "name_with_impl": "bytes::bytes_mut::{impl#0}::split_to",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": true,
+  "loc": "src/bytes_mut.rs:395:5:412:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: at <= self.len() is true, with bound at == self.len()\n",
+        "// may panic: self.advance_unchecked(at) may panic in certain situations\n",
+        "// expected return value/type: other\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::from_vec(vec![1, 2, 3, 4, 5]);",
+                  "    let other = buf.split_to(buf.len());",
+                  "",
+                  "    assert_eq!(buf.len(), 0);",
+                  "    assert_eq!(other.len(), 5);",
+                  "    assert_eq!(other.as_slice(), &[1, 2, 3, 4, 5]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"split_to out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::from_vec(vec![1, 2, 3, 4, 5]);",
+                  "    buf.split_to(6);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut buf = BytesMut::from_vec(vec![1, 2, 3, 4, 5]);",
+                  "    let other = buf.split_to(3);",
+                  "",
+                  "    assert_eq!(buf.len(), 2);",
+                  "    assert_eq!(other.len(), 3);",
+                  "    assert_eq!(buf.as_slice(), &[4, 5]);",
+                  "    assert_eq!(other.as_slice(), &[1, 2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: at <= self.len() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::with_capacity(10);",
+                  "    unsafe {",
+                  "        bytes_mut.set_len(5); // Set length to 5",
+                  "    }",
+                  "    ",
+                  "    // Attempt to split at a point greater than the current length to provoke a panic",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        bytes_mut.split_to(6);",
+                  "    });",
+                  "    ",
+                  "    assert!(result.is_err(), \"Expected panic when splitting at index greater than length\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the type `&mut bytes_mut::BytesMut` may not be safely transferred across an unwind boundary\n    --> src/bytes_mut.rs:1938:43\n     |\n1938 |       let result = std::panic::catch_unwind(|| {\n     |                    ------------------------ ^-\n     |                    |                        |\n     |  __________________|________________________within this `{closure@src/bytes_mut.rs:1938:43: 1938:45}`\n     | |                  |\n     | |                  required by a bound introduced by this call\n1939 | |         bytes_mut.split_to(6);\n1940 | |     });\n     | |_____^ `&mut bytes_mut::BytesMut` may not be safely transferred across an unwind boundary\n     |\n     = help: within `{closure@src/bytes_mut.rs:1938:43: 1938:45}`, the trait `UnwindSafe` is not implemented for `&mut bytes_mut::BytesMut`, which is required by `{closure@src/bytes_mut.rs:1938:43: 1938:45}: UnwindSafe`\n     = note: `UnwindSafe` is implemented for `&bytes_mut::BytesMut`, but not for `&mut bytes_mut::BytesMut`\nnote: required because it's used within this closure\n    --> src/bytes_mut.rs:1938:43\n     |\n1938 |     let result = std::panic::catch_unwind(|| {\n     |                                           ^^\nnote: required by a bound in `std::panic::catch_unwind`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n     |\n349  | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n     |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::with_capacity(10);",
+                  "    bytes_mut.extend_from_slice(&[1, 2, 3, 4, 5]); // Set length to 5",
+                  "",
+                  "    let other = bytes_mut.split_to(5); // Should not panic",
+                  "",
+                  "    assert_eq!(bytes_mut.len(), 0, \"BytesMut should be empty after split\");",
+                  "    assert_eq!(other.len(), 5, \"Returned BytesMut should contain all original elements\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::with_capacity(10);",
+                  "    bytes_mut.extend_from_slice(&[1, 2, 3, 4, 5]); // Set length to 5",
+                  "",
+                  "    let other = bytes_mut.split_to(0); // Should not panic",
+                  "",
+                  "    assert_eq!(bytes_mut.len(), 5, \"BytesMut should retain its full length after splitting zero\");",
+                  "    assert_eq!(other.len(), 0, \"Returned BytesMut should be empty after split at zero\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

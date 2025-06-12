@@ -1,0 +1,49 @@
+// Answer 0
+
+#[derive(Default)]
+struct SparseArray {
+    dense: Vec<usize>,
+    sparse: Vec<usize>,
+    size: usize,
+}
+
+impl SparseArray {
+    pub fn insert(&mut self, value: usize) {
+        let i = self.size;
+        self.dense.push(value);
+        self.sparse.push(i);
+        self.size += 1;
+    }
+}
+
+#[test]
+fn test_insert() {
+    let mut sparse_array = SparseArray::default();
+    
+    sparse_array.insert(5);
+    assert_eq!(sparse_array.dense, vec![5]);
+    assert_eq!(sparse_array.size, 1);
+    
+    sparse_array.insert(10);
+    assert_eq!(sparse_array.dense, vec![5, 10]);
+    assert_eq!(sparse_array.size, 2);
+}
+
+#[test]
+fn test_insert_boundary() {
+    let mut sparse_array = SparseArray::default();
+    
+    // Insert a value and confirm
+    sparse_array.insert(0);
+    assert_eq!(sparse_array.dense, vec![0]);
+    
+    // Check the update for the next index
+    sparse_array.insert(1);
+    assert_eq!(sparse_array.dense, vec![0, 1]);
+    
+    // Insert a large value
+    let large_value = 1000;
+    sparse_array.insert(large_value);
+    assert_eq!(sparse_array.dense, vec![0, 1, large_value]);
+}
+

@@ -1,0 +1,14 @@
+// Answer 0
+
+#[test]
+fn test_bytes_fold_and_negate_no_case_fold_no_negation_allow_utf8() {
+    let span = Span { start: Position::from(0), end: Position::from(1) };
+    let mut class = ClassBytes::new(vec![ClassBytesRange::new(0x61, 0x7A)]); // Example range for 'a' to 'z'
+    
+    let flags = Flags { case_insensitive: Some(false), ..Flags::default() };
+    let translator = Translator { flags: Cell::new(flags), allow_invalid_utf8: true, stack: RefCell::new(vec![]) };
+    let translator_i = TranslatorI::new(&translator, "test_pattern");
+    
+    translator_i.bytes_fold_and_negate(&span, false, &mut class);
+}
+

@@ -1,0 +1,429 @@
+{
+  "name": "bytes::buf::buf_mut::BufMut::put_slice",
+  "name_with_impl": "bytes::buf::buf_mut::BufMut::put_slice",
+  "mod_info": {
+    "name": "buf::buf_mut",
+    "loc": "src/buf/mod.rs:18:1:18:13"
+  },
+  "visible": true,
+  "loc": "src/buf/buf_mut.rs:246:5:264:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.remaining_mut() < src.len() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct BufMut<'a>(&'a mut [u8]);",
+                  "    ",
+                  "    impl<'a> BufMut<'a> {",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.0.len()",
+                  "        }",
+                  "",
+                  "        fn chunk_mut(&mut self) -> &mut [u8] {",
+                  "            &mut self.0",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            let len = self.0.len();",
+                  "            self.0 = &mut self.0[cnt..len];",
+                  "        }",
+                  "",
+                  "        fn put_slice(&mut self, mut src: &[u8]) {",
+                  "            if self.remaining_mut() < src.len() {",
+                  "                panic!(\"Insufficient capacity\");",
+                  "            }",
+                  "",
+                  "            while !src.is_empty() {",
+                  "                let dst = self.chunk_mut();",
+                  "                let cnt = usize::min(src.len(), dst.len());",
+                  "",
+                  "                dst[..cnt].copy_from_slice(&src[..cnt]);",
+                  "                src = &src[cnt..];",
+                  "",
+                  "                // SAFETY: We just initialized `cnt` bytes in `self`.",
+                  "                unsafe { self.advance_mut(cnt) };",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buffer = [0; 3];",
+                  "    let mut buf = BufMut(&mut buffer[..]);",
+                  "    ",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        buf.put_slice(b\"hello\");",
+                  "    });",
+                  "",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0277]: the type `&mut llmtests::test_put_slice_00::BufMut<'_>` may not be safely transferred across an unwind boundary\n    --> src/buf/buf_mut.rs:1716:43\n     |\n1716 |       let result = std::panic::catch_unwind(|| {\n     |                    ------------------------ ^-\n     |                    |                        |\n     |  __________________|________________________within this `{closure@src/buf/buf_mut.rs:1716:43: 1716:45}`\n     | |                  |\n     | |                  required by a bound introduced by this call\n1717 | |         buf.put_slice(b\"hello\");\n1718 | |     });\n     | |_____^ `&mut llmtests::test_put_slice_00::BufMut<'_>` may not be safely transferred across an unwind boundary\n     |\n     = help: within `{closure@src/buf/buf_mut.rs:1716:43: 1716:45}`, the trait `UnwindSafe` is not implemented for `&mut llmtests::test_put_slice_00::BufMut<'_>`, which is required by `{closure@src/buf/buf_mut.rs:1716:43: 1716:45}: UnwindSafe`\n     = note: `UnwindSafe` is implemented for `&llmtests::test_put_slice_00::BufMut<'_>`, but not for `&mut llmtests::test_put_slice_00::BufMut<'_>`\nnote: required because it's used within this closure\n    --> src/buf/buf_mut.rs:1716:43\n     |\n1716 |     let result = std::panic::catch_unwind(|| {\n     |                                           ^^\nnote: required by a bound in `std::panic::catch_unwind`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n     |\n349  | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n     |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nerror: lifetime may not live long enough\n    --> src/buf/buf_mut.rs:1692:13\n     |\n1681 |     impl<'a> BufMut<'a> {\n     |          -- lifetime `'a` defined here\n...\n1690 |         unsafe fn advance_mut(&mut self, cnt: usize) {\n     |                               - let's call the lifetime of this reference `'1`\n1691 |             let len = self.0.len();\n1692 |             self.0 = &mut self.0[cnt..len];\n     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assignment requires that `'1` must outlive `'a`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct BufMut<'a>(&'a mut [u8]);",
+                  "    ",
+                  "    impl<'a> BufMut<'a> {",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.0.len()",
+                  "        }",
+                  "",
+                  "        fn chunk_mut(&mut self) -> &mut [u8] {",
+                  "            &mut self.0",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            let len = self.0.len();",
+                  "            self.0 = &mut self.0[cnt..len];",
+                  "        }",
+                  "",
+                  "        fn put_slice(&mut self, src: &[u8]) {",
+                  "            if self.remaining_mut() < src.len() {",
+                  "                panic!(\"Insufficient capacity\");",
+                  "            }",
+                  "",
+                  "            while !src.is_empty() {",
+                  "                let dst = self.chunk_mut();",
+                  "                let cnt = usize::min(src.len(), dst.len());",
+                  "",
+                  "                dst[..cnt].copy_from_slice(&src[..cnt]);",
+                  "                src = &src[cnt..];",
+                  "",
+                  "                // SAFETY: We just initialized `cnt` bytes in `self`.",
+                  "                unsafe { self.advance_mut(cnt) };",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buffer = [0; 5];",
+                  "    {",
+                  "        let mut buf = BufMut(&mut buffer[..]);",
+                  "        buf.put_slice(b\"hello\");",
+                  "    }",
+                  "    ",
+                  "    assert_eq!(buffer, b\"hello\".to_vec().as_slice());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror: lifetime may not live long enough\n    --> src/buf/buf_mut.rs:1692:13\n     |\n1681 |     impl<'a> BufMut<'a> {\n     |          -- lifetime `'a` defined here\n...\n1690 |         unsafe fn advance_mut(&mut self, cnt: usize) {\n     |                               - let's call the lifetime of this reference `'1`\n1691 |             let len = self.0.len();\n1692 |             self.0 = &mut self.0[cnt..len];\n     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assignment requires that `'1` must outlive `'a`\n\nerror[E0384]: cannot assign to immutable argument `src`\n    --> src/buf/buf_mut.rs:1705:17\n     |\n1705 |                 src = &src[cnt..];\n     |                 ^^^^^^^^^^^^^^^^^ cannot assign to immutable argument\n     |\nhelp: consider making this binding mutable\n     |\n1695 |         fn put_slice(&mut self, mut src: &[u8]) {\n     |                                 +++\n\nFor more information about this error, try `rustc --explain E0384`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct BufMut<'a>(&'a mut [u8]);",
+                  "    ",
+                  "    impl<'a> BufMut<'a> {",
+                  "        fn remaining_mut(&self) -> usize {",
+                  "            self.0.len()",
+                  "        }",
+                  "",
+                  "        fn chunk_mut(&mut self) -> &mut [u8] {",
+                  "            &mut self.0",
+                  "        }",
+                  "",
+                  "        unsafe fn advance_mut(&mut self, cnt: usize) {",
+                  "            let len = self.0.len();",
+                  "            self.0 = &mut self.0[cnt..len];",
+                  "        }",
+                  "",
+                  "        fn put_slice(&mut self, mut src: &[u8]) {",
+                  "            if self.remaining_mut() < src.len() {",
+                  "                panic!(\"Insufficient capacity\");",
+                  "            }",
+                  "",
+                  "            while !src.is_empty() {",
+                  "                let dst = self.chunk_mut();",
+                  "                let cnt = usize::min(src.len(), dst.len());",
+                  "",
+                  "                dst[..cnt].copy_from_slice(&src[..cnt]);",
+                  "                src = &src[cnt..];",
+                  "",
+                  "                // SAFETY: We just initialized `cnt` bytes in `self`.",
+                  "                unsafe { self.advance_mut(cnt) };",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buffer = [0; 4];",
+                  "    {",
+                  "        let mut buf = BufMut(&mut buffer[..]);",
+                  "        buf.put_slice(b\"he\");",
+                  "    }",
+                  "    ",
+                  "    assert_eq!(&buffer[..2], b\"he\".as_slice());",
+                  "    assert_eq!(&buffer[2..], &[0; 2]);  // Remaining part is zeroed out",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror: lifetime may not live long enough\n    --> src/buf/buf_mut.rs:1692:13\n     |\n1681 |     impl<'a> BufMut<'a> {\n     |          -- lifetime `'a` defined here\n...\n1690 |         unsafe fn advance_mut(&mut self, cnt: usize) {\n     |                               - let's call the lifetime of this reference `'1`\n1691 |             let len = self.0.len();\n1692 |             self.0 = &mut self.0[cnt..len];\n     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ assignment requires that `'1` must outlive `'a`\n\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.remaining_mut() < src.len() is false, with bound self.remaining_mut() == src.len()\n",
+        "// constraint: src.is_empty() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[should_panic(expected = \"TryGetError\")]",
+            "fn test_put_slice_with_insufficient_capacity() {",
+            "    let mut dst = [0; 5];",
+            "",
+            "    {",
+            "        let mut buf = &mut dst[..];",
+            "        buf.put_slice(b\"hello world\"); // This should panic",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 5];",
+                  "    ",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_slice(b\"hello\");",
+                  "        ",
+                  "        assert_eq!(1, buf.remaining_mut());",
+                  "    }",
+                  "",
+                  "    assert_eq!(b\"hello\\0\", &dst);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/buf/buf_mut.rs:1675:8\n     |\n1675 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0277]: can't compare `[u8; 6]` with `[u8; 5]`\n    --> src/buf/buf_mut.rs:1698:5\n     |\n1698 |     assert_eq!(b\"hello\\0\", &dst);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no implementation for `[u8; 6] == [u8; 5]`\n     |\n     = help: the trait `PartialEq<[u8; 5]>` is not implemented for `[u8; 6]`, which is required by `&[u8; 6]: PartialEq<&[u8; 5]>`\n     = help: the following other types implement trait `PartialEq<Rhs>`:\n               `&[T]` implements `PartialEq<Vec<U, A>>`\n               `&[T]` implements `PartialEq<[U; N]>`\n               `&[u8]` implements `PartialEq<BytesMut>`\n               `&[u8]` implements `PartialEq<bytes::Bytes>`\n               `&mut [T]` implements `PartialEq<Vec<U, A>>`\n               `&mut [T]` implements `PartialEq<[U; N]>`\n               `[T; N]` implements `PartialEq<&[U]>`\n               `[T; N]` implements `PartialEq<&mut [U]>`\n             and 7 others\n     = note: required for `&[u8; 6]` to implement `PartialEq<&[u8; 5]>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 5];",
+                  "",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_slice(&[]);",
+                  "        ",
+                  "        assert_eq!(5, buf.remaining_mut());",
+                  "    }",
+                  "",
+                  "    assert_eq!(b\"\\0\\0\\0\\0\\0\", &dst);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.remaining_mut() < src.len() is false, with bound self.remaining_mut() == src.len()\n",
+        "// constraint: src.is_empty() is false\n",
+        "// may panic: dst[..cnt] may panic in certain situations\n",
+        "// may panic: src[..cnt] may panic in certain situations\n",
+        "// may panic: src[cnt..] may panic in certain situations\n",
+        "// constraint: src.is_empty() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 6];",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_slice(b\"hello\");",
+                  "        ",
+                  "        assert_eq!(1, buf.remaining_mut());",
+                  "    }",
+                  "    assert_eq!(b\"hello\\0\", &dst);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 5];",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_slice(b\"hello world\"); // Exceeds capacity",
+                  "        ",
+                  "        // This line will not be reached due to panic",
+                  "        assert_eq!(buf.remaining_mut(), 0);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 6];",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_slice(b\"\");",
+                  "        ",
+                  "        assert_eq!(6, buf.remaining_mut()); // Remaining capacity should remain unchanged",
+                  "    }",
+                  "    assert_eq!(b\"\\0\\0\\0\\0\\0\\0\", &dst); // No changes to dst",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut dst = [0; 10];",
+                  "    {",
+                  "        let mut buf = &mut dst[..];",
+                  "        buf.put_slice(b\"hello\");",
+                  "        ",
+                  "        // This assumes we will try to copy partially beyond the range",
+                  "        // Actual panic will occur in `dst[..cnt].copy_from_slice(&src[..cnt]);`",
+                  "        buf.put_slice(b\"hello world\"); // Attempt to write out of bounds",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

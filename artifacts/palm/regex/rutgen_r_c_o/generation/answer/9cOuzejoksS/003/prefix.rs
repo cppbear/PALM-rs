@@ -1,0 +1,56 @@
+// Answer 0
+
+#[test]
+fn test_visit_class_pre_item_err() {
+    struct DummyVisitor;
+    impl Visitor for DummyVisitor {
+        type Output = ();
+        type Err = String;
+
+        fn visit_class_set_item_pre(&mut self, _item: &ClassSetItem) -> Result<(), Self::Err> {
+            Err("Error occurred".to_string())
+        }
+
+        fn visit_class_set_binary_op_pre(&mut self, _op: &ClassSetBinaryOp) -> Result<(), Self::Err> {
+            Ok(())
+        }
+    }
+
+    let mut visitor = DummyVisitor;
+    let item = ClassSetItem::Literal(Literal::new('a')); // Simulating item within range
+    let ast = ClassInduct::Item(&item);
+    let heap_visitor = HeapVisitor::new();
+
+    let result = heap_visitor.visit_class_pre(&ast, &mut visitor);
+}
+
+#[test]
+fn test_visit_class_pre_binary_op_no_err() {
+    struct DummyVisitor;
+    impl Visitor for DummyVisitor {
+        type Output = ();
+        type Err = String;
+
+        fn visit_class_set_item_pre(&mut self, _item: &ClassSetItem) -> Result<(), Self::Err> {
+            Ok(())
+        }
+
+        fn visit_class_set_binary_op_pre(&mut self, _op: &ClassSetBinaryOp) -> Result<(), Self::Err> {
+            Ok(())
+        }
+    }
+
+    let mut visitor = DummyVisitor;
+    let item = ClassSetItem::Empty(Span::new(0, 1));
+    let op = ClassSetBinaryOp {
+        span: Span::new(0, 5),
+        kind: ClassSetBinaryOpKind::Union,
+        lhs: Box::new(ClassSet::from(item.clone())),
+        rhs: Box::new(ClassSet::from(item.clone())),
+    };
+    let ast = ClassInduct::BinaryOp(&op);
+    let heap_visitor = HeapVisitor::new();
+
+    let result = heap_visitor.visit_class_pre(&ast, &mut visitor);
+}
+

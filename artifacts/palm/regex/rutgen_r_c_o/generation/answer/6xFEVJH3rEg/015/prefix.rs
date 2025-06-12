@@ -1,0 +1,34 @@
+// Answer 0
+
+#[test]
+fn test_fmt_single_line_pattern_with_error() {
+    let pattern = "single line pattern";
+    let line_number_width = 0;
+    let by_line = vec![vec![]];
+    let multi_line = vec![];
+    let error_message = "some error message";
+
+    let start_pos = Position { line: 1, column: 0 }; // assuming dummy Position struct
+    let end_pos = Position { line: 1, column: pattern.len() };
+
+    let span = Span { start: start_pos, end: end_pos };
+    let spans = Spans {
+        pattern,
+        line_number_width,
+        by_line,
+        multi_line,
+    };
+    let formatter = Formatter {
+        pattern,
+        err: &error_message,
+        span: &span,
+        aux_span: None,
+    };
+
+    let mut output = String::new();
+    let result = formatter.fmt(&mut output);
+
+    // The result is an error to test the panic condition
+    assert!(result.is_err());
+}
+

@@ -1,0 +1,87 @@
+// Answer 0
+
+#[test]
+fn test_serialize_value_with_valid_key() {
+    struct TestSerializeMap {
+        inner: SerializeMap,
+    }
+    
+    impl TestSerializeMap {
+        fn new() -> Self {
+            let mut map = Map::new();
+            let mut next_key = Some("test_key".to_owned());
+            TestSerializeMap {
+                inner: SerializeMap::Map { map, next_key },
+            }
+        }
+
+        fn serialize_value<T>(&mut self, value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize,
+        {
+            match &mut self.inner {
+                SerializeMap::Map { map, next_key } => {
+                    let key = next_key.take();
+                    let key = key.expect("serialize_value called before serialize_key");
+                    map.insert(key, to_value(value)?);
+                    Ok(())
+                },
+                #[cfg(feature = "arbitrary_precision")]
+                SerializeMap::Number { .. } => unreachable!(),
+                #[cfg(feature = "raw_value")]
+                SerializeMap::RawValue { .. } => unreachable!(),
+            }
+        }
+    }
+
+    let mut test_map = TestSerializeMap::new();
+    let value = "A string value";
+    let result = test_map.serialize_value(&value);
+    
+    assert!(result.is_ok());
+    if let SerializeMap::Map { map, .. } = test_map.inner {
+        assert_eq!(map.len(), 1);
+        assert!(map.contains_key("test_key"));
+    }
+}
+
+#[test]
+fn test_serialize_value_with_no_key() {
+    struct TestSerializeMap {
+        inner: SerializeMap,
+    }
+
+    impl TestSerializeMap {
+        fn new() -> Self {
+            let mut map = Map::new();
+            TestSerializeMap {
+                inner: SerializeMap::Map { map, next_key: None },
+            }
+        }
+
+        fn serialize_value<T>(&mut self, value: &T) -> Result<()>
+        where
+            T: ?Sized + Serialize,
+        {
+            match &mut self.inner {
+                SerializeMap::Map { map, next_key } => {
+                    let key = next_key.take();
+                    let key = key.expect("serialize_value called before serialize_key");
+                    map.insert(key, to_value(value)?);
+                    Ok(())
+                },
+                #[cfg(feature = "arbitrary_precision")]
+                SerializeMap::Number { .. } => unreachable!(),
+                #[cfg(feature = "raw_value")]
+                SerializeMap::RawValue { .. } => unreachable!(),
+            }
+        }
+    }
+
+    let mut test_map = TestSerializeMap::new();
+    let value = "A string value";
+    let result = test_map.serialize_value(&value);
+    
+    assert!(result.is_err());
+}
+

@@ -1,0 +1,106 @@
+// Answer 0
+
+#[test]
+fn test_end_array_empty() {
+    use std::io::{self, Cursor};
+
+    struct Serializer {
+        current_indent: usize,
+        has_value: bool,
+        indent: usize,
+    }
+
+    impl Serializer {
+        fn new(indent: usize) -> Self {
+            Self {
+                current_indent: 0,
+                has_value: false,
+                indent,
+            }
+        }
+
+        fn end_array<W>(&mut self, writer: &mut W) -> io::Result<()>
+        where
+            W: ?Sized + io::Write,
+        {
+            self.current_indent -= 1;
+
+            if self.has_value {
+                writer.write_all(b"\n")?;
+                self.indent(writer, self.current_indent, self.indent)?;
+            }
+
+            writer.write_all(b"]")
+        }
+
+        fn indent<W>(&self, writer: &mut W, current_indent: usize, indent: usize) -> io::Result<()>
+        where
+            W: ?Sized + io::Write,
+        {
+            for _ in 0..current_indent * indent {
+                writer.write_all(b" ")?
+            }
+            Ok(())
+        }
+    }
+
+    let mut serializer = Serializer::new(4);
+    let mut output = Cursor::new(Vec::new());
+
+    serializer.end_array(&mut output).unwrap();
+
+    assert_eq!(output.into_inner(), b"]");
+}
+
+#[test]
+fn test_end_array_with_value() {
+    use std::io::{self, Cursor};
+
+    struct Serializer {
+        current_indent: usize,
+        has_value: bool,
+        indent: usize,
+    }
+
+    impl Serializer {
+        fn new(indent: usize) -> Self {
+            Self {
+                current_indent: 1,
+                has_value: true,
+                indent,
+            }
+        }
+
+        fn end_array<W>(&mut self, writer: &mut W) -> io::Result<()>
+        where
+            W: ?Sized + io::Write,
+        {
+            self.current_indent -= 1;
+
+            if self.has_value {
+                writer.write_all(b"\n")?;
+                self.indent(writer, self.current_indent, self.indent)?;
+            }
+
+            writer.write_all(b"]")
+        }
+
+        fn indent<W>(&self, writer: &mut W, current_indent: usize, indent: usize) -> io::Result<()>
+        where
+            W: ?Sized + io::Write,
+        {
+            for _ in 0..current_indent * indent {
+                writer.write_all(b" ")?
+            }
+            Ok(())
+        }
+    }
+
+    let mut serializer = Serializer::new(4);
+    let mut output = Cursor::new(Vec::new());
+
+    serializer.end_array(&mut output).unwrap();
+
+    assert_eq!(output.into_inner(), b"\n    ]");
+}
+

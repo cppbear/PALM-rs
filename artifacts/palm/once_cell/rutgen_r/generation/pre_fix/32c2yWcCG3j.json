@@ -1,0 +1,195 @@
+{
+  "name": "once_cell::race::race::OnceNonZeroUsize::get_unchecked",
+  "name_with_impl": "once_cell::race::{impl#0}::get_unchecked",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:68:5:100:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::num::NonZeroUsize;",
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::sync::atomic::Ordering;",
+            "use core::mem::align_of;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::num::NonZeroUsize;",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct InitializedCell {",
+                  "        inner: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    impl InitializedCell {",
+                  "        fn new(value: NonZeroUsize) -> Self {",
+                  "            let cell = InitializedCell {",
+                  "                inner: AtomicUsize::new(value.get()),",
+                  "            };",
+                  "            cell",
+                  "        }",
+                  "",
+                  "        unsafe fn get_unchecked(&self) -> NonZeroUsize {",
+                  "            #[inline(always)]",
+                  "            fn as_const_ptr(r: &AtomicUsize) -> *const usize {",
+                  "                use core::mem::align_of;",
+                  "",
+                  "                let p: *const AtomicUsize = r;",
+                  "                const _ALIGNMENT_COMPATIBLE: () = assert!(align_of::<AtomicUsize>() % align_of::<usize>() == 0);",
+                  "                p.cast::<usize>()",
+                  "            }",
+                  "",
+                  "            let p = as_const_ptr(&self.inner);",
+                  "",
+                  "            let val = unsafe { p.read() };",
+                  "            unsafe { NonZeroUsize::new_unchecked(val) }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let non_zero_value = NonZeroUsize::new(42).unwrap();",
+                  "    let cell = InitializedCell::new(non_zero_value);",
+                  "",
+                  "    let result = unsafe { cell.get_unchecked() };",
+                  "    assert_eq!(result.get(), 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::num::NonZeroUsize;",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct UninitializedCell {",
+                  "        inner: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    impl UninitializedCell {",
+                  "        fn new() -> Self {",
+                  "            UninitializedCell {",
+                  "                inner: AtomicUsize::new(0),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        unsafe fn get_unchecked(&self) -> NonZeroUsize {",
+                  "            #[inline(always)]",
+                  "            fn as_const_ptr(r: &AtomicUsize) -> *const usize {",
+                  "                use core::mem::align_of;",
+                  "",
+                  "                let p: *const AtomicUsize = r;",
+                  "                const _ALIGNMENT_COMPATIBLE: () = assert!(align_of::<AtomicUsize>() % align_of::<usize>() == 0);",
+                  "                p.cast::<usize>()",
+                  "            }",
+                  "",
+                  "            let p = as_const_ptr(&self.inner);",
+                  "            let val = unsafe { p.read() };",
+                  "            unsafe { NonZeroUsize::new_unchecked(val) } // This will panic if val is 0",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = UninitializedCell::new();",
+                  "",
+                  "    let _result = unsafe { cell.get_unchecked() }; // Should panic here",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::num::NonZeroUsize;",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct MaxValueCell {",
+                  "        inner: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    impl MaxValueCell {",
+                  "        fn new(value: NonZeroUsize) -> Self {",
+                  "            MaxValueCell {",
+                  "                inner: AtomicUsize::new(value.get()),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        unsafe fn get_unchecked(&self) -> NonZeroUsize {",
+                  "            #[inline(always)]",
+                  "            fn as_const_ptr(r: &AtomicUsize) -> *const usize {",
+                  "                use core::mem::align_of;",
+                  "",
+                  "                let p: *const AtomicUsize = r;",
+                  "                const _ALIGNMENT_COMPATIBLE: () = assert!(align_of::<AtomicUsize>() % align_of::<usize>() == 0);",
+                  "                p.cast::<usize>()",
+                  "            }",
+                  "",
+                  "            let p = as_const_ptr(&self.inner);",
+                  "            let val = unsafe { p.read() };",
+                  "            unsafe { NonZeroUsize::new_unchecked(val) }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let max_value = NonZeroUsize::new(usize::MAX).unwrap();",
+                  "    let cell = MaxValueCell::new(max_value);",
+                  "",
+                  "    let result = unsafe { cell.get_unchecked() };",
+                  "    assert_eq!(result.get(), usize::MAX);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

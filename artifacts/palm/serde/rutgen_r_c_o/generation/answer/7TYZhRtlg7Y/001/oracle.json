@@ -1,0 +1,456 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct MyVisitor;",
+      "",
+      "impl<'de> Visitor<'de> for MyVisitor {",
+      "    type Value = ();",
+      "    ",
+      "    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {",
+      "        formatter.write_str(\"any value\")",
+      "    }",
+      "",
+      "    fn visit_unit(self) -> Result<Self::Value, Self::Error> {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn visit_bool(self, value: bool) -> Result<Self::Value, Self::Error> {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn visit_u32(self, value: u32) -> Result<Self::Value, Self::Error> {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn visit_seq<V>(self, _visitor: V) -> Result<Self::Value, Self::Error>",
+      "    where",
+      "        V: SeqAccess<'de>,",
+      "    {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    // implement other required methods as no-op for this example",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let content = Content::Unit;",
+          "    let deserializer = ContentRefDeserializer {",
+          "        content: &content,",
+          "        err: PhantomData,",
+          "    };",
+          "    let visitor = MyVisitor {};",
+          "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let content = Content::Unit;",
+            "    let deserializer = ContentRefDeserializer { content: &content, err: PhantomData };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let content = Content::Unit;",
+            "    let deserializer = ContentRefDeserializer { content: &content, err: PhantomData };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let error = result.err().unwrap();",
+            "    assert_eq!(error, deserializer.invalid_type(&visitor));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let content = Content::Unit;",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::Unit;",
+            "    let deserializer = ContentRefDeserializer { content: &content, err: PhantomData };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let content = Content::Unit;",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::Unit;",
+            "    let deserializer = ContentRefDeserializer { content: &content, err: PhantomData };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let error = result.err().unwrap();",
+            "    assert_eq!(error, deserializer.invalid_type(&visitor));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+          "    let deserializer = ContentRefDeserializer {",
+          "        content: &content,",
+          "        err: PhantomData,",
+          "    };",
+          "    let visitor = MyVisitor {};",
+          "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert_eq!(result.unwrap_err().unexpected(), content.unexpected());"
+          ],
+          [
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert_eq!(result.unwrap_err().expected(), \"valid map or seq\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert_eq!(result.unwrap_err().unexpected(), content.unexpected());",
+            "}"
+          ],
+          [
+            "{",
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::NewtypeStruct(\"TestNewtype\", Box::new(Content::Bool(true)));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert_eq!(result.unwrap_err().expected(), \"valid map or seq\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let content = Content::U32(42);",
+          "    let deserializer = ContentRefDeserializer {",
+          "        content: &content,",
+          "        err: PhantomData,",
+          "    };",
+          "    let visitor = MyVisitor {};",
+          "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let content = Content::U32(42);",
+            "    let deserializer = ContentRefDeserializer { content: &content, err: PhantomData };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let content = Content::U32(42);",
+            "    let deserializer = ContentRefDeserializer { content: &content, err: PhantomData };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert_eq!(result.err().unwrap(), deserializer.invalid_type(&visitor));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let content = Content::U32(42);",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::U32(42);",
+            "    let deserializer = ContentRefDeserializer { content: &content, err: PhantomData };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let content = Content::U32(42);",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::U32(42);",
+            "    let deserializer = ContentRefDeserializer { content: &content, err: PhantomData };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert_eq!(result.err().unwrap(), deserializer.invalid_type(&visitor));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let content = Content::Some(Box::new(Content::String(\"SomeValue\".to_string())));",
+          "    let deserializer = ContentRefDeserializer {",
+          "        content: &content,",
+          "        err: PhantomData,",
+          "    };",
+          "    let visitor = MyVisitor {};",
+          "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let content = Content::Some(Box::new(Content::String(\"SomeValue\".to_string())));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let content = Content::Some(Box::new(Content::String(\"SomeValue\".to_string())));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert_eq!(result.unwrap_err().to_string(), expected_error_message);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let content = Content::Some(Box::new(Content::String(\"SomeValue\".to_string())));",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::Some(Box::new(Content::String(\"SomeValue\".to_string())));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let content = Content::Some(Box::new(Content::String(\"SomeValue\".to_string())));",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::Some(Box::new(Content::String(\"SomeValue\".to_string())));",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let result = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    assert_eq!(result.unwrap_err().to_string(), expected_error_message);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let content = Content::Tuple(vec![Content::Bool(true)]);",
+          "    let deserializer = ContentRefDeserializer {",
+          "        content: &content,",
+          "        err: PhantomData,",
+          "    };",
+          "    let visitor = MyVisitor {};",
+          "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let content = Content::Tuple(vec![Content::Bool(true)]);",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    assert!(matches!(deserializer.deserialize_struct(\"TestStruct\", &[], visitor), Err(_)));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let content = Content::Tuple(vec![Content::Bool(true)]);",
+            "    let deserializer = ContentRefDeserializer {",
+            "        content: &content,",
+            "        err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    let _ = deserializer.deserialize_struct(\"TestStruct\", &[], visitor);",
+            "    let content = Content::Tuple(vec![Content::Bool(true)]);",
+            "    let deserializer = ContentRefDeserializer {",
+            "    content: &content,",
+            "    err: PhantomData,",
+            "    };",
+            "    let visitor = MyVisitor {};",
+            "    assert!(matches!(deserializer.deserialize_struct(\"TestStruct\", &[], visitor), Err(_)));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false
+        ]
+      }
+    ]
+  }
+]

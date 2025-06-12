@@ -1,0 +1,371 @@
+{
+  "name": "once_cell::unsync::unsync::Lazy<T, F>::force_mut",
+  "name_with_impl": "once_cell::unsync::{impl#12}::force_mut",
+  "mod_info": {
+    "name": "unsync",
+    "loc": "src/lib.rs:383:1:859:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:794:9:803:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: this.cell.get_mut().is_none() is true\n",
+        "// constraint: this.init.get_mut().take() matches Some(f) is true\n",
+        "// constraint: this.init.get_mut().take() matches Some(f) is true\n",
+        "// expected return value/type: this.cell.get_mut().unwrap_or_else(|| unreachable!())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInit;",
+                  "",
+                  "    impl TestInit {",
+                  "        fn new() -> Self {",
+                  "            TestInit",
+                  "        }",
+                  "        ",
+                  "        fn call(&self) -> i32 {",
+                  "            42",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let init_fn = || {",
+                  "        let initializer = TestInit::new();",
+                  "        initializer.call()",
+                  "    };",
+                  "",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "",
+                  "    let value = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(None), // Simulating poisoning",
+                  "    };",
+                  "",
+                  "    let _value = Lazy::force_mut(&mut lazy); // Should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/lib.rs:863:8\n    |\n863 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed for `unsync::Lazy<_, _>`\n   --> src/lib.rs:868:9\n    |\n868 |     let mut lazy = Lazy {\n    |         ^^^^^^^^\n869 |         cell: OnceCell::new(),\n870 |         init: Cell::new(None), // Simulating poisoning\n    |                         ---- type must be known at this point\n    |\nhelp: consider giving `lazy` an explicit type, where the type for type parameter `T` is specified\n    |\n868 |     let mut lazy: unsync::Lazy<T, F> = Lazy {\n    |                 ++++++++++++++++++++\n\nerror[E0283]: type annotations needed for `unsync::Lazy<_, _>`\n   --> src/lib.rs:868:9\n    |\n868 |     let mut lazy = Lazy {\n    |         ^^^^^^^^\n...\n873 |     let _value = Lazy::force_mut(&mut lazy); // Should panic\n    |                  --------------- --------- type must be known at this point\n    |                  |\n    |                  required by a bound introduced by this call\n    |\n    = note: multiple `impl`s satisfying `_: FnOnce()` found in the following crates: `alloc`, `core`:\n            - impl<A, F> FnOnce<A> for &F\n              where A: Tuple, F: Fn<A>, F: ?Sized;\n            - impl<A, F> FnOnce<A> for &mut F\n              where A: Tuple, F: FnMut<A>, F: ?Sized;\n            - impl<Args, F, A> FnOnce<Args> for Box<F, A>\n              where Args: Tuple, F: FnOnce<Args>, A: Allocator, F: ?Sized;\n            - impl<F, Args> FnOnce<Args> for Exclusive<F>\n              where F: FnOnce<Args>, Args: Tuple;\n            - impl<R, F> FnOnce<()> for AssertUnwindSafe<F>\n              where <F as FnOnce<()>>::Output == R, F: FnOnce();\nnote: required by a bound in `unsync::Lazy::<T, F>::force_mut`\n   --> src/lib.rs:758:16\n    |\n758 |     impl<T, F: FnOnce() -> T> Lazy<T, F> {\n    |                ^^^^^^^^^^^^^ required by this bound in `Lazy::<T, F>::force_mut`\n...\n794 |         pub fn force_mut(this: &mut Lazy<T, F>) -> &mut T {\n    |                --------- required by a bound in this associated function\nhelp: consider giving `lazy` an explicit type, where the type for type parameter `F` is specified\n    |\n868 |     let mut lazy: unsync::Lazy<T, F> = Lazy {\n    |                 ++++++++++++++++++++\n\nSome errors have detailed explanations: E0282, E0283.\nFor more information about an error, try `rustc --explain E0282`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInit;",
+                  "",
+                  "    impl TestInit {",
+                  "        fn new() -> Self {",
+                  "            TestInit",
+                  "        }",
+                  "",
+                  "        fn call(&self) -> i32 {",
+                  "            100",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let init_fn = || {",
+                  "        let initializer = TestInit::new();",
+                  "        initializer.call()",
+                  "    };",
+                  "",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "",
+                  "    let value_first = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value_first, 100);",
+                  "    ",
+                  "    let value_second = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(value_first as *mut _ , value_second as *mut _); // Ensure the same reference is returned",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/lib.rs:863:8\n    |\n863 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0499]: cannot borrow `lazy` as mutable more than once at a time\n   --> src/lib.rs:892:40\n    |\n889 |     let value_first = Lazy::force_mut(&mut lazy);\n    |                                       --------- first mutable borrow occurs here\n...\n892 |     let value_second = Lazy::force_mut(&mut lazy);\n    |                                        ^^^^^^^^^ second mutable borrow occurs here\n893 |     assert_eq!(value_first as *mut _ , value_second as *mut _); // Ensure the same reference is returned\n    |                ----------- first borrow later used here\n\nFor more information about this error, try `rustc --explain E0499`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: this.cell.get_mut().is_none() is true\n",
+        "// constraint: this.init.get_mut().take() matches None is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(|| 42)),",
+                  "    };",
+                  "",
+                  "    let value = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(None),",
+                  "    };",
+                  "",
+                  "    Lazy::force_mut(&mut lazy);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/lib.rs:863:8\n    |\n863 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed for `unsync::Lazy<_, _>`\n   --> src/lib.rs:868:9\n    |\n868 |     let mut lazy = Lazy {\n    |         ^^^^^^^^\n869 |         cell: OnceCell::new(),\n870 |         init: Cell::new(None),\n    |                         ---- type must be known at this point\n    |\nhelp: consider giving `lazy` an explicit type, where the type for type parameter `T` is specified\n    |\n868 |     let mut lazy: unsync::Lazy<T, F> = Lazy {\n    |                 ++++++++++++++++++++\n\nerror[E0283]: type annotations needed for `unsync::Lazy<_, _>`\n   --> src/lib.rs:868:9\n    |\n868 |     let mut lazy = Lazy {\n    |         ^^^^^^^^\n...\n873 |     Lazy::force_mut(&mut lazy);\n    |     --------------- --------- type must be known at this point\n    |     |\n    |     required by a bound introduced by this call\n    |\n    = note: multiple `impl`s satisfying `_: FnOnce()` found in the following crates: `alloc`, `core`:\n            - impl<A, F> FnOnce<A> for &F\n              where A: Tuple, F: Fn<A>, F: ?Sized;\n            - impl<A, F> FnOnce<A> for &mut F\n              where A: Tuple, F: FnMut<A>, F: ?Sized;\n            - impl<Args, F, A> FnOnce<Args> for Box<F, A>\n              where Args: Tuple, F: FnOnce<Args>, A: Allocator, F: ?Sized;\n            - impl<F, Args> FnOnce<Args> for Exclusive<F>\n              where F: FnOnce<Args>, Args: Tuple;\n            - impl<R, F> FnOnce<()> for AssertUnwindSafe<F>\n              where <F as FnOnce<()>>::Output == R, F: FnOnce();\nnote: required by a bound in `unsync::Lazy::<T, F>::force_mut`\n   --> src/lib.rs:758:16\n    |\n758 |     impl<T, F: FnOnce() -> T> Lazy<T, F> {\n    |                ^^^^^^^^^^^^^ required by this bound in `Lazy::<T, F>::force_mut`\n...\n794 |         pub fn force_mut(this: &mut Lazy<T, F>) -> &mut T {\n    |                --------- required by a bound in this associated function\nhelp: consider giving `lazy` an explicit type, where the type for type parameter `F` is specified\n    |\n868 |     let mut lazy: unsync::Lazy<T, F> = Lazy {\n    |                 ++++++++++++++++++++\n\nSome errors have detailed explanations: E0282, E0283.\nFor more information about an error, try `rustc --explain E0282`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(|| 100)),",
+                  "    };",
+                  "",
+                  "    let value = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value, 100);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: this.cell.get_mut().is_none() is false\n",
+        "// expected return value/type: this.cell.get_mut().unwrap_or_else(|| unreachable!())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy: Lazy<u32, fn() -> u32> = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(Some(|| 42)),",
+                  "    };",
+                  "    ",
+                  "    let value: &mut u32 = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy: Lazy<u32, fn() -> u32> = Lazy {",
+                  "        cell: OnceCell::with_value(100),",
+                  "        init: Cell::new(None),",
+                  "    };",
+                  "    ",
+                  "    let value: &mut u32 = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value, 100);",
+                  "    ",
+                  "    *value += 1;",
+                  "    assert_eq!(*value, 101);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"Lazy instance has previously been poisoned\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy: Lazy<u32, fn() -> u32> = Lazy {",
+                  "        cell: OnceCell::new(),",
+                  "        init: Cell::new(None),",
+                  "    };",
+                  "    ",
+                  "    Lazy::force_mut(&mut lazy);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut lazy: Lazy<u32, fn() -> u32> = Lazy {",
+                  "        cell: OnceCell::with_value(10),",
+                  "        init: Cell::new(None),",
+                  "    };",
+                  "    ",
+                  "    let value: &mut u32 = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(*value, 10);",
+                  "    ",
+                  "    let second_value: &mut u32 = Lazy::force_mut(&mut lazy);",
+                  "    assert_eq!(value, second_value);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/lib.rs:863:8\n    |\n863 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0499]: cannot borrow `lazy` as mutable more than once at a time\n   --> src/lib.rs:875:50\n    |\n872 |     let value: &mut u32 = Lazy::force_mut(&mut lazy);\n    |                                           --------- first mutable borrow occurs here\n...\n875 |     let second_value: &mut u32 = Lazy::force_mut(&mut lazy);\n    |                                                  ^^^^^^^^^ second mutable borrow occurs here\n876 |     assert_eq!(value, second_value);\n    |     ------------------------------- first borrow later used here\n\nFor more information about this error, try `rustc --explain E0499`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+// Answer 0
+
+#[test]
+fn test_exec_with_valid_conditions() {
+    // Set up the program with the necessary properties
+    let prog = Program {
+        insts: vec![], // Assuming an empty instruction set for this test
+        matches: vec![InstPtr::default()], // Valid length of 1
+        captures: vec![],
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: InstPtr::default(),
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: false,
+        is_reverse: false,
+        is_anchored_start: false, // Constraint: this should be false
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher::empty(), // Will be replaced below
+        dfa_size_limit: 0,
+    };
+
+    // Create a non-empty prefix and ensure it's not empty
+    let prefixes = LiteralSearcher::prefixes(Literals::empty()); 
+    prog.prefixes = prefixes; // Constraint: prefixes.is_empty() must be false
+
+    // Set up the Cache
+    let mut cache = Cache {
+        jobs: vec![],
+        visited: vec![],
+    };
+
+    // Set up the input with required constraints
+    struct TestInput;
+    
+    impl Input for TestInput {
+        fn at(&self, i: usize) -> InputAt {
+            InputAt {
+                pos: i,
+                c: Char::default(), 
+                byte: Some(0), 
+                len: 1,
+            }
+        }
+        fn next_char(&self, at: InputAt) -> Char {
+            Char::default() 
+        }
+        fn previous_char(&self, at: InputAt) -> Char {
+            Char::default() 
+        }
+        fn is_empty_match(&self, at: InputAt, empty: &InstEmptyLook) -> bool {
+            false // Non-empty for this test
+        }
+        fn prefix_at(&self, prefixes: &LiteralSearcher, at: InputAt) -> Option<InputAt> {
+            Some(at) // Constraint: this should match to Some(at)
+        }
+        fn len(&self) -> usize {
+            10 // Some valid length
+        }
+        fn is_empty(&self) -> bool {
+            false // Must not be empty
+        }
+        fn as_bytes(&self) -> &[u8] {
+            &[]
+        }
+    }
+
+    let mut matches = vec![false; 1]; // Size 1, to match the program requirement
+    let mut slots = vec![Slot::default(); 1]; // Dummy slot
+
+    // Create the bounded instance
+    let input = TestInput;
+    let mut bounded = Bounded {
+        prog: &prog,
+        input,
+        matches: &mut matches,
+        slots: &mut slots,
+        m: &mut cache,
+    };
+
+    // Create a valid InputAt which satisfies all constraints
+    let at = InputAt {
+        pos: 9, // End position since len is 10
+        c: Char::default(),
+        byte: Some(255), // Any byte value
+        len: 1, // Length of 1
+    };
+
+    // Call the function to test
+    let result = bounded.exec_(at);
+}
+
+#[test]
+fn test_exec_with_edge_condition() {
+    // Set up the program with one edge case
+    let prog = Program {
+        insts: vec![], 
+        matches: vec![InstPtr::default()], // Valid length of 1
+        captures: vec![],
+        capture_name_idx: Arc::new(HashMap::new()),
+        start: InstPtr::default(),
+        byte_classes: vec![],
+        only_utf8: false,
+        is_bytes: false,
+        is_dfa: false,
+        is_reverse: false,
+        is_anchored_start: false, 
+        is_anchored_end: false,
+        has_unicode_word_boundary: false,
+        prefixes: LiteralSearcher::empty(), 
+        dfa_size_limit: 0,
+    };
+
+    let prefixes = LiteralSearcher::prefixes(Literals::empty()); 
+    prog.prefixes = prefixes;
+
+    let mut cache = Cache {
+        jobs: vec![],
+        visited: vec![],
+    };
+
+    struct EdgeTestInput;
+
+    impl Input for EdgeTestInput {
+        fn at(&self, i: usize) -> InputAt {
+            InputAt {
+                pos: 255, // Near the maximum size constraint to simulate edge case
+                c: Char::default(),
+                byte: Some(255),
+                len: 1, // 1 byte to match
+            }
+        }
+        fn next_char(&self, at: InputAt) -> Char {
+            Char::default() 
+        }
+        fn previous_char(&self, at: InputAt) -> Char {
+            Char::default() 
+        }
+        fn is_empty_match(&self, at: InputAt, empty: &InstEmptyLook) -> bool {
+            false 
+        }
+        fn prefix_at(&self, prefixes: &LiteralSearcher, at: InputAt) -> Option<InputAt> {
+            Some(at) 
+        }
+        fn len(&self) -> usize {
+            256 // Test for max boundary
+        }
+        fn is_empty(&self) -> bool {
+            false 
+        }
+        fn as_bytes(&self) -> &[u8] {
+            &[]
+        }
+    }
+
+    let mut matches = vec![false; 1]; 
+    let mut slots = vec![Slot::default(); 1]; 
+
+    let input = EdgeTestInput;
+    let mut bounded = Bounded {
+        prog: &prog,
+        input,
+        matches: &mut matches,
+        slots: &mut slots,
+        m: &mut cache,
+    };
+
+    let at = InputAt {
+        pos: 255,
+        c: Char::default(),
+        byte: Some(255),
+        len: 1, 
+    };
+
+    let result = bounded.exec_(at);
+}
+

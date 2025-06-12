@@ -1,0 +1,458 @@
+{
+  "name": "http::header::name::<header::name::MaybeLower<'a> as std::hash::Hash>::hash",
+  "name_with_impl": "http::header::name::{impl#32}::hash",
+  "mod_info": {
+    "name": "header::name",
+    "loc": "src/header/mod.rs:74:1:74:10"
+  },
+  "visible": true,
+  "loc": "src/header/name.rs:1630:5:1638:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.lower is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::hash::DefaultHasher;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::hash::DefaultHasher;",
+                  "    ",
+                  "    struct TestHasher {",
+                  "        hasher: DefaultHasher,",
+                  "    }",
+                  "",
+                  "    impl Hasher for TestHasher {",
+                  "        fn finish(&self) -> u64 {",
+                  "            self.hasher.finish()",
+                  "        }",
+                  "",
+                  "        fn write(&mut self, bytes: &[u8]) {",
+                  "            self.hasher.write(bytes)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let buf: &[u8] = b\"test\";",
+                  "    let maybe_lower = MaybeLower { buf, lower: true };",
+                  "    let mut hasher = TestHasher {",
+                  "        hasher: DefaultHasher::new(),",
+                  "    };",
+                  "",
+                  "    maybe_lower.hash(&mut hasher);",
+                  "    let result = hasher.finish();",
+                  "",
+                  "    assert!(result > 0); // Ensuring that some hash value is produced",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::hash::DefaultHasher;",
+                  "    ",
+                  "    struct TestHasher {",
+                  "        hasher: DefaultHasher,",
+                  "    }",
+                  "",
+                  "    impl Hasher for TestHasher {",
+                  "        fn finish(&self) -> u64 {",
+                  "            self.hasher.finish()",
+                  "        }",
+                  "",
+                  "        fn write(&mut self, bytes: &[u8]) {",
+                  "            self.hasher.write(bytes)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let buf: &[u8] = b\"\";",
+                  "    let maybe_lower = MaybeLower { buf, lower: true };",
+                  "    let mut hasher = TestHasher {",
+                  "        hasher: DefaultHasher::new(),",
+                  "    };",
+                  "",
+                  "    maybe_lower.hash(&mut hasher);",
+                  "    let result = hasher.finish();",
+                  "",
+                  "    assert_eq!(result, 0); // Empty buffer should output a hash of 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.lower is false\n",
+        "// constraint: &b in self.buf is true\n",
+        "// constraint: &b in self.buf is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::collections::hash_map::DefaultHasher;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let input = MaybeLower {",
+                  "        buf: b\"abc\",",
+                  "        lower: false,",
+                  "    };",
+                  "",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    input.hash(&mut hasher);",
+                  "    let hash_value = hasher.finish();",
+                  "",
+                  "    assert!(hash_value != 0); // Check that hashing gave a valid non-zero value",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let input = MaybeLower {",
+                  "        buf: b\"\",",
+                  "        lower: false,",
+                  "    };",
+                  "",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    input.hash(&mut hasher);",
+                  "    let hash_value = hasher.finish();",
+                  "",
+                  "    assert!(hash_value == 0); // Hashing an empty buffer should yield zero",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    // This buffer contains a value 300 which is out of bounds for HEADER_CHARS",
+                  "    let input = MaybeLower {",
+                  "        buf: &[255, 300],",
+                  "        lower: false,",
+                  "    };",
+                  "",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    ",
+                  "    // This should not panic as Rust will handle out-of-bounds",
+                  "    std::panic::catch_unwind(|| {",
+                  "        input.hash(&mut hasher);",
+                  "    }).unwrap_err(); // Check that it panics",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the type `&mut DefaultHasher` may not be safely transferred across an unwind boundary\n    --> src/header/name.rs:1944:30\n     |\n1944 |       std::panic::catch_unwind(|| {\n     |       ------------------------ ^-\n     |       |                        |\n     |  _____|________________________within this `{closure@src/header/name.rs:1944:30: 1944:32}`\n     | |     |\n     | |     required by a bound introduced by this call\n1945 | |         input.hash(&mut hasher);\n1946 | |     }).unwrap_err(); // Check that it panics\n     | |_____^ `&mut DefaultHasher` may not be safely transferred across an unwind boundary\n     |\n     = help: within `{closure@src/header/name.rs:1944:30: 1944:32}`, the trait `UnwindSafe` is not implemented for `&mut DefaultHasher`, which is required by `{closure@src/header/name.rs:1944:30: 1944:32}: UnwindSafe`\n     = note: `UnwindSafe` is implemented for `&DefaultHasher`, but not for `&mut DefaultHasher`\nnote: required because it's used within this closure\n    --> src/header/name.rs:1944:30\n     |\n1944 |     std::panic::catch_unwind(|| {\n     |                              ^^\nnote: required by a bound in `std::panic::catch_unwind`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n     |\n349  | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n     |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 14 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let input = MaybeLower {",
+                  "        buf: b\"xyz\",",
+                  "        lower: true,",
+                  "    };",
+                  "",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    input.hash(&mut hasher);",
+                  "    let hash_value = hasher.finish();",
+                  "",
+                  "    assert!(hash_value != 0); // Check that hashing gave a valid non-zero value",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    let input = MaybeLower {",
+                  "        buf: b\"\",",
+                  "        lower: true,",
+                  "    };",
+                  "",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "    input.hash(&mut hasher);",
+                  "    let hash_value = hasher.finish();",
+                  "",
+                  "    assert!(hash_value == 0); // Hashing an empty buffer should yield zero",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::hash_map::DefaultHasher;",
+                  "",
+                  "    // This buffer contains a value 300 which is out of bounds for HEADER_CHARS",
+                  "    let input = MaybeLower {",
+                  "        buf: &[255, 300],",
+                  "        lower: true,",
+                  "    };",
+                  "",
+                  "    let mut hasher = DefaultHasher::new();",
+                  "",
+                  "    // This should not panic as Rust will handle out-of-bounds",
+                  "    std::panic::catch_unwind(|| {",
+                  "        input.hash(&mut hasher);",
+                  "    }).unwrap_err(); // Check that it panics",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling http v1.3.1 (/home/abezbm/rust-utgen-test-crates-new/http)\nwarning: unused import: `self::StandardHeader::Vary`\n    --> src/header/name.rs:1676:9\n     |\n1676 |     use self::StandardHeader::Vary;\n     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:481:9\n    |\n481 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::map::HeaderMap`\n   --> src/header/value.rs:482:9\n    |\n482 |     use crate::header::map::HeaderMap;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:483:9\n    |\n483 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/header/value.rs:568:9\n    |\n568 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::header::name`\n   --> src/header/value.rs:569:9\n    |\n569 |     use crate::header::name;\n    |         ^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/method.rs:424:9\n    |\n424 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/request.rs:1063:9\n     |\n1063 |     use super::*;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/response.rs:776:9\n    |\n776 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/authority.rs:533:9\n    |\n533 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/builder.rs:165:9\n    |\n165 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/uri/port.rs:115:9\n    |\n115 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/error.rs:143:9\n    |\n143 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/lib.rs:197:9\n    |\n197 |     use super::*;\n    |         ^^^^^^^^\n\nerror[E0277]: the type `&mut DefaultHasher` may not be safely transferred across an unwind boundary\n    --> src/header/name.rs:1944:30\n     |\n1944 |       std::panic::catch_unwind(|| {\n     |       ------------------------ ^-\n     |       |                        |\n     |  _____|________________________within this `{closure@src/header/name.rs:1944:30: 1944:32}`\n     | |     |\n     | |     required by a bound introduced by this call\n1945 | |         input.hash(&mut hasher);\n1946 | |     }).unwrap_err(); // Check that it panics\n     | |_____^ `&mut DefaultHasher` may not be safely transferred across an unwind boundary\n     |\n     = help: within `{closure@src/header/name.rs:1944:30: 1944:32}`, the trait `UnwindSafe` is not implemented for `&mut DefaultHasher`, which is required by `{closure@src/header/name.rs:1944:30: 1944:32}: UnwindSafe`\n     = note: `UnwindSafe` is implemented for `&DefaultHasher`, but not for `&mut DefaultHasher`\nnote: required because it's used within this closure\n    --> src/header/name.rs:1944:30\n     |\n1944 |     std::panic::catch_unwind(|| {\n     |                              ^^\nnote: required by a bound in `std::panic::catch_unwind`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n     |\n349  | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n     |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `http` (lib test) generated 14 warnings\nerror: could not compile `http` (lib test) due to 1 previous error; 14 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.lower is false\n",
+        "// constraint: &b in self.buf is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestHasher {",
+                  "        value: u64,",
+                  "    }",
+                  "    impl Hasher for TestHasher {",
+                  "        fn finish(&self) -> u64 {",
+                  "            self.value",
+                  "        }",
+                  "        fn write(&mut self, bytes: &[u8]) {",
+                  "            self.value = bytes.iter().fold(self.value, |acc, &b| acc ^ b as u64);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let buf: &[u8] = &[0xFF, 0xFE, 0xFD]; // Non-header characters",
+                  "    let maybe_lower = MaybeLower { buf, lower: false };",
+                  "    let mut hasher = TestHasher { value: 0 };",
+                  "",
+                  "    maybe_lower.hash(&mut hasher);",
+                  "    assert_eq!(hasher.finish(), buf.iter().fold(0u64, |acc, &b| acc ^ b as u64));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct PanicHasher;",
+                  "",
+                  "    impl Hasher for PanicHasher {",
+                  "        fn finish(&self) -> u64 {",
+                  "            0",
+                  "        }",
+                  "        fn write(&mut self, _bytes: &[u8]) {",
+                  "            panic!(\"This hasher is designed to panic!\");",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let buf: &[u8] = &[255]; // Invalid header character",
+                  "    let maybe_lower = MaybeLower { buf, lower: false };",
+                  "    let mut hasher = PanicHasher;",
+                  "",
+                  "    maybe_lower.hash(&mut hasher); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestHasher {",
+                  "        value: u64,",
+                  "    }",
+                  "    impl Hasher for TestHasher {",
+                  "        fn finish(&self) -> u64 {",
+                  "            self.value",
+                  "        }",
+                  "        fn write(&mut self, _bytes: &[u8]) {",
+                  "            // No-op for empty input",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let buf: &[u8] = &[]; // Empty buffer",
+                  "    let maybe_lower = MaybeLower { buf, lower: false };",
+                  "    let mut hasher = TestHasher { value: 0 };",
+                  "",
+                  "    maybe_lower.hash(&mut hasher);",
+                  "    assert_eq!(hasher.finish(), 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

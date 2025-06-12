@@ -1,0 +1,6 @@
+pub fn get_many_mut<Q, const N: usize>(&mut self, ks: [&Q; N]) -> [Option<&'_ mut V>; N]
+    where
+        Q: Hash + Equivalent<K> + ?Sized,
+    {
+        self.get_many_mut_inner(ks).map(|res| res.map(|(_, v)| v))
+    }

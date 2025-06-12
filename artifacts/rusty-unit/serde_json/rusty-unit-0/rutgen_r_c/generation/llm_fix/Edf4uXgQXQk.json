@@ -1,0 +1,232 @@
+{
+  "name": "serde_json::value::de::<value::de::SeqRefDeserializer<'de> as serde::de::SeqAccess<'de>>::size_hint",
+  "name_with_impl": "serde_json::value::de::{impl#17}::size_hint",
+  "mod_info": {
+    "name": "value::de",
+    "loc": "src/value/mod.rs:927:1:927:8"
+  },
+  "visible": true,
+  "loc": "src/value/de.rs:1147:5:1152:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.iter.size_hint() matches _ is true\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Create a sequence of Value for testing",
+                  "    let values = vec![Value::Null, Value::Bool(true), Value::Number(Number::from(1)), Value::String(String::from(\"test\"))];",
+                  "    let iter = values.iter();",
+                  "    ",
+                  "    // Create a SeqRefDeserializer instance",
+                  "    let deserializer = SeqRefDeserializer { iter };",
+                  "    ",
+                  "    // Call size_hint and assert that it returns None",
+                  "    assert_eq!(deserializer.size_hint(), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.iter.size_hint() matches (lower, Some(upper)) is true\n",
+        "// constraint: lower == upper is true\n",
+        "// expected return value/type: Some(upper)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestValueIterator {",
+                  "        values: Vec<Value>,",
+                  "    }",
+                  "",
+                  "    impl TestValueIterator {",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            let len = self.values.len();",
+                  "            (len, Some(len))",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSeqRefDeserializer<'de> {",
+                  "        iter: TestValueIterator,",
+                  "    }",
+                  "",
+                  "    impl<'de> SeqAccess<'de> for TestSeqRefDeserializer<'de> {",
+                  "        type Error = Error;",
+                  "",
+                  "        fn next_element_seed<T>(&mut self, _seed: T) -> Result<Option<T::Value>, Error>",
+                  "        where",
+                  "            T: DeserializeSeed<'de>,",
+                  "        {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> Option<usize> {",
+                  "            match self.iter.size_hint() {",
+                  "                (lower, Some(upper)) if lower == upper => Some(upper),",
+                  "                _ => None,",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let test_values = vec![Value::Null, Value::Bool(true), Value::Number(Number::from(1))];",
+                  "    let iter = TestValueIterator { values: test_values };",
+                  "    let deserializer = TestSeqRefDeserializer { iter };",
+                  "",
+                  "    assert_eq!(deserializer.size_hint(), Some(3));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0392]: lifetime parameter `'de` is never used\n    --> src/value/de.rs:1522:35\n     |\n1522 |     struct TestSeqRefDeserializer<'de> {\n     |                                   ^^^ unused lifetime parameter\n     |\n     = help: consider removing `'de`, referring to it in a field, or using a marker such as `PhantomData`\n\nFor more information about this error, try `rustc --explain E0392`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.iter.size_hint() matches (lower, Some(upper)) is true\n",
+        "// constraint: lower == upper is false\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestValue;",
+                  "    impl Value for TestValue {",
+                  "        // Dummy implementation as we only need the size_hint method",
+                  "    }",
+                  "    ",
+                  "    struct TestSlice<'de> {",
+                  "        values: &'de [TestValue],",
+                  "    }",
+                  "",
+                  "    impl<'de> Slice for TestSlice<'de> {",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (2, Some(3)) // lower != upper",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let values = [TestValue, TestValue];",
+                  "    let deserializer = SeqRefDeserializer {",
+                  "        iter: values.iter(),",
+                  "    };",
+                  "    ",
+                  "    let result = deserializer.size_hint();",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0404]: expected trait, found enum `Value`\n    --> src/value/de.rs:1512:10\n     |\n1512 |     impl Value for TestValue {\n     |          ^^^^^ not a trait\n\nerror[E0405]: cannot find trait `Slice` in this scope\n    --> src/value/de.rs:1520:15\n     |\n1520 |     impl<'de> Slice for TestSlice<'de> {\n     |               ^^^^^ not found in this scope\n\nSome errors have detailed explanations: E0404, E0405.\nFor more information about an error, try `rustc --explain E0404`.\nerror: could not compile `serde_json` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestValue;",
+                  "    impl Value for TestValue {",
+                  "        // Dummy implementation as we only need the size_hint method",
+                  "    }",
+                  "    ",
+                  "    struct TestSlice<'de> {",
+                  "        values: &'de [TestValue],",
+                  "    }",
+                  "",
+                  "    impl<'de> Slice for TestSlice<'de> {",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (0, Some(0)) // lower == upper but isn't the targeted test case; used for completeness",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let values: Vec<TestValue> = Vec::new();",
+                  "    let deserializer = SeqRefDeserializer {",
+                  "        iter: values.iter(),",
+                  "    };",
+                  "    ",
+                  "    let result = deserializer.size_hint();",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0404]: expected trait, found enum `Value`\n    --> src/value/de.rs:1512:10\n     |\n1512 |     impl Value for TestValue {\n     |          ^^^^^ not a trait\n\nerror[E0405]: cannot find trait `Slice` in this scope\n    --> src/value/de.rs:1520:15\n     |\n1520 |     impl<'de> Slice for TestSlice<'de> {\n     |               ^^^^^ not found in this scope\n\nSome errors have detailed explanations: E0404, E0405.\nFor more information about an error, try `rustc --explain E0404`.\nerror: could not compile `serde_json` (lib test) due to 2 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

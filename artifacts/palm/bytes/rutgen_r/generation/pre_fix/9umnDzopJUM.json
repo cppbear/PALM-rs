@@ -1,0 +1,528 @@
+{
+  "name": "bytes::bytes::shallow_clone_vec",
+  "name_with_impl": "bytes::bytes::shallow_clone_vec",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1493:1:1562:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: 0 == (shared as usize & KIND_MASK) is false\n",
+        "// constraint: atom.compare_exchange(ptr as _, shared as _, Ordering::AcqRel, Ordering::Acquire) matches Err(actual) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::ptr::null_mut;",
+            "use std::ptr::null;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::{null, null_mut};",
+                  "    use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};",
+                  "",
+                  "    // Create an AtomicPtr representing invalid alignment scenario",
+                  "    let atom = AtomicPtr::new(null_mut());",
+                  "    let buf = null_mut();",
+                  "    ",
+                  "    // Create a pointer that is misaligned (not divisible by 8)",
+                  "    let ptr = 1 as *const () as *const ();",
+                  "    let offset = null();",
+                  "    let len = 10;",
+                  "",
+                  "    // Call the function and expect it to panic due to alignment check",
+                  "    assert!(std::panic::catch_unwind(|| {",
+                  "        unsafe { shallow_clone_vec(&atom, ptr, buf, offset, len) };",
+                  "    }).is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::null_mut;",
+                  "    use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};",
+                  "",
+                  "    // Prepare necessary pointers and data for testing",
+                  "    let atom = AtomicPtr::new(null_mut());",
+                  "    let buf = null_mut();",
+                  "    let ptr = null_mut();",
+                  "    let offset = null_mut();",
+                  "    let len = 10;",
+                  "",
+                  "    // Setting the initial AtomicPtr to point to the `ptr`",
+                  "    atom.store(ptr, Ordering::Relaxed);",
+                  "",
+                  "    // Simulate the scenario where another thread could have already promoted the buffer",
+                  "    atom.compare_exchange(ptr, ptr, Ordering::AcqRel, Ordering::Acquire).unwrap();",
+                  "",
+                  "    // Here we just need to invoke the function that results in an expected panic,",
+                  "    // which corresponds to the scenario in which the compare_exchange fails.",
+                  "    assert!(std::panic::catch_unwind(|| {",
+                  "        unsafe { shallow_clone_vec(&atom, ptr, buf, offset, len) };",
+                  "    }).is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: 0 == (shared as usize & KIND_MASK) is false\n",
+        "// constraint: atom.compare_exchange(ptr as _, shared as _, Ordering::AcqRel, Ordering::Acquire) matches Ok(actual) is true\n",
+        "// constraint: atom.compare_exchange(ptr as _, shared as _, Ordering::AcqRel, Ordering::Acquire) matches Ok(actual) is true\n",
+        "// constraint: actual as usize == ptr as usize is true\n",
+        "// expected return value/type: Bytes {\n                ptr: offset,\n                len,\n                data: AtomicPtr::new(shared as _),\n                vtable: &SHARED_VTABLE,\n            }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::Ordering;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::ptr::null_mut;",
+            "use std::sync::atomic::AtomicUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::null_mut;",
+                  "    use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    struct Bytes {",
+                  "        ptr: *const u8,",
+                  "        len: usize,",
+                  "        data: AtomicPtr<Shared>,",
+                  "        vtable: *const (),",
+                  "    }",
+                  "",
+                  "    const KIND_MASK: usize = 0x3; // Assume some mask value",
+                  "    let SHARED_VTABLE: *const () = null_mut(); // Placeholder vtable",
+                  "",
+                  "    unsafe fn shallow_clone_vec(",
+                  "        atom: &AtomicPtr<()>,",
+                  "        ptr: *const (),",
+                  "        buf: *mut u8,",
+                  "        offset: *const u8,",
+                  "        len: usize,",
+                  "    ) -> Bytes {",
+                  "        // Function implementation from the provided code",
+                  "    }",
+                  "",
+                  "    let atom = AtomicPtr::new(null_mut());",
+                  "    let buf: *mut u8 = Box::into_raw(Box::new([0u8; 10])); // Allocate 10 bytes",
+                  "    let offset: *const u8 = buf;",
+                  "    let len = 10;",
+                  "",
+                  "    // Set initial value to atom to simulate the expected condition",
+                  "    let expected_shared_ptr = buf as *const _; // Initial shared pointer pointing to buf",
+                  "    atom.store(expected_shared_ptr as *mut _, Ordering::Release);",
+                  "",
+                  "    let bytes = unsafe { shallow_clone_vec(&atom, expected_shared_ptr, buf, offset, len) };",
+                  "",
+                  "    assert_eq!(bytes.ptr, offset);",
+                  "    assert_eq!(bytes.len, len);",
+                  "    assert!(!bytes.data.load(Ordering::Acquire).is_null());",
+                  "    assert_eq!(bytes.data.load(Ordering::Acquire), expected_shared_ptr);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0530]: let bindings cannot shadow statics\n    --> src/bytes.rs:1705:9\n     |\n1683 |    use super::*;\n     |        -------- the static `SHARED_VTABLE` is imported here\n...\n1705 |     let SHARED_VTABLE: *const () = null_mut(); // Placeholder vtable\n     |         ^^^^^^^^^^^^^ cannot be named the same as a static\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1718:47\n     |\n1718 |     let buf: *mut u8 = Box::into_raw(Box::new([0u8; 10])); // Allocate 10 bytes\n     |                                      -------- ^^^^^^^^^ expected `u8`, found `[u8; 10]`\n     |                                      |\n     |                                      arguments to this function are incorrect\n     |\nnote: associated function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/boxed.rs:258:12\n     |\n258  |     pub fn new(x: T) -> Self {\n     |            ^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1731:52\n     |\n1731 |     assert_eq!(bytes.data.load(Ordering::Acquire), expected_shared_ptr);\n     |                                                    ^^^^^^^^^^^^^^^^^^^ types differ in mutability\n     |\n     = note: expected raw pointer `*mut llmtests::test_shallow_clone_vec_02::Shared`\n                found raw pointer `*const ()`\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1713:10\n     |\n1707 |     unsafe fn shallow_clone_vec(\n     |               ----------------- implicitly returns `()` as its body has no tail or `return` expression\n...\n1713 |     ) -> Bytes {\n     |          ^^^^^ expected `Bytes`, found `()`\n\nSome errors have detailed explanations: E0308, E0530.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 4 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: 0 == (shared as usize & KIND_MASK) is false\n",
+        "// constraint: atom.compare_exchange(ptr as _, shared as _, Ordering::AcqRel, Ordering::Acquire) matches Ok(actual) is true\n",
+        "// constraint: atom.compare_exchange(ptr as _, shared as _, Ordering::AcqRel, Ordering::Acquire) matches Ok(actual) is true\n",
+        "// constraint: actual as usize == ptr as usize is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::ptr::null_mut;",
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::null_mut;",
+                  "    use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    struct Bytes {",
+                  "        ptr: *const u8,",
+                  "        len: usize,",
+                  "        data: AtomicPtr<Shared>,",
+                  "        vtable: &'static VTable,",
+                  "    }",
+                  "",
+                  "    #[repr(C)]",
+                  "    struct VTable;",
+                  "",
+                  "    static SHARED_VTABLE: VTable = VTable;",
+                  "",
+                  "    let atom = AtomicPtr::new(null_mut());",
+                  "    let buffer = vec![1u8, 2, 3, 4, 5];",
+                  "    let len = buffer.len();",
+                  "    let ptr = buffer.as_ptr(); // This will be the original pointer",
+                  "    let offset: *const u8 = ptr; // Since this is a test, the offset can just be the same",
+                  "",
+                  "    unsafe {",
+                  "        let result = shallow_clone_vec(",
+                  "            &atom,",
+                  "            ptr as _,",
+                  "            buffer.as_ptr() as *mut u8,",
+                  "            offset,",
+                  "            len,",
+                  "        );",
+                  "",
+                  "        assert_eq!(result.len, len);",
+                  "        assert_eq!(result.ptr, offset);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::null_mut;",
+                  "    use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    struct Bytes {",
+                  "        ptr: *const u8,",
+                  "        len: usize,",
+                  "        data: AtomicPtr<Shared>,",
+                  "        vtable: &'static VTable,",
+                  "    }",
+                  "",
+                  "    #[repr(C)]",
+                  "    struct VTable;",
+                  "",
+                  "    static SHARED_VTABLE: VTable = VTable;",
+                  "",
+                  "    let atom = AtomicPtr::new(null_mut());",
+                  "    let buffer = vec![1u8, 2, 3, 4, 5];",
+                  "    let len = buffer.len();",
+                  "    let ptr = buffer.as_ptr(); // This will be the original pointer",
+                  "    let offset: *const u8 = ptr as *const u8; // Align this pointer",
+                  "",
+                  "    // This will lead to misalignment",
+                  "    let misaligned_ptr = (offset as usize + 1) as *const u8;",
+                  "",
+                  "    unsafe {",
+                  "        shallow_clone_vec(",
+                  "            &atom,",
+                  "            misaligned_ptr as _,",
+                  "            buffer.as_ptr() as *mut u8,",
+                  "            offset,",
+                  "            len,",
+                  "        );",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::null_mut;",
+                  "    use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    struct Bytes {",
+                  "        ptr: *const u8,",
+                  "        len: usize,",
+                  "        data: AtomicPtr<Shared>,",
+                  "        vtable: &'static VTable,",
+                  "    }",
+                  "",
+                  "    #[repr(C)]",
+                  "    struct VTable;",
+                  "",
+                  "    static SHARED_VTABLE: VTable = VTable;",
+                  "",
+                  "    // Setup atomic pointer with an initial pointer",
+                  "    let initial_ptr = Box::into_raw(Box::new(0 as *mut u8));",
+                  "    let atom: AtomicPtr<()> = AtomicPtr::new(initial_ptr);",
+                  "",
+                  "    // Create original buffer",
+                  "    let original_buffer = vec![1u8, 2, 3, 4, 5];",
+                  "    let len = original_buffer.len();",
+                  "    let ptr = original_buffer.as_ptr();",
+                  "    let offset: *const u8 = ptr;",
+                  "",
+                  "    // Try cloning, it will end up attempting the compare_exchange which should fail",
+                  "    unsafe {",
+                  "        // The atom already points to initial_ptr, hence, we expect the compare_exchange to fail",
+                  "        let result = shallow_clone_vec(",
+                  "            &atom,",
+                  "            ptr as _,",
+                  "            original_buffer.as_ptr() as *mut u8,",
+                  "            offset,",
+                  "            len,",
+                  "        );",
+                  "",
+                  "        assert_eq!(result.len, len);",
+                  "        assert_eq!(result.ptr, offset);",
+                  "    }",
+                  "",
+                  "    // Clean up",
+                  "    unsafe {",
+                  "        Box::from_raw(initial_ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `std::ptr::null_mut`\n    --> src/bytes.rs:1688:9\n     |\n1688 |     use std::ptr::null_mut;\n     |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `Ordering`\n    --> src/bytes.rs:1689:53\n     |\n1689 |     use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};\n     |                                                     ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1711:46\n     |\n1711 |     let atom: AtomicPtr<()> = AtomicPtr::new(initial_ptr);\n     |                               -------------- ^^^^^^^^^^^ expected `*mut ()`, found `*mut *mut u8`\n     |                               |\n     |                               arguments to this function are incorrect\n     |\n     = note: expected raw pointer `*mut ()`\n                found raw pointer `*mut *mut u8`\nnote: associated function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/sync/atomic.rs:1207:18\n     |\n1207 |     pub const fn new(p: *mut T) -> AtomicPtr<T> {\n     |                  ^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 4 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: 0 == (shared as usize & KIND_MASK) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};",
+                  "",
+                  "    // Helper struct to hold the Shared type",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    // Assuming KIND_MASK is defined as a constant",
+                  "    const KIND_MASK: usize = 0x1; ",
+                  "",
+                  "    // Assuming SHARED_VTABLE is defined as a static variable",
+                  "    static SHARED_VTABLE: usize = 0;",
+                  "",
+                  "    // Prepare test input",
+                  "    let vec = vec![1u8, 2, 3, 4];",
+                  "    let buf = vec.as_ptr() as *mut u8;",
+                  "    let len = vec.len();",
+                  "    let offset = buf as *const u8;",
+                  "    let ptr = buf as *const ();",
+                  "    let atom = AtomicPtr::new(ptr as _);",
+                  "",
+                  "    // Call the function",
+                  "    let bytes = unsafe {",
+                  "        shallow_clone_vec(&atom, ptr, buf, offset, len)",
+                  "    };",
+                  "",
+                  "    // Validate expected result",
+                  "    assert_eq!(bytes.len, len);",
+                  "    assert_eq!(bytes.ptr, offset);",
+                  "    assert_eq!(bytes.data.load(Ordering::SeqCst) as usize & KIND_MASK, 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};",
+                  "",
+                  "    // Helper struct to hold the Shared type",
+                  "    struct Shared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    // Assuming KIND_MASK is defined as a constant",
+                  "    const KIND_MASK: usize = 0x1; ",
+                  "",
+                  "    // Assuming SHARED_VTABLE is defined as a static variable",
+                  "    static SHARED_VTABLE: usize = 0;",
+                  "",
+                  "    // Prepare test input with invalid atomic pointer comparison",
+                  "    let vec = vec![1u8, 2, 3, 4];",
+                  "    let buf = vec.as_ptr() as *mut u8;",
+                  "    let len = vec.len();",
+                  "    let offset = buf as *const u8;",
+                  "    let ptr = buf as *const ();",
+                  "    let atom = AtomicPtr::new((ptr as usize + 1) as _); // Invalid comparison to trigger panic",
+                  "",
+                  "    // Call the function",
+                  "    unsafe {",
+                  "        shallow_clone_vec(&atom, ptr, buf, offset, len);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

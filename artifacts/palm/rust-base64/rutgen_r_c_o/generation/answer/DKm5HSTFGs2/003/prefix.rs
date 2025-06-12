@@ -1,0 +1,87 @@
+// Answer 0
+
+#[test]
+fn test_finish_with_none_delegate() {
+    struct DummyEngine;
+    impl Engine for DummyEngine {
+        type Config = ();
+        type DecodeEstimate = ();
+        
+        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {
+            0
+        }
+
+        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {
+            ()
+        }
+
+        fn internal_decode(
+            &self,
+            input: &[u8],
+            output: &mut [u8],
+            decode_estimate: Self::DecodeEstimate,
+        ) -> Result<(), io::Error> {
+            Ok(())
+        }
+        
+        fn config(&self) -> &Self::Config {
+            &()
+        }
+        
+        fn encode<T: AsRef<[u8]>>(&self, _input: T) -> String {
+            String::new()
+        }
+
+        fn encode_string<T: AsRef<[u8]>>(&self, _input: T, _output_buf: &mut String) {}
+
+        fn encode_slice<T: AsRef<[u8]>>(
+            &self,
+            _input: T,
+            _output_buf: &mut [u8],
+        ) -> Result<usize, io::Error> {
+            Ok(0)
+        }
+
+        fn decode<T: AsRef<[u8]>>(&self, _input: T) -> Result<Vec<u8>, io::Error> {
+            Ok(vec![])
+        }
+
+        fn decode_vec<T: AsRef<[u8]>>(
+            &self,
+            _input: T,
+            _buffer: &mut Vec<u8>,
+        ) -> Result<(), io::Error> {
+            Ok(())
+        }
+
+        fn decode_slice<T: AsRef<[u8]>>(
+            &self,
+            _input: T,
+            _output: &mut [u8],
+        ) -> Result<usize, io::Error> {
+            Ok(0)
+        }
+        
+        fn decode_slice_unchecked<T: AsRef<[u8]>>(
+            &self,
+            _input: T,
+            _output: &mut [u8],
+        ) -> Result<usize, io::Error> {
+            Ok(0)
+        }
+    }
+
+    let engine = DummyEngine;
+    let writer = Vec::new(); // Using a Vec as a dummy writer
+    let mut encoder = EncoderWriter::new(writer, &engine);
+    
+    // Simulating that the delegate is already None
+    encoder.delegate = None;
+
+    let result = std::panic::catch_unwind(|| {
+        encoder.finish()
+    });
+    
+    assert!(result.is_err());
+}
+

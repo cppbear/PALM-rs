@@ -1,0 +1,24 @@
+// Answer 0
+
+#[test]
+fn test_get_key_value_mut_none() {
+    struct TestAllocator;
+    
+    unsafe impl Allocator for TestAllocator {
+        fn allocate(&self, _layout: Layout) -> Result<NonNull<u8>, ()> {
+            unimplemented!()
+        }
+        unsafe fn deallocate(&self, _ptr: NonNull<u8>, _layout: Layout) {
+            unimplemented!()
+        }
+    }
+
+    let mut map: HashMap<i32, &str, DefaultHashBuilder, TestAllocator> = HashMap {
+        hash_builder: DefaultHashBuilder::new(),
+        table: RawTable::new(TestAllocator),
+    };
+
+    let result = map.get_key_value_mut(&42);
+    // No assertions as per instructions, just function call.
+}
+

@@ -1,0 +1,3 @@
+fn replace_append(&mut self, caps: &Captures, dst: &mut String) {
+        caps.expand(*self, dst);
+    }

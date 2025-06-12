@@ -1,0 +1,1 @@
+pub fn is_none(self) -> bool { self.0 == u32::MAX }

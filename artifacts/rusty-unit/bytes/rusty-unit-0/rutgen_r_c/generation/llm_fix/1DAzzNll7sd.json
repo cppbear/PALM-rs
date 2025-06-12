@@ -1,0 +1,127 @@
+{
+  "name": "bytes::bytes::shared_clone",
+  "name_with_impl": "bytes::bytes::shared_clone",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1388:1:1391:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::mem;",
+            "use core::ptr::NonNull;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   // use core::ptr::NonNull;  ",
+                  "   // use std::mem;",
+                  "",
+                  "    struct DummyShared {",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let mut dummy_shared = DummyShared {",
+                  "       buf: Box::into_raw(Box::new(0u8)),",
+                  "       cap: 1,",
+                  "       ref_cnt: AtomicUsize::new(1),",
+                  "    };",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(&mut dummy_shared as *mut _ as *mut ());",
+                  "    let ptr = dummy_shared.buf;",
+                  "    let len = dummy_shared.cap;",
+                  "",
+                  "    // Ensuring the function doesn't cause a panic and returns a valid Bytes instance",
+                  "    let bytes = unsafe {",
+                  "        shared_clone(&atomic_ptr, ptr, len)",
+                  "    };",
+                  "",
+                  "    assert_eq!(bytes.len, len);",
+                  "    assert_eq!(bytes.ptr, ptr);",
+                  "    assert!(!bytes.data.load(Ordering::Relaxed).is_null());",
+                  "    assert_eq!(bytes.vtable, &SHARED_VTABLE);",
+                  "",
+                  "    // Clean up",
+                  "    unsafe {",
+                  "        drop(Box::from_raw(dummy_shared.buf));",
+                  "        let shared_ptr = bytes.data.load(Ordering::Relaxed);",
+                  "        drop(Box::from_raw(shared_ptr as *mut Shared));",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0369]: binary operation `==` cannot be applied to type `&Vtable`\n    --> src/bytes.rs:1718:5\n     |\n1718 |     assert_eq!(bytes.vtable, &SHARED_VTABLE);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     &Vtable\n     |     &Vtable\n     |\nnote: an implementation of `PartialEq` might be missing for `Vtable`\n    --> src/bytes.rs:110:1\n     |\n110  | pub(crate) struct Vtable {\n     | ^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `Vtable` with `#[derive(PartialEq)]`\n     |\n110  + #[derive(PartialEq)]\n111  | pub(crate) struct Vtable {\n     |\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"attempt to add with overflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   // use core::ptr::NonNull;",
+                  "  // use std::mem;",
+                  " ",
+                  "   struct DummyShared {",
+                  "       buf: *mut u8,",
+                  "       cap: usize,",
+                  "       ref_cnt: AtomicUsize,",
+                  "   }",
+                  " ",
+                  "   let mut dummy_shared = DummyShared {",
+                  "       buf: Box::into_raw(Box::new([0u8; 10])),",
+                  "       cap: 10,",
+                  "       ref_cnt: AtomicUsize::new(usize::MAX), // Set to MAX to force overflow",
+                  "   };",
+                  " ",
+                  "   let atomic_ptr = AtomicPtr::new(&mut dummy_shared as *mut _ as *mut ());",
+                  "   let ptr = dummy_shared.buf;",
+                  "   let len = dummy_shared.cap;",
+                  " ",
+                  "  // This should panic due to attempted overflow of ref_cnt",
+                  "   unsafe {",
+                  "       shared_clone(&atomic_ptr, ptr, len);",
+                  "   }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1702:36\n     |\n1702 |        buf: Box::into_raw(Box::new([0u8; 10])),\n     |                           -------- ^^^^^^^^^ expected `u8`, found `[u8; 10]`\n     |                           |\n     |                           arguments to this function are incorrect\n     |\nnote: associated function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/boxed.rs:258:12\n     |\n258  |     pub fn new(x: T) -> Self {\n     |            ^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,292 @@
+{
+  "name": "hashbrown::raw::raw::RawTableInner::find_inner",
+  "name_with_impl": "hashbrown::raw::{impl#13}::find_inner",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:1960:5:1997:6",
+  "doc": "/// Searches for an element in a table, returning the `index` of the found element.\n/// This uses dynamic dispatch to reduce the amount of code generated, but it is\n/// eliminated by LLVM optimizations.\n///\n/// This function does not make any changes to the `data` part of the table, or any\n/// changes to the `items` or `growth_left` field of the table.\n///\n/// The table must have at least 1 empty `bucket`, otherwise, if the\n/// `eq: &mut dyn FnMut(usize) -> bool` function does not return `true`,\n/// this function will also never return (will go into an infinite loop).\n///\n/// This function is guaranteed to provide the `eq: &mut dyn FnMut(usize) -> bool`\n/// function with only `FULL` buckets' indices and return the `index` of the found\n/// element as `Some(index)`, so the index will always be in the range\n/// `0..self.buckets()`.\n///\n/// # Safety\n///\n/// The [`RawTableInner`] must have properly initialized control bytes otherwise calling\n/// this function results in [`undefined behavior`].\n///\n/// [`undefined behavior`]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html\n",
+  "code": [
+    "unsafe fn find_inner(&self, hash: u64, eq: &mut dyn FnMut(usize) -> bool) -> Option<usize> {",
+    "    let tag_hash = Tag::full(hash);",
+    "    let mut probe_seq = self.probe_seq(hash);",
+    "",
+    "    loop {",
+    "        // SAFETY:",
+    "        // * Caller of this function ensures that the control bytes are properly initialized.",
+    "        //",
+    "        // * `ProbeSeq.pos` cannot be greater than `self.bucket_mask = self.buckets() - 1`",
+    "        //   of the table due to masking with `self.bucket_mask`.",
+    "        //",
+    "        // * Even if `ProbeSeq.pos` returns `position == self.bucket_mask`, it is safe to",
+    "        //   call `Group::load` due to the extended control bytes range, which is",
+    "        //  `self.bucket_mask + 1 + Group::WIDTH` (in fact, this means that the last control",
+    "        //   byte will never be read for the allocated table);",
+    "        //",
+    "        // * Also, even if `RawTableInner` is not already allocated, `ProbeSeq.pos` will",
+    "        //   always return \"0\" (zero), so Group::load will read unaligned `Group::static_empty()`",
+    "        //   bytes, which is safe (see RawTableInner::new_in).",
+    "        let group = unsafe { Group::load(self.ctrl(probe_seq.pos)) };",
+    "",
+    "        for bit in group.match_tag(tag_hash) {",
+    "            // This is the same as `(probe_seq.pos + bit) % self.buckets()` because the number",
+    "            // of buckets is a power of two, and `self.bucket_mask = self.buckets() - 1`.",
+    "            let index = (probe_seq.pos + bit) & self.bucket_mask;",
+    "",
+    "            if likely(eq(index)) {",
+    "                return Some(index);",
+    "            }",
+    "        }",
+    "",
+    "        if likely(group.match_empty().any_bit_set()) {",
+    "            return None;",
+    "        }",
+    "",
+    "        probe_seq.move_next(self.bucket_mask);",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 4,
+    "contra": 2,
+    "min_set": 4
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "bit in group.match_tag(tag_hash)",
+          "norm": null,
+          "value": "true",
+          "line": 1981,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "likely(eq(index))",
+          "norm": null,
+          "value": "true",
+          "line": 1986,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Some(index)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        16,
+        17,
+        18,
+        19,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "bit in group.match_tag(tag_hash)",
+          "norm": null,
+          "value": "true",
+          "line": 1981,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "likely(eq(index))",
+          "norm": null,
+          "value": "false",
+          "line": 1986,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "bit in group.match_tag(tag_hash)",
+          "norm": null,
+          "value": "false",
+          "line": 1981,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "likely(group.match_empty().any_bit_set())",
+          "norm": null,
+          "value": "true",
+          "line": 1991,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        16,
+        17,
+        18,
+        20,
+        9,
+        10,
+        11,
+        13,
+        15,
+        21,
+        22,
+        23,
+        24,
+        27
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "bit in group.match_tag(tag_hash)",
+          "norm": null,
+          "value": "false",
+          "line": 1981,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "likely(group.match_empty().any_bit_set())",
+          "norm": null,
+          "value": "true",
+          "line": 1991,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "None",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        15,
+        21,
+        22,
+        23,
+        24,
+        27
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "bit in group.match_tag(tag_hash)",
+          "norm": null,
+          "value": "false",
+          "line": 1981,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "likely(group.match_empty().any_bit_set())",
+          "norm": null,
+          "value": "false",
+          "line": 1991,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "bit in group.match_tag(tag_hash)",
+          "norm": null,
+          "value": "true",
+          "line": 1981,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "likely(eq(index))",
+          "norm": null,
+          "value": "true",
+          "line": 1986,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": "Some(index)",
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        15,
+        21,
+        22,
+        23,
+        25,
+        26,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        14,
+        16,
+        17,
+        18,
+        19,
+        27
+      ],
+      "may_contra": true,
+      "min_set": true
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+// Answer 0
+
+#[test]
+fn test_deserialize_char_with_empty_string() {
+    struct TestVisitor;
+
+    impl<'de> Visitor<'de> for TestVisitor {
+        type Value = char;
+
+        fn visit_char(self, value: char) -> Result<Self::Value, value::Error> {
+            Ok(value)
+        }
+
+        fn visit_string(self, value: String) -> Result<Self::Value, value::Error> {
+            Ok(value.chars().next().unwrap_or('\0'))
+        }
+
+        fn visit_borrowed_str(self, value: &'de str) -> Result<Self::Value, value::Error> {
+            Ok(value.chars().next().unwrap_or('\0'))
+        }
+
+        // Additional required methods can be implemented as no-op for this test
+        fn visit_none(self) -> Result<Self::Value, value::Error> { Err(value::Error::custom("None")) }
+        fn visit_unit(self) -> Result<Self::Value, value::Error> { Err(value::Error::custom("Unit")) }
+        fn visit_bool(self, _: bool) -> Result<Self::Value, value::Error> { Err(value::Error::custom("Bool")) }
+        fn visit_i8(self, _: i8) -> Result<Self::Value, value::Error> { Err(value::Error::custom("I8")) }
+        // ... other methods can be similarly stubbed out
+    }
+
+    let deserializer = ContentDeserializer {
+        content: Content::String(String::new()),
+        err: PhantomData,
+    };
+    let _ = deserializer.deserialize_char(TestVisitor);
+}
+
+#[test]
+fn test_deserialize_char_with_single_character_string() {
+    struct TestVisitor;
+
+    impl<'de> Visitor<'de> for TestVisitor {
+        type Value = char;
+
+        fn visit_char(self, value: char) -> Result<Self::Value, value::Error> {
+            Ok(value)
+        }
+
+        fn visit_string(self, value: String) -> Result<Self::Value, value::Error> {
+            Ok(value.chars().next().unwrap_or('\0'))
+        }
+
+        fn visit_borrowed_str(self, value: &'de str) -> Result<Self::Value, value::Error> {
+            Ok(value.chars().next().unwrap_or('\0'))
+        }
+
+        fn visit_none(self) -> Result<Self::Value, value::Error> { Err(value::Error::custom("None")) }
+        fn visit_unit(self) -> Result<Self::Value, value::Error> { Err(value::Error::custom("Unit")) }
+        fn visit_bool(self, _: bool) -> Result<Self::Value, value::Error> { Err(value::Error::custom("Bool")) }
+        fn visit_i8(self, _: i8) -> Result<Self::Value, value::Error> { Err(value::Error::custom("I8")) }
+    }
+
+    let deserializer = ContentDeserializer {
+        content: Content::String(String::from("a")),
+        err: PhantomData,
+    };
+    let _ = deserializer.deserialize_char(TestVisitor);
+}
+
+#[test]
+fn test_deserialize_char_with_multi_character_string() {
+    struct TestVisitor;
+
+    impl<'de> Visitor<'de> for TestVisitor {
+        type Value = char;
+
+        fn visit_char(self, value: char) -> Result<Self::Value, value::Error> {
+            Ok(value)
+        }
+
+        fn visit_string(self, value: String) -> Result<Self::Value, value::Error> {
+            Ok(value.chars().next().unwrap_or('\0'))
+        }
+
+        fn visit_borrowed_str(self, value: &'de str) -> Result<Self::Value, value::Error> {
+            Ok(value.chars().next().unwrap_or('\0'))
+        }
+
+        fn visit_none(self) -> Result<Self::Value, value::Error> { Err(value::Error::custom("None")) }
+        fn visit_unit(self) -> Result<Self::Value, value::Error> { Err(value::Error::custom("Unit")) }
+        fn visit_bool(self, _: bool) -> Result<Self::Value, value::Error> { Err(value::Error::custom("Bool")) }
+        fn visit_i8(self, _: i8) -> Result<Self::Value, value::Error> { Err(value::Error::custom("I8")) }
+    }
+
+    let deserializer = ContentDeserializer {
+        content: Content::String(String::from("test")),
+        err: PhantomData,
+    };
+    let _ = deserializer.deserialize_char(TestVisitor);
+}
+

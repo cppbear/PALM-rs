@@ -1,0 +1,35 @@
+// Answer 0
+
+#[test]
+fn test_find_no_match() {
+    let table: RawTable<i32> = RawTable::new_in(Global);
+    let hash: u64 = 0;
+    let result = table.find(hash, |x| false);
+}
+
+#[test]
+fn test_find_no_elements() {
+    let table: RawTable<i32> = RawTable::new_in(Global);
+    let hash: u64 = 1;
+    let result = table.find(hash, |x| x == &10);
+}
+
+#[test]
+fn test_find_empty_table() {
+    let table: RawTable<i32> = RawTable::new_in(Global);
+    let hash: u64 = 2;
+    let result = table.find(hash, |x| x == &5);
+}
+
+#[test]
+fn test_find_when_all_elements_dont_match() {
+    let mut table: RawTable<i32> = RawTable::with_capacity_in(16, Global);
+    unsafe {
+        table.insert(3, 1, |x| *x);
+        table.insert(4, 2, |x| *x);
+    }
+    
+    let hash: u64 = 5;
+    let result = table.find(hash, |x| x == &3);
+}
+

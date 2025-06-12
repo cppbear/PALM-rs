@@ -1,0 +1,555 @@
+{
+  "name": "once_cell::unsync::<unsync::Lazy<T, F> as std::ops::Deref>::deref",
+  "name_with_impl": "once_cell::unsync::{impl#13}::deref",
+  "mod_info": {
+    "name": "unsync",
+    "loc": "src/lib.rs:383:1:859:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:842:9:844:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// expected return value/type: Lazy::force(self)\n"
+      ],
+      "input_infer": "test input ranges: self: Lazy<T, F> where T: any type, F: any function that returns T, init: Option<F> can be Some(f) or None, T must be initialized by function f (valid function pointer), ensure f does not panic and waits until value is correctly obtained from OnceCell.\n",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let init_fn = || 42; // Example function returning an integer",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell {",
+                "            inner: UnsafeCell::new(Some(42)),",
+                "        },",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    let result = lazy.deref();",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let init_fn = || 42;",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(42)),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(*result, 42);"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "    let init_fn = || 42; // Example function returning an integer",
+                  "    let lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(42)),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    let init_fn = || 42;",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(42)),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(*result, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell {",
+                "            inner: UnsafeCell::new(None),",
+                "        },",
+                "        init: Cell::new(None),",
+                "    };",
+                "    let result = lazy.deref(); // This should panic",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let lazy = Lazy { cell: OnceCell { inner: UnsafeCell::new(None) }, init: Cell::new(None) };",
+                  "    let result = std::panic::catch_unwind(|| lazy.deref());",
+                  "    assert!(result.is_err());"
+                ],
+                [
+                  "    let lazy = Lazy { cell: OnceCell { inner: UnsafeCell::new(None) }, init: Cell::new(None) };",
+                  "    let result = std::panic::catch_unwind(|| lazy.deref());",
+                  "    assert_eq!(result.err().unwrap().downcast_ref::<&str>(), None);"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "   let lazy: Lazy<i32, fn() -> i32> = Lazy {  ",
+                  "       cell: OnceCell {  ",
+                  "           inner: UnsafeCell::new(None),  ",
+                  "       },  ",
+                  "       init: Cell::new(None),  ",
+                  "   };  ",
+                  "   let result = lazy.deref(); // This should panic  ",
+                  "   let lazy: Lazy<i32, fn() -> i32> = Lazy { cell: OnceCell { inner: UnsafeCell::new(None) }, init: Cell::new(None) };  ",
+                  "   let result = std::panic::catch_unwind(|| lazy.deref());  ",
+                  "   assert!(result.is_err());  ",
+                  "}"
+                ],
+                [
+                  "{",
+                  "   let lazy: Lazy<(), fn() -> ()> = Lazy {",
+                  "       cell: OnceCell {",
+                  "           inner: UnsafeCell::new(None),",
+                  "       },",
+                  "       init: Cell::new(None),",
+                  "   };",
+                  "   let result = lazy.deref(); // This should panic",
+                  "   let lazy: Lazy<(), fn() -> ()> = Lazy { cell: OnceCell { inner: UnsafeCell::new(None) }, init: Cell::new(None) };",
+                  "   let result = std::panic::catch_unwind(|| lazy.deref());",
+                  "    assert_eq!(result.err().unwrap().downcast_ref::<&str>(), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                },
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true,
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let init_fn = || panic!(\"Initialization function should not panic\");",
+                "    let mut lazy = Lazy {",
+                "        cell: OnceCell {",
+                "            inner: UnsafeCell::new(Some(100)),",
+                "        },",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    let _ = lazy.deref(); // First call to deref should succeed",
+                "    lazy.init.set(None); // Set to None to simulate a poisoned state",
+                "    let result = lazy.deref(); // This should panic",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let init_fn = || panic!(\"Initialization function should not panic\");",
+                  "    let mut lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(100)),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let _ = lazy.deref();",
+                  "    lazy.init.set(None);",
+                  "    let result = std::panic::catch_unwind(|| lazy.deref());",
+                  "    assert!(result.is_err());"
+                ],
+                [
+                  "    let init_fn = || panic!(\"Initialization function should not panic\");",
+                  "    let mut lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(100)),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let _ = lazy.deref();",
+                  "    lazy.init.set(None);",
+                  "    let result = std::panic::catch_unwind(|| lazy.deref());",
+                  "    assert_eq!(result.err().unwrap().downcast_ref::<&str>(), Some(&\"Lazy instance has previously been poisoned\"));"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "    let init_fn = || panic!(\"Initialization function should not panic\");",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(100)),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let _ = lazy.deref(); // First call to deref should succeed",
+                  "    lazy.init.set(None); // Set to None to simulate a poisoned state",
+                  "    let result = lazy.deref(); // This should panic",
+                  "    let init_fn = || panic!(\"Initialization function should not panic\");",
+                  "    let mut lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(100)),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let _ = lazy.deref();",
+                  "    lazy.init.set(None);",
+                  "    let result = std::panic::catch_unwind(|| lazy.deref());",
+                  "    assert!(result.is_err());",
+                  "}"
+                ],
+                [
+                  "{",
+                  "    let init_fn = || panic!(\"Initialization function should not panic\");",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(100)),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let _ = lazy.deref(); // First call to deref should succeed",
+                  "    lazy.init.set(None); // Set to None to simulate a poisoned state",
+                  "    let result = lazy.deref(); // This should panic",
+                  "    let init_fn = || panic!(\"Initialization function should not panic\");",
+                  "    let mut lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(100)),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let _ = lazy.deref();",
+                  "    lazy.init.set(None);",
+                  "    let result = std::panic::catch_unwind(|| lazy.deref());",
+                  "    assert_eq!(result.err().unwrap().downcast_ref::<&str>(), Some(&\"Lazy instance has previously been poisoned\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                },
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false,
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let init_fn = || String::from(\"Hello, World!\");",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell {",
+                "            inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                "        },",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    let result = lazy.deref();",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(result, \"Hello, World!\");"
+                ],
+                [
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert!(result.is_ascii());"
+                ],
+                [
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert!(result.len() > 0);"
+                ],
+                [
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(result.to_uppercase(), \"HELLO, WORLD!\");"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(result, \"Hello, World!\");",
+                  "}"
+                ],
+                [
+                  "{",
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert!(result.is_ascii());",
+                  "}"
+                ],
+                [
+                  "{",
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert!(result.len() > 0);",
+                  "}"
+                ],
+                [
+                  "{",
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    let init_fn = || String::from(\"Hello, World!\");",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(String::from(\"Hello, World!\"))),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(result.to_uppercase(), \"HELLO, WORLD!\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                },
+                {
+                  "Ok": null
+                },
+                {
+                  "Ok": null
+                },
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false,
+                false,
+                false,
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    let init_fn = || vec![1, 2, 3];",
+                "    let mut lazy = Lazy {",
+                "        cell: OnceCell {",
+                "            inner: UnsafeCell::new(Some(vec![1, 2, 3])),",
+                "        },",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    let result = lazy.deref(); ",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let init_fn = || vec![1, 2, 3];",
+                  "    let mut lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(vec![1, 2, 3])),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(result, &vec![1, 2, 3]);"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "    let init_fn = || vec![1, 2, 3];",
+                  "    let mut lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(vec![1, 2, 3])),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref(); ",
+                  "    let init_fn = || vec![1, 2, 3];",
+                  "    let mut lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(vec![1, 2, 3])),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(result, &vec![1, 2, 3]);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [
+                "{",
+                "    struct CustomType {",
+                "        value: f64,",
+                "    }",
+                "    let init_fn = || CustomType { value: 3.14 };",
+                "    let lazy = Lazy {",
+                "        cell: OnceCell {",
+                "            inner: UnsafeCell::new(Some(CustomType { value: 3.14 })),",
+                "        },",
+                "        init: Cell::new(Some(init_fn)),",
+                "    };",
+                "    let result = lazy.deref();",
+                "}"
+              ],
+              "oracles": [
+                [
+                  "    let init_fn = || CustomType { value: 3.14 };",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(CustomType { value: 3.14 })),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(result.value, 3.14);"
+                ]
+              ],
+              "codes": [
+                [
+                  "{",
+                  "    struct CustomType {",
+                  "        value: f64,",
+                  "    }",
+                  "    let init_fn = || CustomType { value: 3.14 };",
+                  "    let lazy = Lazy {",
+                  "        cell: OnceCell {",
+                  "            inner: UnsafeCell::new(Some(CustomType { value: 3.14 })),",
+                  "        },",
+                  "        init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    let init_fn = || CustomType { value: 3.14 };",
+                  "    let lazy = Lazy {",
+                  "    cell: OnceCell {",
+                  "    inner: UnsafeCell::new(Some(CustomType { value: 3.14 })),",
+                  "    },",
+                  "    init: Cell::new(Some(init_fn)),",
+                  "    };",
+                  "    let result = lazy.deref();",
+                  "    assert_eq!(result.value, 3.14);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

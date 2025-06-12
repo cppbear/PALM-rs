@@ -1,0 +1,833 @@
+[
+  {
+    "uses": [
+      "use std::marker::PhantomData;",
+      "use serde::de::SeqAccess;",
+      "use serde::de::Visitor;",
+      "use serde::de;",
+      "use serde::de::Content;"
+    ],
+    "has_test_mod": false,
+    "common": [
+      "struct TestSeqAccess<'de> {",
+      "    values: Vec<Result<Content<'de>, de::Error>>,",
+      "    current: usize,",
+      "}",
+      "",
+      "impl<'de> SeqAccess<'de> for TestSeqAccess<'de> {",
+      "    type Error = de::Error;",
+      "",
+      "    fn next_element(&mut self) -> Result<Option<Content<'de>>, Self::Error> {",
+      "        if self.current < self.values.len() {",
+      "            let value = self.values[self.current].clone();",
+      "            self.current += 1;",
+      "            value.map(|content| Some(content)).map_err(|err| err)",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn size_hint(&self) -> Option<usize> {",
+      "        Some(self.values.len() - self.current)",
+      "    }",
+      "}",
+      "",
+      "#[derive(Debug, Clone)]",
+      "struct ContentVisitor<'de> {",
+      "    _marker: PhantomData<&'de ()>,",
+      "}",
+      "",
+      "impl<'de> Visitor<'de> for ContentVisitor<'de> {",
+      "    type Value = Content<'de>;",
+      "",
+      "    fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>",
+      "    where",
+      "        V: SeqAccess<'de>,",
+      "    {",
+      "        let mut vec = Vec::with_capacity(visitor.size_hint().unwrap_or(0));",
+      "        while let Some(e) = visitor.next_element()? {",
+      "            vec.push(e);",
+      "        }",
+      "        Ok(Content::Seq(vec))",
+      "    }",
+      "",
+      "    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {",
+      "        write!(formatter, \"an array of contents\")",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let test_data = (1..=10)",
+          "        .map(|i| Ok(Content::I32(i)))",
+          "        .collect::<Vec<_>>();",
+          "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+          "    let visitor = ContentVisitor { _marker: PhantomData };",
+          "    let _ = visitor.visit_seq(seq_access);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.unwrap(), Content::Seq(vec![Content::I32(1), Content::I32(2)]));"
+          ],
+          [
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.unwrap(), Content::Seq(vec![]));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let test_data = (1..=10)",
+            "        .map(|i| Ok(Content::I32(i)))",
+            "        .collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = (1..=10)",
+            "        .map(|i| Ok(Content::I32(i)))",
+            "        .collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = (1..=10)",
+            "        .map(|i| Ok(Content::I32(i)))",
+            "        .collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = (1..=10)",
+            "        .map(|i| Ok(Content::I32(i)))",
+            "        .collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.unwrap(), Content::Seq(vec![Content::I32(1), Content::I32(2)]));",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = (1..=10)",
+            "        .map(|i| Ok(Content::I32(i)))",
+            "        .collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data = (1..=10).map(|i| Ok(Content::I32(i))).collect::<Vec<_>>();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![], current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.unwrap(), Content::Seq(vec![]));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let test_data = vec![",
+          "        Ok(Content::I32(1)),",
+          "        Err(de::Error::custom(\"error\")),",
+          "        Ok(Content::I32(2)),",
+          "    ];",
+          "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+          "    let visitor = ContentVisitor { _marker: PhantomData };",
+          "    let result = visitor.visit_seq(seq_access);",
+          "    let _ = result.unwrap_err(); // ensures an error is returned",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let result_success = visitor.visit_seq(seq_access);",
+            "    assert!(result_success.is_ok());"
+          ],
+          [
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let result_success = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result_success.unwrap(), Content::Seq(vec![Content::I32(1), Content::I32(2)]));"
+          ],
+          [
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let result_success = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let result_error = visitor.visit_seq(seq_access);",
+            "    assert!(result_error.is_err());"
+          ],
+          [
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let result_success = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let result_error = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result_error.unwrap_err().to_string(), \"error\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let test_data = vec![",
+            "        Ok(Content::I32(1)),",
+            "        Err(de::Error::custom(\"error\")),",
+            "        Ok(Content::I32(2)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = vec![",
+            "        Ok(Content::I32(1)),",
+            "        Err(de::Error::custom(\"error\")),",
+            "        Ok(Content::I32(2)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let result_success = visitor.visit_seq(seq_access);",
+            "    assert!(result_success.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = vec![",
+            "        Ok(Content::I32(1)),",
+            "        Err(de::Error::custom(\"error\")),",
+            "        Ok(Content::I32(2)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let result_success = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result_success.unwrap(), Content::Seq(vec![Content::I32(1), Content::I32(2)]));",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = vec![",
+            "        Ok(Content::I32(1)),",
+            "        Err(de::Error::custom(\"error\")),",
+            "        Ok(Content::I32(2)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let result_success = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let result_error = visitor.visit_seq(seq_access);",
+            "    assert!(result_error.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = vec![",
+            "        Ok(Content::I32(1)),",
+            "        Err(de::Error::custom(\"error\")),",
+            "        Ok(Content::I32(2)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![Ok(Content::I32(1)), Err(de::Error::custom(\"error\")), Ok(Content::I32(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data.clone(), current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Ok(Content::I32(1)), Ok(Content::I32(2))], current: 0 };",
+            "    let result_success = visitor.visit_seq(seq_access);",
+            "    let mut seq_access = TestSeqAccess { values: vec![Err(de::Error::custom(\"error\"))], current: 0 };",
+            "    let result_error = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result_error.unwrap_err().to_string(), \"error\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let test_data: Vec<Result<Content, de::Error>> = Vec::new();",
+          "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+          "    let visitor = ContentVisitor { _marker: PhantomData };",
+          "    let _ = visitor.visit_seq(seq_access);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    assert!(matches!(content, Content::Seq(vec) if vec.len() == 2));"
+          ],
+          [
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    assert_eq!(vec[0], Content::U8(1));"
+          ],
+          [
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    assert_eq!(vec[1], Content::U8(2));"
+          ],
+          [
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.err().unwrap().to_string(), \"error\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let test_data: Vec<Result<Content, de::Error>> = Vec::new();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data: Vec<Result<Content, de::Error>> = Vec::new();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    assert!(matches!(content, Content::Seq(vec) if vec.len() == 2));",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data: Vec<Result<Content, de::Error>> = Vec::new();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    assert_eq!(vec[0], Content::U8(1));",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data: Vec<Result<Content, de::Error>> = Vec::new();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    assert_eq!(vec[1], Content::U8(2));",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data: Vec<Result<Content, de::Error>> = Vec::new();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data: Vec<Result<Content, de::Error>> = Vec::new();",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let _ = visitor.visit_seq(seq_access);",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Ok(Content::U8(1)), Ok(Content::U8(2))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let content = result.unwrap();",
+            "    let test_data: Vec<Result<Content, de::Error>> = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.err().unwrap().to_string(), \"error\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let test_data = vec![Err(de::Error::custom(\"error\"))];",
+          "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+          "    let visitor = ContentVisitor { _marker: PhantomData };",
+          "    let result = visitor.visit_seq(seq_access);",
+          "    let _ = result.unwrap_err(); // ensures an error is returned",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let test_data = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let test_data = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.unwrap_err().to_string(), \"error\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let test_data = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![Err(de::Error::custom(\"error\"))];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.unwrap_err().to_string(), \"error\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let test_data = vec![",
+          "        Ok(Content::I32(1)),",
+          "        Ok(Content::I32(2)),",
+          "        Err(de::Error::custom(\"error\")),",
+          "        Ok(Content::I32(3)),",
+          "    ];",
+          "    ",
+          "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+          "    let visitor = ContentVisitor { _marker: PhantomData };",
+          "    let result = visitor.visit_seq(seq_access);",
+          "    let _ = result.unwrap_err(); // ensures an error is returned",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let test_data = vec![",
+            "    Ok(Content::I32(1)),",
+            "    Ok(Content::I32(2)),",
+            "    Err(de::Error::custom(\"error\")),",
+            "    Ok(Content::I32(3)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let test_data = vec![",
+            "    Ok(Content::I32(1)),",
+            "    Ok(Content::I32(2)),",
+            "    Err(de::Error::custom(\"error\")),",
+            "    Ok(Content::I32(3)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.err().unwrap().to_string(), \"error\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let test_data = vec![",
+            "        Ok(Content::I32(1)),",
+            "        Ok(Content::I32(2)),",
+            "        Err(de::Error::custom(\"error\")),",
+            "        Ok(Content::I32(3)),",
+            "    ];",
+            "    ",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![",
+            "    Ok(Content::I32(1)),",
+            "    Ok(Content::I32(2)),",
+            "    Err(de::Error::custom(\"error\")),",
+            "    Ok(Content::I32(3)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let test_data = vec![",
+            "        Ok(Content::I32(1)),",
+            "        Ok(Content::I32(2)),",
+            "        Err(de::Error::custom(\"error\")),",
+            "        Ok(Content::I32(3)),",
+            "    ];",
+            "    ",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    let _ = result.unwrap_err(); // ensures an error is returned",
+            "    let test_data = vec![",
+            "    Ok(Content::I32(1)),",
+            "    Ok(Content::I32(2)),",
+            "    Err(de::Error::custom(\"error\")),",
+            "    Ok(Content::I32(3)),",
+            "    ];",
+            "    let mut seq_access = TestSeqAccess { values: test_data, current: 0 };",
+            "    let visitor = ContentVisitor { _marker: PhantomData };",
+            "    let result = visitor.visit_seq(seq_access);",
+            "    assert_eq!(result.err().unwrap().to_string(), \"error\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

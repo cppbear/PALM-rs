@@ -1,0 +1,212 @@
+{
+  "name": "once_cell::race::race::OnceRef<'a, T>::get_or_try_init",
+  "name_with_impl": "once_cell::race::{impl#5}::get_or_try_init",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:299:5:307:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.get() matches Some(val) is true\n",
+        "// constraint: self.get() matches Some(val) is true\n",
+        "// expected return value/type: Ok(val)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestData {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    let once_ref = OnceRef::new();",
+                  "    let test_value = TestData { value: 42 };",
+                  "",
+                  "    // Set the value first to satisfy the condition that self.get() matches Some(val)",
+                  "    once_ref.set(&test_value).unwrap();",
+                  "",
+                  "    let result: Result<&TestData, ()> = once_ref.get_or_try_init(|| Err(()));",
+                  "",
+                  "    assert_eq!(result.is_ok(), true);",
+                  "    assert_eq!(result.unwrap().value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestData {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    let once_ref = OnceRef::new();",
+                  "    let test_value = TestData { value: 42 };",
+                  "",
+                  "    // Set the value first to satisfy the condition that self.get() matches Some(val)",
+                  "    once_ref.set(&test_value).unwrap();",
+                  "",
+                  "    let result: Result<&TestData, ()> = once_ref.get_or_try_init(|| {",
+                  "        // This initialization function deliberately fails",
+                  "        Err(())",
+                  "    });",
+                  "",
+                  "    assert_eq!(result.is_ok(), true);",
+                  "    assert_eq!(result.unwrap().value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.get() matches None is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestData {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    let once_ref = OnceRef::<TestData>::new();",
+                  "",
+                  "    let result = once_ref.get_or_try_init(|| {",
+                  "        let data = TestData { value: 42 };",
+                  "        // Returning a reference to a temporary value would normally be an issue,",
+                  "        // but here we assume the closure will leverage the heap or global context",
+                  "        Ok(&data)",
+                  "    });",
+                  "",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0282]: type annotations needed for `Result<&TestData, _>`\n   --> src/race.rs:515:9\n    |\n515 |     let result = once_ref.get_or_try_init(|| {\n    |         ^^^^^^\n...\n519 |         Ok(&data)\n    |         --------- type must be known at this point\n    |\nhelp: consider giving `result` an explicit type, where the type for type parameter `E` is specified\n    |\n515 |     let result: Result<&TestData, E> = once_ref.get_or_try_init(|| {\n    |               ++++++++++++++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestData {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    let once_ref = OnceRef::<TestData>::new();",
+                  "",
+                  "    let result = once_ref.get_or_try_init(|| {",
+                  "        let data = TestData { value: 42 };",
+                  "        // Here we have to assume data will be accessible for the lifetime being returned",
+                  "        unsafe { Ok(&*(Box::into_raw(Box::new(data)) as *const TestData)) }",
+                  "    });",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(unsafe { (*result.unwrap()).value }, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0282]: type annotations needed for `Result<&TestData, _>`\n   --> src/race.rs:515:9\n    |\n515 |     let result = once_ref.get_or_try_init(|| {\n    |         ^^^^^^\n...\n518 |         unsafe { Ok(&*(Box::into_raw(Box::new(data)) as *const TestData)) }\n    |                  -------------------------------------------------------- type must be known at this point\n    |\nhelp: consider giving `result` an explicit type, where the type for type parameter `E` is specified\n    |\n515 |     let result: Result<&TestData, E> = once_ref.get_or_try_init(|| {\n    |               ++++++++++++++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestData {",
+                  "        value: i32,",
+                  "    }",
+                  "",
+                  "    let once_ref = OnceRef::<TestData>::new();",
+                  "",
+                  "    let result: Result<&TestData, String> = once_ref.get_or_try_init(|| {",
+                  "        Err(\"Initialization failed\".to_string())",
+                  "    });",
+                  "",
+                  "    assert!(result.is_err());",
+                  "    assert_eq!(result.unwrap_err(), \"Initialization failed\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0277]: `TestData` doesn't implement `Debug`\n    --> src/race.rs:520:23\n     |\n520  |     assert_eq!(result.unwrap_err(), \"Initialization failed\");\n     |                       ^^^^^^^^^^ `TestData` cannot be formatted using `{:?}`\n     |\n     = help: the trait `Debug` is not implemented for `TestData`, which is required by `&TestData: Debug`\n     = note: add `#[derive(Debug)]` to `TestData` or manually `impl Debug for TestData`\n     = note: required for `&TestData` to implement `Debug`\nnote: required by a bound in `Result::<T, E>::unwrap_err`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:1193:12\n     |\n1191 |     pub fn unwrap_err(self) -> E\n     |            ---------- required by a bound in this associated function\n1192 |     where\n1193 |         T: fmt::Debug,\n     |            ^^^^^^^^^^ required by this bound in `Result::<T, E>::unwrap_err`\nhelp: consider annotating `TestData` with `#[derive(Debug)]`\n     |\n509  +     #[derive(Debug)]\n510  |     struct TestData {\n     |\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `once_cell` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

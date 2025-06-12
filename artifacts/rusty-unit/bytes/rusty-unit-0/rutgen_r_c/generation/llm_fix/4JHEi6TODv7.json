@@ -1,0 +1,1497 @@
+{
+  "name": "bytes::bytes_mut::bytes_mut::BytesMut::reserve_inner",
+  "name_with_impl": "bytes::bytes_mut::{impl#0}::reserve_inner",
+  "mod_info": {
+    "name": "bytes_mut",
+    "loc": "src/lib.rs:83:1:83:15"
+  },
+  "visible": false,
+  "loc": "src/bytes_mut.rs:608:5:784:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is true\n",
+        "// constraint: self.capacity() - self.len() + off >= additional is true, with bound self.capacity() - self.len() + off == additional\n",
+        "// constraint: off >= self.len() is true, with bound off == self.len()\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        bytes_mut: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new(capacity: usize) -> Self {",
+                  "            TestBytesMut {",
+                  "                bytes_mut: BytesMut::with_capacity(capacity),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn setup_capacity_and_length(&mut self, additional: usize) {",
+                  "            self.bytes_mut.resize(self.bytes_mut.len() + additional, 0);",
+                  "            unsafe {",
+                  "                self.bytes_mut.set_len(self.bytes_mut.len());",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buffer = TestBytesMut::new(20);",
+                  "    ",
+                  "    // Set initial length and off equal to length",
+                  "    buffer.setup_capacity_and_length(10); // self.len() = 10",
+                  "    let initial_length = buffer.bytes_mut.len();",
+                  "    ",
+                  "    unsafe {",
+                  "        buffer.bytes_mut.set_len(initial_length); // Ensure it's within the valid range",
+                  "    }",
+                  "",
+                  "    // Calculate off such that it's equal to self.len()",
+                  "    let off = initial_length;",
+                  "",
+                  "    // Ensure the capacity satisfies the conditions",
+                  "    buffer.bytes_mut.reserve(10); // This makes cap = 20",
+                  "",
+                  "    // Now call reserve_inner with additional that satisfies the conditions",
+                  "    let result = unsafe { buffer.bytes_mut.reserve_inner(0, true) }; // additional = 0",
+                  "",
+                  "    assert_eq!(result, true);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        bytes_mut: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new(capacity: usize) -> Self {",
+                  "            TestBytesMut {",
+                  "                bytes_mut: BytesMut::with_capacity(capacity),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn setup_buffer(&mut self, length: usize, to_reserve: usize) {",
+                  "            self.bytes_mut.resize(length, 0);",
+                  "            unsafe {",
+                  "                self.bytes_mut.set_len(length);",
+                  "            }",
+                  "            self.bytes_mut.reserve(to_reserve);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut buffer = TestBytesMut::new(30);",
+                  "    buffer.setup_buffer(20, 10); // Initial length is 20, reserve 10 more",
+                  "",
+                  "    // off will now be equal to the length",
+                  "    let off = unsafe { buffer.bytes_mut.get_vec_pos() };",
+                  "",
+                  "    // Validate that the requirements hold",
+                  "    assert!(off >= buffer.bytes_mut.len());",
+                  "    assert_eq!(buffer.bytes_mut.capacity() - buffer.bytes_mut.len() + off, 10);",
+                  "",
+                  "    // Call reserve_inner with constraints met",
+                  "    let result = unsafe { buffer.bytes_mut.reserve_inner(10, true) };",
+                  "",
+                  "    assert_eq!(result, true);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is true\n",
+        "// constraint: self.capacity() - self.len() + off >= additional is true, with bound self.capacity() - self.len() + off == additional\n",
+        "// constraint: off >= self.len() is false\n",
+        "// constraint: allocate is true\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        inner: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new(capacity: usize) -> Self {",
+                  "            TestBytesMut {",
+                  "                inner: BytesMut::with_capacity(capacity),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn set_len(&mut self, len: usize) {",
+                  "            unsafe { self.inner.set_len(len) };",
+                  "        }",
+                  "",
+                  "        fn reserve_inner(&mut self, additional: usize, allocate: bool) -> bool {",
+                  "            self.inner.reserve_inner(additional, allocate)",
+                  "        }",
+                  "",
+                  "        fn capacity(&self) -> usize {",
+                  "            self.inner.capacity()",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.inner.len()",
+                  "        }",
+                  "",
+                  "        fn get_vec_pos(&mut self) -> usize {",
+                  "            unsafe { self.inner.get_vec_pos() }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_bytes_mut = TestBytesMut::new(32);",
+                  "    test_bytes_mut.set_len(10);",
+                  "    let off = 20; // ensuring off >= self.len() is false",
+                  "    unsafe {",
+                  "        test_bytes_mut.inner.set_vec_pos(off);",
+                  "    }",
+                  "    ",
+                  "    let additional = 2; // self.capacity() - self.len() + off == additional",
+                  "    let result = test_bytes_mut.reserve_inner(additional, true);",
+                  "    ",
+                  "    assert!(result);",
+                  "    assert!(test_bytes_mut.capacity() > 32); // Ensure capacity increased",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        inner: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new() -> Self {",
+                  "            TestBytesMut {",
+                  "                inner: BytesMut::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn reserve_inner(&mut self, additional: usize, allocate: bool) -> bool {",
+                  "            self.inner.reserve_inner(additional, allocate)",
+                  "        }",
+                  "",
+                  "        fn set_len(&mut self, len: usize) {",
+                  "            unsafe { self.inner.set_len(len) };",
+                  "        }",
+                  "",
+                  "        fn set_vec_pos(&mut self, pos: usize) {",
+                  "            unsafe { self.inner.set_vec_pos(pos) };",
+                  "        }",
+                  "",
+                  "    }",
+                  "",
+                  "    let mut test_bytes_mut = TestBytesMut::new();",
+                  "    test_bytes_mut.set_len(5);",
+                  "    test_bytes_mut.set_vec_pos(10); // forcing off >= self.len() to false; assume kind is KIND_VEC.",
+                  "",
+                  "    let result = test_bytes_mut.reserve_inner(6, false); // Trying to reserve without allocation",
+                  "    assert!(!result);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is true\n",
+        "// constraint: self.capacity() - self.len() + off >= additional is false\n",
+        "// constraint: allocate is false\n",
+        "// expected return value/type: false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = {",
+                  "        let mut vec = Vec::with_capacity(10);",
+                  "        vec.extend_from_slice(&[1, 2, 3, 4, 5]);",
+                  "        BytesMut::from_vec(vec)",
+                  "    };",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.set_len(5); // Setting the length to match data present",
+                  "        bytes_mut.reserve(10); // Setting the capacity to at least 15 (5 length + 10 requested)",
+                  "    }",
+                  "",
+                  "    // Simulating the internal state to cause the first constraint to be met.",
+                  "    bytes_mut.ptr = bytes_mut.ptr; // No operation but keeping the syntax",
+                  "    bytes_mut.cap = 15; // Simulating initialized capacity",
+                  "    bytes_mut.len = 5; // Current length",
+                  "    let additional = 20; // Additional space requested",
+                  "    let allocate = false; // No allocation",
+                  "",
+                  "    let result = bytes_mut.reserve_inner(additional, allocate); // Running the operation",
+                  "",
+                  "    assert!(!result); // Expecting false since we cannot allocate more without allocation",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 8,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: (*shared).is_unique() is true\n",
+        "// constraint: v_capacity >= new_cap + offset is true, with bound v_capacity == new_cap + offset\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Create a new BytesMut instance with a small capacity",
+                  "    let mut bytes_mut = BytesMut::with_capacity(10);",
+                  "    // Setup initial conditions",
+                  "    let additional = 5;",
+                  "",
+                  "    // Let's assume that the method is being tested as KIND_VEC",
+                  "    let kind_vec = KIND_VEC;",
+                  "",
+                  "    // Manually setting the internal state to satisfy the required conditions",
+                  "    unsafe {",
+                  "        let shared = &mut *(bytes_mut.data as *mut Shared);",
+                  "        shared.ref_count.store(1, Ordering::Release); // Unique reference",
+                  "",
+                  "        // Create a vector with exact capacity",
+                  "        shared.vec = Vec::with_capacity(15);",
+                  "        shared.vec.extend_from_slice(&[0u8; 10]); // Existing data",
+                  "        shared.original_capacity_repr = 3; // Example representation for original capacity",
+                  "",
+                  "        // Set other necessary properties for the test",
+                  "        bytes_mut.ptr = vptr(shared.vec.as_mut_ptr());",
+                  "        bytes_mut.len = 10; // Current length",
+                  "        bytes_mut.cap = 15; // Current capacity",
+                  "    }",
+                  "",
+                  "    // Call the function under test",
+                  "    let result = bytes_mut.reserve_inner(additional, true);",
+                  "",
+                  "    // Assertions",
+                  "    assert!(result); // Expecting true return value.",
+                  "    assert_eq!(bytes_mut.len(), 10); // Length should remain unchanged",
+                  "    assert!(bytes_mut.capacity() >= 15); // Expecting capacity to reflect proper reservation",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"overflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::with_capacity(10);",
+                  "    let additional = usize::MAX; // Could lead to overflow",
+                  "",
+                  "    // Setup the internal state to meet the constraints that could lead to panic",
+                  "    unsafe {",
+                  "        let shared = &mut *(bytes_mut.data as *mut Shared);",
+                  "        shared.ref_count.store(1, Ordering::Release); // Unique reference",
+                  "        shared.vec = Vec::with_capacity(10);",
+                  "        shared.vec.extend_from_slice(&[0u8; 10]); // Existing data",
+                  "        shared.original_capacity_repr = 3;",
+                  "",
+                  "        bytes_mut.ptr = vptr(shared.vec.as_mut_ptr());",
+                  "        bytes_mut.len = 10; // Current length",
+                  "        bytes_mut.cap = 10; // Current capacity",
+                  "    }",
+                  "",
+                  "    // Should panic due to overflow",
+                  "    bytes_mut.reserve_inner(additional, true);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::with_capacity(20);",
+                  "    let additional = 5;",
+                  "",
+                  "    // Set conditions for successful reservation without allocations",
+                  "    unsafe {",
+                  "        let shared = &mut *(bytes_mut.data as *mut Shared);",
+                  "        shared.ref_count.store(1, Ordering::Release); // Unique reference",
+                  "        shared.vec = Vec::with_capacity(30);",
+                  "        shared.vec.extend_from_slice(&[0u8; 20]); // Existing data",
+                  "        shared.original_capacity_repr = 4;",
+                  "",
+                  "        bytes_mut.ptr = vptr(shared.vec.as_mut_ptr());",
+                  "        bytes_mut.len = 20; // Current length",
+                  "        bytes_mut.cap = 30; // Current capacity",
+                  "        bytes_mut.set_vec_pos(0); // Setting vec position",
+                  "    }",
+                  "",
+                  "    // Call the function under test",
+                  "    let result = bytes_mut.reserve_inner(additional, false);",
+                  "    ",
+                  "    // Assertions",
+                  "    assert!(result); // Expecting true return value",
+                  "    assert_eq!(bytes_mut.len(), 20); // Length should remain unchanged",
+                  "    assert!(bytes_mut.capacity() >= 30); // Expecting capacity to be sufficient",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 9,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: (*shared).is_unique() is true\n",
+        "// constraint: v_capacity >= new_cap + offset is false\n",
+        "// constraint: v_capacity >= new_cap is true, with bound v_capacity == new_cap\n",
+        "// constraint: offset >= len is true, with bound offset == len\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Initialize a BytesMut with a vector.",
+                  "    let mut bytes_mut: BytesMut = BytesMut::with_capacity(20);",
+                  "    ",
+                  "    // Fill it with some data to ensure kind is KIND_VEC.",
+                  "    bytes_mut.extend_from_slice(&[1, 2, 3, 4, 5]);",
+                  "    ",
+                  "    // Set state so that:",
+                  "    // - kind == KIND_VEC (implicitly true by using a Vec)",
+                  "    // - (*shared).is_unique() is true (we'll assume this since we just created it)",
+                  "    // - len.checked_add(additional) matches Some(new_cap) is true",
+                  "    // - v_capacity >= new_cap (we'll set new_cap to v_capacity)",
+                  "    ",
+                  "    let len = bytes_mut.len();",
+                  "    let additional = 0; // Adding no additional capacity for simplicity.",
+                  "    let new_cap = len; // new_cap is exactly the current length.",
+                  "",
+                  "    // Assume a scenario where v_capacity >= new_cap is true.",
+                  "    // Since we are not making changes that affect capacity, we will just call reserve_inner.",
+                  "    let success = bytes_mut.reserve_inner(additional, true);",
+                  "    ",
+                  "    // Ensure the expected return value.",
+                  "    assert!(success);",
+                  "",
+                  "    // Ensure the length remains the same.",
+                  "    assert_eq!(bytes_mut.len(), len);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut: BytesMut = BytesMut::with_capacity(20);",
+                  "    bytes_mut.extend_from_slice(&[6, 7, 8, 9, 10]);",
+                  "    ",
+                  "    let len = bytes_mut.len();",
+                  "    let additional = 10; // Requesting additional capacity",
+                  "    let new_cap = len + additional; // Calculating new capacity requirement",
+                  "",
+                  "    let v_capacity = bytes_mut.capacity();",
+                  "    ",
+                  "    // Assuming v_capacity is such that: v_capacity >= new_cap and offset matches len.",
+                  "    unsafe {",
+                  "        bytes_mut.set_vec_pos(len); // Making offset equal to len as required for the test.",
+                  "    }",
+                  "    ",
+                  "    let success = bytes_mut.reserve_inner(additional, true);",
+                  "    ",
+                  "    // Ensure the expected return value.",
+                  "    assert!(success);",
+                  "",
+                  "    // Ensure the length remains unchanged.",
+                  "    assert_eq!(bytes_mut.len(), len);",
+                  "    ",
+                  "    // Verify the capacity has increased.",
+                  "    assert!(bytes_mut.capacity() > len);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 11,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: (*shared).is_unique() is true\n",
+        "// constraint: v_capacity >= new_cap + offset is false\n",
+        "// constraint: v_capacity >= new_cap is true, with bound v_capacity == new_cap\n",
+        "// constraint: offset >= len is false\n",
+        "// constraint: allocate is true\n",
+        "// may panic: new_cap.checked_add(off).expect(\"overflow\") may panic in certain situations\n",
+        "// constraint: off + len <= v.capacity() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        bytes_mut: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new() -> Self {",
+                  "            let bytes_mut = BytesMut::new();",
+                  "            TestBytesMut { bytes_mut }",
+                  "        }",
+                  "",
+                  "        fn set_data(&mut self, data: Vec<u8>) {",
+                  "            self.bytes_mut = BytesMut::from_vec(data);",
+                  "        }",
+                  "",
+                  "        fn reserve_inner(&mut self, additional: usize, allocate: bool) -> bool {",
+                  "            // Here we would call the reserve_inner method with conditions set",
+                  "            unsafe { self.bytes_mut.reserve_inner(additional, allocate) }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.bytes_mut.len()",
+                  "        }",
+                  "",
+                  "        fn capacity(&self) -> usize {",
+                  "            self.bytes_mut.capacity()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_bytes_mut = TestBytesMut::new();",
+                  "    test_bytes_mut.set_data(vec![1, 2, 3, 4]);",
+                  "",
+                  "    let additional = 2; // Should not cause overflow",
+                  "    let allocate = true; // We want to allocate new space",
+                  "",
+                  "    // Set conditions to satisfy constraints",
+                  "    // Constraint: offset >= len is false",
+                  "    let initial_len = test_bytes_mut.len();",
+                  "    let initial_capacity = test_bytes_mut.capacity();",
+                  "",
+                  "    // Adjust buffer to have less capacity than required for the test",
+                  "    test_bytes_mut.bytes_mut.truncate(initial_len / 2);",
+                  "",
+                  "    // Call the reserve_inner method and check its return value",
+                  "    let result = test_bytes_mut.reserve_inner(additional, allocate);",
+                  "    ",
+                  "    // Assertion based on expected behavior",
+                  "    assert!(result);",
+                  "    assert!(test_bytes_mut.capacity() > initial_capacity);  // Capacity should have increased",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        bytes_mut: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new() -> Self {",
+                  "            let bytes_mut = BytesMut::new();",
+                  "            TestBytesMut { bytes_mut }",
+                  "        }",
+                  "",
+                  "        fn set_data(&mut self, data: Vec<u8>) {",
+                  "            self.bytes_mut = BytesMut::from_vec(data);",
+                  "        }",
+                  "",
+                  "        fn reserve_inner(&mut self, additional: usize, allocate: bool) -> bool {",
+                  "            // Here we would call the reserve_inner method with conditions set",
+                  "            unsafe { self.bytes_mut.reserve_inner(additional, allocate) }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_bytes_mut = TestBytesMut::new();",
+                  "    test_bytes_mut.set_data(vec![1, 2, 3, 4]);",
+                  "",
+                  "    let additional = usize::MAX; // Should cause overflow",
+                  "    let allocate = true;",
+                  "",
+                  "    // Call the reserve_inner method to test panic behavior",
+                  "    test_bytes_mut.reserve_inner(additional, allocate);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        bytes_mut: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new() -> Self {",
+                  "            let bytes_mut = BytesMut::new();",
+                  "            TestBytesMut { bytes_mut }",
+                  "        }",
+                  "",
+                  "        fn set_data(&mut self, data: Vec<u8>) {",
+                  "            self.bytes_mut = BytesMut::from_vec(data);",
+                  "        }",
+                  "",
+                  "        fn reserve_inner(&mut self, additional: usize, allocate: bool) -> bool {",
+                  "            // Here we would call the reserve_inner method with conditions set",
+                  "            unsafe { self.bytes_mut.reserve_inner(additional, allocate) }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut test_bytes_mut = TestBytesMut::new();",
+                  "    test_bytes_mut.set_data(vec![1, 2, 3, 4]);",
+                  "",
+                  "    let additional = 2; // Should remain within bounds for this test",
+                  "    let allocate = false; // We won't allocate new space",
+                  "",
+                  "    // Simulate the case where the shared state is not unique",
+                  "    // (You would implement a way to make `test_bytes_mut` not unique)",
+                  "",
+                  "    // Assertions to check behavior when not unique",
+                  "    let result = test_bytes_mut.reserve_inner(additional, allocate);",
+                  "    assert!(!result); // It should return false since we are not allocating",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 13,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: (*shared).is_unique() is true\n",
+        "// constraint: v_capacity >= new_cap + offset is false\n",
+        "// constraint: v_capacity >= new_cap is false\n",
+        "// constraint: allocate is true\n",
+        "// may panic: new_cap.checked_add(off).expect(\"overflow\") may panic in certain situations\n",
+        "// constraint: off + len <= v.capacity() is true, with bound off + len == v.capacity()\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        inner: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new_with_cap(capacity: usize) -> Self {",
+                  "            Self {",
+                  "                inner: BytesMut::with_capacity(capacity),",
+                  "            }",
+                  "        }",
+                  "",
+                  "       fn reserve_inner_test(&mut self, additional: usize, allocate: bool) -> bool {",
+                  "           let result = self.inner.reserve_inner(additional, allocate);",
+                  "           result",
+                  "       }",
+                  "    }",
+                  "",
+                  "    // Create a test instance with a specific capacity",
+                  "    let mut test_bytes_mut = TestBytesMut::new_with_cap(16);",
+                  "    ",
+                  "    unsafe {",
+                  "        // Setting len to be 8 manually and using a valid shared state.",
+                  "        test_bytes_mut.inner.set_len(8);",
+                  "        test_bytes_mut.inner.data = invalid_ptr(0); // Simulating a unique state.",
+                  "",
+                  "        // Simulating valid shared state",
+                  "        let shared = Box::into_raw(Box::new(Shared {",
+                  "            vec: Vec::with_capacity(16),",
+                  "            original_capacity_repr: 1,",
+                  "            ref_count: AtomicUsize::new(1),",
+                  "        }));",
+                  "",
+                  "        test_bytes_mut.inner.data = shared as *mut Shared as *mut u8;",
+                  "",
+                  "        // Conditions: len.checked_add(additional) matches Some(new_cap) is true",
+                  "        let additional = 6;",
+                  "        let new_cap = 14; // 8 (current length) + 6 (additional) = 14",
+                  "        assert_eq!(test_bytes_mut.inner.len(), 8); // Current length is 8",
+                  "",
+                  "        // Use a specially crafted scenario to ensure that we end up not using",
+                  "        // the current `Vec`",
+                  "        assert!(test_bytes_mut.reserve_inner_test(additional, true));",
+                  "        assert_eq!(test_bytes_mut.inner.capacity(), 16);  // Ensure capacity respects the increment",
+                  "",
+                  "        // Validate offsets and vectors as per condition",
+                  "        let offset = test_bytes_mut.inner.get_vec_pos();",
+                  "        assert!(offset + test_bytes_mut.inner.len() <= (*shared).vec.capacity()); // This condition must hold true.",
+                  "",
+                  "        // Clean up",
+                  "        release_shared(shared);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n    --> src/bytes_mut.rs:1964:37\n     |\n1964 |         test_bytes_mut.inner.data = shared as *mut Shared as *mut u8;\n     |         -------------------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*mut Shared`, found `*mut u8`\n     |         |\n     |         expected due to the type of this binding\n     |\n     = note: expected raw pointer `*mut bytes_mut::Shared`\n                found raw pointer `*mut u8`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"overflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        inner: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                inner: BytesMut::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "       fn reserve_inner_test(&mut self, additional: usize, allocate: bool) -> bool {",
+                  "           let result = self.inner.reserve_inner(additional, allocate);",
+                  "           result",
+                  "       }",
+                  "    }",
+                  "",
+                  "    let mut test_bytes_mut = TestBytesMut::new();",
+                  "    ",
+                  "    unsafe {",
+                  "        test_bytes_mut.inner.set_len(usize::MAX); // Max length",
+                  "        test_bytes_mut.inner.data = invalid_ptr(0); // Simulating a unique state.",
+                  "",
+                  "        // Simulate the initial state shared ref counting",
+                  "        let shared = Box::into_raw(Box::new(Shared {",
+                  "            vec: Vec::with_capacity(16),",
+                  "            original_capacity_repr: 1,",
+                  "            ref_count: AtomicUsize::new(1),",
+                  "        }));",
+                  "",
+                  "       test_bytes_mut.inner.data = shared as *mut u8 as *mut Shared;",
+                  "",
+                  "        // This next line should panic due to overflow",
+                  "        let _ = test_bytes_mut.reserve_inner_test(1, true);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 15,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: (*shared).is_unique() is true\n",
+        "// constraint: v_capacity >= new_cap + offset is false\n",
+        "// constraint: v_capacity >= new_cap is false\n",
+        "// constraint: allocate is false\n",
+        "// expected return value/type: false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 16,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: (*shared).is_unique() is false\n",
+        "// constraint: allocate is true\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// expected return value/type: true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestShared {",
+                  "        ref_count: AtomicUsize,",
+                  "        vec: Vec<u8>,",
+                  "        original_capacity_repr: usize,",
+                  "    }",
+                  "",
+                  "    struct TestBytesMut {",
+                  "        ptr: NonNull<u8>,",
+                  "        len: usize,",
+                  "        cap: usize,",
+                  "        data: *mut TestShared,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "       unsafe fn new(data: *mut TestShared, mut vec: Vec<u8>, len: usize) -> TestBytesMut {  ",
+                  "           TestBytesMut {  ",
+                  "               ptr: vptr(vec.as_mut_ptr()),  ",
+                  "                len,",
+                  "                cap: vec.capacity(),",
+                  "                data,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.len",
+                  "        }",
+                  "",
+                  "        fn capacity(&self) -> usize {",
+                  "            self.cap",
+                  "        }",
+                  "",
+                  "        fn kind(&self) -> usize {",
+                  "            0 // For this test, we can set it to KIND_ARC (0)",
+                  "        }",
+                  "",
+                  "        unsafe fn get_vec_pos(&self) -> usize {",
+                  "            0 // Return 0 for simplicity",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Allocate shared structure",
+                  "    let shared = Box::new(TestShared {",
+                  "        ref_count: AtomicUsize::new(2), // Simulate not being unique",
+                  "        vec: Vec::with_capacity(10),",
+                  "        original_capacity_repr: 0,",
+                  "    });",
+                  "",
+                  "    let data_ptr = Box::into_raw(shared);",
+                  "    let mut bytes_mut = unsafe { TestBytesMut::new(data_ptr, Vec::with_capacity(10), 5) };",
+                  "",
+                  "    let additional: usize = 5;",
+                  "    let allocate: bool = true;",
+                  "",
+                  "    let result = unsafe { bytes_mut.reserve_inner(additional, allocate) };",
+                  "    ",
+                  "    assert!(result);",
+                  "    unsafe {",
+                  "        // Release the `shared` structure.",
+                  "        let shared_ref = &*bytes_mut.data;",
+                  "        assert_eq!(shared_ref.ref_count.load(Ordering::SeqCst), 2);",
+                  "        drop(Box::from_raw(data_ptr));",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `reserve_inner` found for struct `TestBytesMut` in the current scope\n    --> src/bytes_mut.rs:1985:37\n     |\n1938 |     struct TestBytesMut {\n     |     ------------------- method `reserve_inner` not found for this struct\n...\n1985 |     let result = unsafe { bytes_mut.reserve_inner(additional, allocate) };\n     |                                     ^^^^^^^^^^^^^ method not found in `TestBytesMut`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestShared {",
+                  "        ref_count: AtomicUsize,",
+                  "        vec: Vec<u8>,",
+                  "        original_capacity_repr: usize,",
+                  "    }",
+                  "",
+                  "    struct TestBytesMut {",
+                  "        ptr: NonNull<u8>,",
+                  "        len: usize,",
+                  "        cap: usize,",
+                  "        data: *mut TestShared,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "       unsafe fn new(data: *mut TestShared, mut vec: Vec<u8>, len: usize) -> TestBytesMut {",
+                  "           TestBytesMut {",
+                  "               ptr: vptr(vec.as_mut_ptr()),",
+                  "                len,",
+                  "                cap: vec.capacity(),",
+                  "                data,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.len",
+                  "        }",
+                  "",
+                  "        fn capacity(&self) -> usize {",
+                  "            self.cap",
+                  "        }",
+                  "",
+                  "        fn kind(&self) -> usize {",
+                  "            0 // For this test, we can set it to KIND_ARC (0)",
+                  "        }",
+                  "",
+                  "        unsafe fn get_vec_pos(&self) -> usize {",
+                  "            0 // Return 0 for simplicity",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Allocate shared structure",
+                  "    let shared = Box::new(TestShared {",
+                  "        ref_count: AtomicUsize::new(2), // Simulate not being unique",
+                  "        vec: Vec::with_capacity(10),",
+                  "        original_capacity_repr: 0,",
+                  "    });",
+                  "",
+                  "    let data_ptr = Box::into_raw(shared);",
+                  "    let mut bytes_mut = unsafe { TestBytesMut::new(data_ptr, Vec::with_capacity(15), 10) };",
+                  "",
+                  "    let additional: usize = 5;",
+                  "    let allocate: bool = true;",
+                  "",
+                  "    let result = unsafe { bytes_mut.reserve_inner(additional, allocate) };",
+                  "    ",
+                  "    assert!(result);",
+                  "    unsafe {",
+                  "        // Release the `shared` structure.",
+                  "        let shared_ref = &(*bytes_mut.data);",
+                  "        assert_eq!(shared_ref.ref_count.load(Ordering::SeqCst), 2);",
+                  "        drop(Box::from_raw(data_ptr));",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `reserve_inner` found for struct `TestBytesMut` in the current scope\n    --> src/bytes_mut.rs:1985:37\n     |\n1938 |     struct TestBytesMut {\n     |     ------------------- method `reserve_inner` not found for this struct\n...\n1985 |     let result = unsafe { bytes_mut.reserve_inner(additional, allocate) };\n     |                                     ^^^^^^^^^^^^^ method not found in `TestBytesMut`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 18,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: len.checked_add(additional) matches Some(new_cap) is true\n",
+        "// constraint: (*shared).is_unique() is false\n",
+        "// constraint: allocate is false\n",
+        "// expected return value/type: false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestBytesMut {",
+                  "        bytes: BytesMut,",
+                  "    }",
+                  "",
+                  "    impl TestBytesMut {",
+                  "        fn new(shared: *mut Shared) -> Self {",
+                  "            Self {",
+                  "                bytes: BytesMut {",
+                  "                    ptr: NonNull::new(std::ptr::null_mut()).unwrap(),",
+                  "                    len: 0,",
+                  "                    cap: 0,",
+                  "                    data: shared,",
+                  "                },",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn setup_shared() -> *mut Shared {",
+                  "               let shared = Box::into_raw(Box::new(Shared {  ",
+                  "                  vec: Vec::new(),  ",
+                  "                  original_capacity_repr: 10,  ",
+                  "                  ref_count: AtomicUsize::new(2),  ",
+                  "              }));  ",
+                  "            shared",
+                  "        }",
+                  "    }",
+                  "",
+                  "    unsafe {",
+                  "        let shared = TestBytesMut::setup_shared();",
+                  "        let mut test_bytes_mut = TestBytesMut::new(shared);",
+                  "",
+                  "        // Arguments to help meet the test constraints",
+                  "        let additional = 5;",
+                  "        let allocate = false;",
+                  "",
+                  "        // Setting the length to be 0 and capacity to be less than what would be requested",
+                  "        test_bytes_mut.bytes.len = 0;",
+                  "        test_bytes_mut.bytes.cap = 10;",
+                  "",
+                  "        // Now we will call the reserve_inner function",
+                  "        let result = test_bytes_mut.bytes.reserve_inner(additional, allocate);",
+                  "",
+                  "        // Ensure that the return value is false",
+                  "        assert!(!result);",
+                  "",
+                  "        // Clean up",
+                  "        Box::from_raw(shared);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 19,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches None or None is true\n",
+        "// constraint: len.checked_add(additional) matches None is true\n",
+        "// constraint: allocate is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Initialize a BytesMut with enough capacity",
+                  "    let mut bytes_mut = BytesMut::new();",
+                  "    ",
+                  "    // Simulate the kind being KIND_ARC by directly manipulating its internal representation.",
+                  "    unsafe {",
+                  "        let shared = &mut *(bytes_mut.data as *mut Shared);",
+                  "        shared.ref_cnt.store(1, Ordering::Release); // Set unique ref count",
+                  "    }",
+                  "    ",
+                  "    // The current length of BytesMut",
+                  "    let current_len = bytes_mut.len();",
+                  "    let additional = 10; // Additional space to reserve",
+                  "    let allocate = true; // Allocate should be true",
+                  "",
+                  "    // Invoke the reserve_inner method and capture the output",
+                  "    let result = unsafe { bytes_mut.reserve_inner(additional, allocate) };",
+                  "",
+                  "    // Check preconditions",
+                  "    assert!(result); // Should succeed in reserving",
+                  "    assert!(bytes_mut.capacity() >= current_len + additional); // Ensure capacity is sufficient",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0609]: no field `ref_cnt` on type `&mut bytes_mut::Shared`\n    --> src/bytes_mut.rs:1938:16\n     |\n1938 |         shared.ref_cnt.store(1, Ordering::Release); // Set unique ref count\n     |                ^^^^^^^ unknown field\n     |\nhelp: a field with a similar name exists\n     |\n1938 |         shared.ref_count.store(1, Ordering::Release); // Set unique ref count\n     |                ~~~~~~~~~\n\nFor more information about this error, try `rustc --explain E0609`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"overflow\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::new();",
+                  "",
+                  "    // Simulate the kind being KIND_ARC and cause an overflow",
+                  "    unsafe {",
+                  "        let shared = &mut *(bytes_mut.data as *mut Shared);",
+                  "        shared.ref_cnt.store(1, Ordering::Release); // Set unique ref count",
+                  "    }",
+                  "",
+                  "    // Set length to maximum value, and the additional value too high to check for overflow",
+                  "    let current_len = usize::MAX;",
+                  "    let additional = 1; // This will cause an overflow",
+                  "",
+                  "    unsafe {",
+                  "        bytes_mut.len = current_len; // Mocks the length",
+                  "        let result = bytes_mut.reserve_inner(additional, true);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0609]: no field `ref_cnt` on type `&mut bytes_mut::Shared`\n    --> src/bytes_mut.rs:1938:16\n     |\n1938 |         shared.ref_cnt.store(1, Ordering::Release); // Set unique ref count\n     |                ^^^^^^^ unknown field\n     |\nhelp: a field with a similar name exists\n     |\n1938 |         shared.ref_count.store(1, Ordering::Release); // Set unique ref count\n     |                ~~~~~~~~~\n\nFor more information about this error, try `rustc --explain E0609`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::new();",
+                  "    ",
+                  "    // Simulate not unique case",
+                  "    unsafe {",
+                  "        let shared = &mut *(bytes_mut.data as *mut Shared);",
+                  "        shared.ref_cnt.store(2, Ordering::Release); // Set non-unique ref count",
+                  "    }",
+                  "",
+                  "    // The current length of BytesMut",
+                  "    let current_len = bytes_mut.len();",
+                  "    let additional = 10; // Additional space to reserve",
+                  "    let allocate = false; // Allocate should be false",
+                  "",
+                  "    // Invoke the reserve_inner method and capture the output",
+                  "    let result = unsafe { bytes_mut.reserve_inner(additional, allocate) };",
+                  "",
+                  "    // Check that it returns false since allocate is false and we are not unique",
+                  "    assert!(!result);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0609]: no field `ref_cnt` on type `&mut bytes_mut::Shared`\n    --> src/bytes_mut.rs:1937:16\n     |\n1937 |         shared.ref_cnt.store(2, Ordering::Release); // Set non-unique ref count\n     |                ^^^^^^^ unknown field\n     |\nhelp: a field with a similar name exists\n     |\n1937 |         shared.ref_count.store(2, Ordering::Release); // Set non-unique ref count\n     |                ~~~~~~~~~\n\nFor more information about this error, try `rustc --explain E0609`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes_mut = BytesMut::new();",
+                  "    ",
+                  "    // Simulate the kind being KIND_ARC and non-unique",
+                  "    unsafe {",
+                  "        let shared = &mut *(bytes_mut.data as *mut Shared);",
+                  "        shared.ref_cnt.store(1, Ordering::Release); // Set unique ref count",
+                  "        shared.vec = Vec::with_capacity(5); // Small initial capacity",
+                  "    }",
+                  "",
+                  "    // The current length of BytesMut",
+                  "    let current_len = bytes_mut.len();",
+                  "    let additional = 20; // Additional request that exceeds capacity",
+                  "    let allocate = true; // Allocate should be true",
+                  "",
+                  "    // Invoke the reserve_inner method and capture the output",
+                  "    let result = unsafe { bytes_mut.reserve_inner(additional, allocate) };",
+                  "",
+                  "    // There is not enough capacity, should allocate more space",
+                  "    assert!(result);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0609]: no field `ref_cnt` on type `&mut bytes_mut::Shared`\n    --> src/bytes_mut.rs:1937:16\n     |\n1937 |         shared.ref_cnt.store(1, Ordering::Release); // Set unique ref count\n     |                ^^^^^^^ unknown field\n     |\nhelp: a field with a similar name exists\n     |\n1937 |         shared.ref_count.store(1, Ordering::Release); // Set unique ref count\n     |                ~~~~~~~~~\n\nFor more information about this error, try `rustc --explain E0609`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 20,
+      "prompt_conds": [
+        "// constraint: kind == KIND_VEC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// constraint: len.checked_add(additional) matches None or None is true\n",
+        "// constraint: len.checked_add(additional) matches None is true\n",
+        "// constraint: allocate is false\n",
+        "// expected return value/type: false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockBytesMut {",
+                  "        len: usize,",
+                  "        cap: usize,",
+                  "        data: *mut Shared,",
+                  "        ptr: NonNull<u8>,",
+                  "    }",
+                  "",
+                  "    impl MockBytesMut {",
+                  "        fn new(len: usize, cap: usize) -> Self {",
+                  "            Self {",
+                  "                len,",
+                  "                cap,",
+                  "                data: std::ptr::null_mut(),",
+                  "                ptr: NonNull::new(std::ptr::null_mut()).unwrap(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.len",
+                  "        }",
+                  "",
+                  "        fn capacity(&self) -> usize {",
+                  "            self.cap",
+                  "        }",
+                  "",
+                  "        fn kind(&self) -> usize {",
+                  "            0 // Assuming KIND_ARC (not KIND_VEC)",
+                  "        }",
+                  "",
+                  "        fn try_reclaim(&mut self, additional: usize, allocate: bool) -> bool {",
+                  "            let new_cap = self.len.checked_add(additional);",
+                  "            if new_cap.is_none() || !allocate {",
+                  "                return false;",
+                  "            }",
+                  "            // additional implementation omitted for brevity",
+                  "            true",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut bytes_mut = MockBytesMut::new(10, 20);",
+                  "    let additional = usize::MAX; // This will trigger the checked_add to return None",
+                  "",
+                  "    let result = bytes_mut.try_reclaim(additional, false);",
+                  "    assert_eq!(result, false);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

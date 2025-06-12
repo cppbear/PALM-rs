@@ -1,0 +1,296 @@
+{
+  "name": "once_cell::sync::sync::OnceCell<T>::wait",
+  "name_with_impl": "once_cell::sync::{impl#6}::wait",
+  "mod_info": {
+    "name": "sync",
+    "loc": "src/lib.rs:863:1:1409:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:993:9:1001:10",
+  "fn_tests": [
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.0.is_initialized() is true\n",
+        "// constraint: self.0.is_initialized() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Creating a mock for the inner structure to simulate initialization",
+                  "    struct MockImp<T> {",
+                  "        initialized: bool,",
+                  "        value: Option<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> MockImp<T> {",
+                  "        fn is_initialized(&self) -> bool {",
+                  "            self.initialized",
+                  "        }",
+                  "",
+                  "        fn wait(&self) {",
+                  "            // Simulating the wait operation.",
+                  "        }",
+                  "",
+                  "        fn get_unchecked(&self) -> &T {",
+                  "            self.value.as_ref().unwrap() // Assumes initialized",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct OnceCell<T> {",
+                  "        inner: MockImp<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> OnceCell<T> {",
+                  "        fn new() -> OnceCell<T> {",
+                  "            OnceCell {",
+                  "                inner: MockImp {",
+                  "                    initialized: false,",
+                  "                    value: None,",
+                  "                },",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn wait(&self) -> &T {",
+                  "            if !self.inner.is_initialized() {",
+                  "                self.inner.wait()",
+                  "            }",
+                  "            unsafe { self.inner.get_unchecked() }",
+                  "        }",
+                  "",
+                  "        fn set(&mut self, value: T) {",
+                  "            self.inner.initialized = true;",
+                  "            self.inner.value = Some(value);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = OnceCell::new();",
+                  "    cell.set(92);",
+                  "",
+                  "    let value: &u32 = cell.wait();",
+                  "    assert_eq!(*value, 92);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Creating a mock for the inner structure to simulate uninitialized state",
+                  "    struct MockImp<T> {",
+                  "        initialized: bool,",
+                  "        value: Option<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> MockImp<T> {",
+                  "        fn is_initialized(&self) -> bool {",
+                  "            self.initialized",
+                  "        }",
+                  "",
+                  "        fn wait(&self) {",
+                  "            // Simulating the wait operation.",
+                  "        }",
+                  "",
+                  "        fn get_unchecked(&self) -> &T {",
+                  "            panic!(\"Attempted to access uninitialized value\")",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct OnceCell<T> {",
+                  "        inner: MockImp<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> OnceCell<T> {",
+                  "        fn new() -> OnceCell<T> {",
+                  "            OnceCell {",
+                  "                inner: MockImp {",
+                  "                    initialized: false,",
+                  "                    value: None,",
+                  "                },",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn wait(&self) -> &T {",
+                  "            if !self.inner.is_initialized() {",
+                  "                self.inner.wait()",
+                  "            }",
+                  "            unsafe { self.inner.get_unchecked() }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = OnceCell::new();",
+                  "    let _value: &u32 = cell.wait(); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: self.0.is_initialized() is false\n",
+        "// constraint: self.0.is_initialized() is true\n",
+        "// may panic: self.get_unchecked() may panic in certain situations\n",
+        "// expected return value/type: self.get_unchecked()\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::thread;",
+            "use std::sync::Mutex;",
+            "use std::sync::Arc;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::{Arc, Mutex};",
+                  "    use std::thread;",
+                  "",
+                  "    struct OnceCellForTest(Mutex<Option<u32>>);",
+                  "",
+                  "    impl OnceCellForTest {",
+                  "        pub fn new() -> Self {",
+                  "            OnceCellForTest(Mutex::new(None))",
+                  "        }",
+                  "",
+                  "        pub fn is_initialized(&self) -> bool {",
+                  "            self.0.lock().unwrap().is_some()",
+                  "        }",
+                  "",
+                  "        pub fn set(&self, value: u32) {",
+                  "            *self.0.lock().unwrap() = Some(value);",
+                  "        }",
+                  "        ",
+                  "        pub fn wait(&self) -> &u32 {",
+                  "            while !self.is_initialized() {",
+                  "                thread::sleep(std::time::Duration::from_millis(1));",
+                  "            }",
+                  "            self.get_unchecked()",
+                  "        }",
+                  "",
+                  "        pub fn get_unchecked(&self) -> &u32 {",
+                  "            self.0.lock().unwrap().as_ref().unwrap()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = Arc::new(OnceCellForTest::new());",
+                  "    let cell_clone = Arc::clone(&cell);",
+                  "",
+                  "    let handle = thread::spawn(move || {",
+                  "        thread::sleep(std::time::Duration::from_millis(50));",
+                  "        cell_clone.set(42);",
+                  "    });",
+                  "",
+                  "    let value = cell.wait();",
+                  "    assert_eq!(*value, 42);",
+                  "",
+                  "    handle.join().unwrap();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/lib.rs:1412:8\n     |\n1412 |    use super::*;\n     |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n    --> src/lib.rs:1413:8\n     |\n1413 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nerror[E0515]: cannot return value referencing temporary value\n    --> src/lib.rs:1443:13\n     |\n1443 |             self.0.lock().unwrap().as_ref().unwrap()\n     |             ----------------------^^^^^^^^^^^^^^^^^^\n     |             |\n     |             returns a value referencing data owned by the current function\n     |             temporary value created here\n\nFor more information about this error, try `rustc --explain E0515`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::{Arc, Mutex};",
+                  "",
+                  "    struct OnceCellForTest(Mutex<Option<u32>>);",
+                  "",
+                  "    impl OnceCellForTest {",
+                  "        pub fn new() -> Self {",
+                  "            OnceCellForTest(Mutex::new(Some(100)))",
+                  "        }",
+                  "",
+                  "        pub fn is_initialized(&self) -> bool {",
+                  "            self.0.lock().unwrap().is_some()",
+                  "        }",
+                  "        ",
+                  "        pub fn wait(&self) -> &u32 {",
+                  "            if !self.is_initialized() {",
+                  "                panic!(\"Cell is not initialized\");",
+                  "            }",
+                  "            self.get_unchecked()",
+                  "        }",
+                  "",
+                  "        pub fn get_unchecked(&self) -> &u32 {",
+                  "            self.0.lock().unwrap().as_ref().unwrap()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = Arc::new(OnceCellForTest::new());",
+                  "    let value = cell.wait();",
+                  "    assert_eq!(*value, 100);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/lib.rs:1412:8\n     |\n1412 |    use super::*;\n     |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n    --> src/lib.rs:1413:8\n     |\n1413 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nerror[E0515]: cannot return value referencing temporary value\n    --> src/lib.rs:1438:13\n     |\n1438 |             self.0.lock().unwrap().as_ref().unwrap()\n     |             ----------------------^^^^^^^^^^^^^^^^^^\n     |             |\n     |             returns a value referencing data owned by the current function\n     |             temporary value created here\n\nFor more information about this error, try `rustc --explain E0515`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

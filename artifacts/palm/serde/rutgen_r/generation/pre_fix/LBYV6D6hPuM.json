@@ -1,0 +1,260 @@
+{
+  "name": "serde::__private::ser::<__private::ser::TaggedSerializer<S> as ser::Serializer>::serialize_unit",
+  "name_with_impl": "serde::__private::ser::{impl#2}::serialize_unit",
+  "mod_info": {
+    "name": "__private::ser",
+    "loc": "serde/src/private/mod.rs:4:1:4:13"
+  },
+  "visible": true,
+  "loc": "serde/src/private/ser.rs:182:5:186:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.delegate.serialize_map(Some(1)) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockDelegate;",
+                  "",
+                  "    impl MockDelegate {",
+                  "        fn serialize_map(&self, _: Option<usize>) -> Result<MockMap, String> {",
+                  "            Err(\"serialize_map error\".to_string())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockMap;",
+                  "",
+                  "    impl MockMap {",
+                  "        fn serialize_entry(&mut self, _: &str, _: &str) -> Result<(), String> {",
+                  "            Ok(())",
+                  "        }",
+                  "",
+                  "        fn end(self) -> Result<(), String> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestSerializer {",
+                  "        delegate: MockDelegate,",
+                  "        tag: &'static str,",
+                  "        variant_name: &'static str,",
+                  "    }",
+                  "",
+                  "    impl TestSerializer {",
+                  "        fn serialize_unit(self) -> Result<(), String> {",
+                  "            let mut map = self.delegate.serialize_map(Some(1))?;",
+                  "            map.serialize_entry(self.tag, self.variant_name)?;",
+                  "            map.end()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let serializer = TestSerializer {",
+                  "        delegate: MockDelegate,",
+                  "        tag: \"tag_value\",",
+                  "        variant_name: \"variant_value\",",
+                  "    };",
+                  "",
+                  "    let result = serializer.serialize_unit();",
+                  "    assert_eq!(result, Err(\"serialize_map error\".to_string()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.delegate.serialize_map(Some(1)) matches Ok(val) is true\n",
+        "// constraint: map.serialize_entry(self.tag, self.variant_name) matches Ok(val) is true\n",
+        "// constraint: map.serialize_entry(self.tag, self.variant_name) matches Err(err) is true\n",
+        "// expected return value/type: Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct MockDelegate {",
+            "    serialize_map_return: Result<MockMap, String>,",
+            "}",
+            "",
+            "impl MockDelegate {",
+            "    fn serialize_map(&self, _: Option<usize>) -> Result<MockMap, String> {",
+            "        self.serialize_map_return.clone()",
+            "    }",
+            "}",
+            "",
+            "#[derive(Debug)]",
+            "struct MockMap {",
+            "    entries: Vec<(String, String)>,",
+            "    ended: bool,",
+            "}",
+            "",
+            "impl MockMap {",
+            "    fn new() -> Self {",
+            "        MockMap {",
+            "            entries: vec![],",
+            "            ended: false,",
+            "        }",
+            "    }",
+            "",
+            "    fn serialize_entry(&mut self, key: String, value: String) -> Result<(), String> {",
+            "        if self.ended {",
+            "            return Err(\"map already ended\".to_string());",
+            "        }",
+            "        self.entries.push((key, value));",
+            "        Ok(())",
+            "    }",
+            "",
+            "    fn end(self) -> Result<(), String> {",
+            "        self.ended = true;",
+            "        Ok(())",
+            "    }",
+            "}",
+            "",
+            "struct TestStruct<'a> {",
+            "    delegate: MockDelegate,",
+            "    tag: String,",
+            "    variant_name: &'a str,",
+            "}",
+            "",
+            "impl TestStruct<'_> {",
+            "    fn serialize_unit(self) -> Result<(), String> {",
+            "        let mut map = self.delegate.serialize_map(Some(1))?;",
+            "        map.serialize_entry(self.tag, self.variant_name)?;",
+            "        map.end()",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mock_map = MockMap::new();",
+                  "    let delegate = MockDelegate {",
+                  "        serialize_map_return: Ok(mock_map),",
+                  "    };",
+                  "",
+                  "    let test_struct = TestStruct {",
+                  "        delegate,",
+                  "        tag: \"key\".to_string(),",
+                  "        variant_name: \"value\",",
+                  "    };",
+                  "",
+                  "    let result = test_struct.serialize_unit();",
+                  "    assert_eq!(result, Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1368:8\n     |\n1368 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: the method `clone` exists for enum `Result<MockMap, String>`, but its trait bounds were not satisfied\n    --> serde/src/private/ser.rs:1376:35\n     |\n1376 |         self.serialize_map_return.clone()\n     |                                   ^^^^^ method cannot be called on `Result<MockMap, String>` due to unsatisfied trait bounds\n...\n1381 | struct MockMap {\n     | -------------- doesn't satisfy `MockMap: Clone`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:527:1\n     |\n527  | pub enum Result<T, E> {\n     | --------------------- doesn't satisfy `Result<MockMap, std::string::String>: Clone`\n     |\n     = note: the following trait bounds were not satisfied:\n             `MockMap: Clone`\n             which is required by `Result<MockMap, std::string::String>: Clone`\nnote: the method `clone` exists on the type `std::string::String`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/clone.rs:163:5\n     |\n163  |     fn clone(&self) -> Self;\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^\nhelp: consider annotating `MockMap` with `#[derive(Clone)]`\n     |\n1381 + #[derive(Clone)]\n1382 | struct MockMap {\n     |\nhelp: use the `?` operator to extract the `std::string::String` value, propagating a `Result::Err` value to the caller\n     |\n1376 |         self.serialize_map_return?.clone()\n     |                                  +\n\nerror[E0308]: mismatched types\n    --> serde/src/private/ser.rs:1417:39\n     |\n1417 |         map.serialize_entry(self.tag, self.variant_name)?;\n     |             ---------------           ^^^^^^^^^^^^^^^^^- help: try using a conversion method: `.to_string()`\n     |             |                         |\n     |             |                         expected `String`, found `&str`\n     |             arguments to this method are incorrect\n     |\nnote: method defined here\n    --> serde/src/private/ser.rs:1394:8\n     |\n1394 |     fn serialize_entry(&mut self, key: String, value: String) -> Result<(), String> {\n     |        ^^^^^^^^^^^^^^^                         -------------\n\nerror[E0594]: cannot assign to `self.ended`, as `self` is not declared as mutable\n    --> serde/src/private/ser.rs:1403:9\n     |\n1403 |         self.ended = true;\n     |         ^^^^^^^^^^^^^^^^^ cannot assign\n     |\nhelp: consider changing this to be mutable\n     |\n1402 |     fn end(mut self) -> Result<(), String> {\n     |            +++\n\nSome errors have detailed explanations: E0308, E0594, E0599.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 3 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let delegate = MockDelegate {",
+                  "        serialize_map_return: Err(\"failed to serialize map\".to_string()),",
+                  "    };",
+                  "",
+                  "    let test_struct = TestStruct {",
+                  "        delegate,",
+                  "        tag: \"key\".to_string(),",
+                  "        variant_name: \"value\",",
+                  "    };",
+                  "",
+                  "    let result = test_struct.serialize_unit();",
+                  "    assert_eq!(result, Err(\"failed to serialize map\".to_string()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1368:8\n     |\n1368 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: the method `clone` exists for enum `Result<MockMap, String>`, but its trait bounds were not satisfied\n    --> serde/src/private/ser.rs:1376:35\n     |\n1376 |         self.serialize_map_return.clone()\n     |                                   ^^^^^ method cannot be called on `Result<MockMap, String>` due to unsatisfied trait bounds\n...\n1381 | struct MockMap {\n     | -------------- doesn't satisfy `MockMap: Clone`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:527:1\n     |\n527  | pub enum Result<T, E> {\n     | --------------------- doesn't satisfy `Result<MockMap, std::string::String>: Clone`\n     |\n     = note: the following trait bounds were not satisfied:\n             `MockMap: Clone`\n             which is required by `Result<MockMap, std::string::String>: Clone`\nnote: the method `clone` exists on the type `std::string::String`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/clone.rs:163:5\n     |\n163  |     fn clone(&self) -> Self;\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^\nhelp: consider annotating `MockMap` with `#[derive(Clone)]`\n     |\n1381 + #[derive(Clone)]\n1382 | struct MockMap {\n     |\nhelp: use the `?` operator to extract the `std::string::String` value, propagating a `Result::Err` value to the caller\n     |\n1376 |         self.serialize_map_return?.clone()\n     |                                  +\n\nerror[E0308]: mismatched types\n    --> serde/src/private/ser.rs:1417:39\n     |\n1417 |         map.serialize_entry(self.tag, self.variant_name)?;\n     |             ---------------           ^^^^^^^^^^^^^^^^^- help: try using a conversion method: `.to_string()`\n     |             |                         |\n     |             |                         expected `String`, found `&str`\n     |             arguments to this method are incorrect\n     |\nnote: method defined here\n    --> serde/src/private/ser.rs:1394:8\n     |\n1394 |     fn serialize_entry(&mut self, key: String, value: String) -> Result<(), String> {\n     |        ^^^^^^^^^^^^^^^                         -------------\n\nerror[E0594]: cannot assign to `self.ended`, as `self` is not declared as mutable\n    --> serde/src/private/ser.rs:1403:9\n     |\n1403 |         self.ended = true;\n     |         ^^^^^^^^^^^^^^^^^ cannot assign\n     |\nhelp: consider changing this to be mutable\n     |\n1402 |     fn end(mut self) -> Result<(), String> {\n     |            +++\n\nSome errors have detailed explanations: E0308, E0594, E0599.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `serde` (lib test) generated 1 warning\nerror: could not compile `serde` (lib test) due to 3 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut mock_map = MockMap::new();",
+                  "    let delegate = MockDelegate {",
+                  "        serialize_map_return: Ok(mock_map),",
+                  "    };",
+                  "",
+                  "    let test_struct = TestStruct {",
+                  "        delegate,",
+                  "        tag: \"key\".to_string(),",
+                  "        variant_name: \"value\",",
+                  "    };",
+                  "",
+                  "    // Simulate map already ended to trigger entry error",
+                  "    mock_map.end().unwrap();",
+                  "",
+                  "    let result = test_struct.serialize_unit();",
+                  "    assert_eq!(result, Err(\"map already ended\".to_string()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde_derive v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde_derive)\n   Compiling serde v1.0.219 (/home/abezbm/rust-utgen-test-crates-new/serde/serde)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.100\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n    --> serde/src/private/ser.rs:1368:8\n     |\n1368 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: the method `clone` exists for enum `Result<MockMap, String>`, but its trait bounds were not satisfied\n    --> serde/src/private/ser.rs:1376:35\n     |\n1376 |         self.serialize_map_return.clone()\n     |                                   ^^^^^ method cannot be called on `Result<MockMap, String>` due to unsatisfied trait bounds\n...\n1381 | struct MockMap {\n     | -------------- doesn't satisfy `MockMap: Clone`\n     |\n    ::: /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:527:1\n     |\n527  | pub enum Result<T, E> {\n     | --------------------- doesn't satisfy `Result<MockMap, std::string::String>: Clone`\n     |\n     = note: the following trait bounds were not satisfied:\n             `MockMap: Clone`\n             which is required by `Result<MockMap, std::string::String>: Clone`\nnote: the method `clone` exists on the type `std::string::String`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/clone.rs:163:5\n     |\n163  |     fn clone(&self) -> Self;\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^\nhelp: consider annotating `MockMap` with `#[derive(Clone)]`\n     |\n1381 + #[derive(Clone)]\n1382 | struct MockMap {\n     |\nhelp: use the `?` operator to extract the `std::string::String` value, propagating a `Result::Err` value to the caller\n     |\n1376 |         self.serialize_map_return?.clone()\n     |                                  +\n\nerror[E0308]: mismatched types\n    --> serde/src/private/ser.rs:1417:39\n     |\n1417 |         map.serialize_entry(self.tag, self.variant_name)?;\n     |             ---------------           ^^^^^^^^^^^^^^^^^- help: try using a conversion method: `.to_string()`\n     |             |                         |\n     |             |                         expected `String`, found `&str`\n     |             arguments to this method are incorrect\n     |\nnote: method defined here\n    --> serde/src/private/ser.rs:1394:8\n     |\n1394 |     fn serialize_entry(&mut self, key: String, value: String) -> Result<(), String> {\n     |        ^^^^^^^^^^^^^^^                         -------------\n\nerror[E0594]: cannot assign to `self.ended`, as `self` is not declared as mutable\n    --> serde/src/private/ser.rs:1403:9\n     |\n1403 |         self.ended = true;\n     |         ^^^^^^^^^^^^^^^^^ cannot assign\n     |\nhelp: consider changing this to be mutable\n     |\n1402 |     fn end(mut self) -> Result<(), String> {\n     |            +++\n\nwarning: variable does not need to be mutable\n    --> serde/src/private/ser.rs:1425:9\n     |\n1425 |     let mut mock_map = MockMap::new();\n     |         ----^^^^^^^^\n     |         |\n     |         help: remove this `mut`\n     |\n     = note: `#[warn(unused_mut)]` on by default\n\nerror[E0382]: use of moved value: `mock_map`\n    --> serde/src/private/ser.rs:1437:5\n     |\n1425 |     let mut mock_map = MockMap::new();\n     |         ------------ move occurs because `mock_map` has type `MockMap`, which does not implement the `Copy` trait\n1426 |     let delegate = MockDelegate {\n1427 |         serialize_map_return: Ok(mock_map),\n     |                                  -------- value moved here\n...\n1437 |     mock_map.end().unwrap();\n     |     ^^^^^^^^ value used here after move\n     |\nnote: if `MockMap` implemented `Clone`, you could clone the value\n    --> serde/src/private/ser.rs:1381:1\n     |\n1381 | struct MockMap {\n     | ^^^^^^^^^^^^^^ consider implementing `Clone` for this type\n...\n1427 |         serialize_map_return: Ok(mock_map),\n     |                                  -------- you could clone this value\n\nSome errors have detailed explanations: E0308, E0382, E0594, E0599.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `serde` (lib test) generated 2 warnings\nerror: could not compile `serde` (lib test) due to 4 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

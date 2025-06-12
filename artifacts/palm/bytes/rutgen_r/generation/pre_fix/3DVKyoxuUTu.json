@@ -1,0 +1,264 @@
+{
+  "name": "bytes::bytes::<bytes::Bytes as buf::buf_impl::Buf>::advance",
+  "name_with_impl": "bytes::bytes::{impl#5}::advance",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": true,
+  "loc": "src/bytes.rs:710:5:721:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: cnt <= self.len() is true, with bound cnt == self.len()\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Bytes {",
+                  "        data: Vec<u8>,",
+                  "        start: usize,",
+                  "    }",
+                  "",
+                  "    impl Bytes {",
+                  "        fn new(data: Vec<u8>) -> Self {",
+                  "            Self { data, start: 0 }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.data.len() - self.start",
+                  "        }",
+                  "",
+                  "        unsafe fn inc_start(&mut self, cnt: usize) {",
+                  "            self.start += cnt;",
+                  "        }",
+                  "",
+                  "        fn advance(&mut self, cnt: usize) {",
+                  "            assert!(",
+                  "                cnt <= self.len(),",
+                  "                \"cannot advance past `remaining`: {:?} <= {:?}\",",
+                  "                cnt,",
+                  "                self.len(),",
+                  "            );",
+                  "",
+                  "            unsafe {",
+                  "                self.inc_start(cnt);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let data = vec![1, 2, 3, 4, 5];",
+                  "    let mut bytes = Bytes::new(data);",
+                  "    let count_to_advance = bytes.len(); // set cnt to the current length",
+                  "",
+                  "    bytes.advance(count_to_advance); // This should not panic",
+                  "    assert_eq!(bytes.len(), 0); // After advancing, there should be no remaining data",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"cannot advance past `remaining`\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Bytes {",
+                  "        data: Vec<u8>,",
+                  "        start: usize,",
+                  "    }",
+                  "",
+                  "    impl Bytes {",
+                  "        fn new(data: Vec<u8>) -> Self {",
+                  "            Self { data, start: 0 }",
+                  "        }",
+                  "",
+                  "        fn len(&self) -> usize {",
+                  "            self.data.len() - self.start",
+                  "        }",
+                  "",
+                  "        unsafe fn inc_start(&mut self, cnt: usize) {",
+                  "            self.start += cnt;",
+                  "        }",
+                  "",
+                  "        fn advance(&mut self, cnt: usize) {",
+                  "            assert!(",
+                  "                cnt <= self.len(),",
+                  "                \"cannot advance past `remaining`: {:?} <= {:?}\",",
+                  "                cnt,",
+                  "                self.len(),",
+                  "            );",
+                  "",
+                  "            unsafe {",
+                  "                self.inc_start(cnt);",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let data = vec![1, 2, 3];",
+                  "    let mut bytes = Bytes::new(data);",
+                  "    ",
+                  "    let invalid_count = bytes.len() + 1; // Set cnt to be greater than the current length",
+                  "    bytes.advance(invalid_count); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: cnt <= self.len() is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct Bytes {",
+            "    data: Vec<u8>,",
+            "    start: usize,",
+            "}",
+            "",
+            "impl Bytes {",
+            "    fn len(&self) -> usize {",
+            "        self.data.len() - self.start",
+            "    }",
+            "",
+            "    unsafe fn inc_start(&mut self, cnt: usize) {",
+            "        self.start += cnt;",
+            "    }",
+            "",
+            "    fn advance(&mut self, cnt: usize) {",
+            "        assert!(",
+            "            cnt <= self.len(),",
+            "            \"cannot advance past `remaining`: {:?} <= {:?}\",",
+            "            cnt,",
+            "            self.len(),",
+            "        );",
+            "",
+            "        unsafe {",
+            "            self.inc_start(cnt);",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"cannot advance past `remaining`: 5 <= 3\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes {",
+                  "        data: vec![1, 2, 3],",
+                  "        start: 0,",
+                  "    };",
+                  "    bytes.advance(5); // This should panic since 5 > len (3)",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes {",
+                  "        data: vec![1, 2, 3],",
+                  "        start: 0,",
+                  "    };",
+                  "    bytes.advance(3); // This should work since 3 == len (3)",
+                  "    assert_eq!(bytes.len(), 0); // After advancing all, len should be 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes {",
+                  "        data: vec![1, 2],",
+                  "        start: 0,",
+                  "    };",
+                  "    bytes.advance(2); // Advance to the end",
+                  "    assert_eq!(bytes.len(), 0); // Verify length is now 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

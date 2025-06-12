@@ -1,0 +1,187 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct MockFormatter;",
+      "",
+      "impl Formatter for MockFormatter {",
+      "    fn begin_string(&mut self) -> Result<()> {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn write_u32(&mut self, _writer: &mut dyn io::Write, _value: u32) -> Result<()> {",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn end_string(&mut self, _writer: &mut dyn io::Write) -> Result<()> {",
+      "        Ok(())",
+      "    }",
+      "}",
+      "",
+      "struct FailingWriter;",
+      "",
+      "impl io::Write for FailingWriter {",
+      "    fn write(&mut self, _buf: &[u8]) -> Result<usize> {",
+      "        Err(Error::from(ErrorCode::Io)) // Simulate an IO error",
+      "    }",
+      "",
+      "    fn flush(&mut self) -> Result<()> {",
+      "        Ok(())",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let writer = Vec::new();",
+          "    let formatter = MockFormatter;",
+          "    let mut serializer = Serializer { writer, formatter };",
+          "",
+          "    let _ = serializer.serialize_u32(0);",
+          "    let _ = serializer.serialize_u32(1);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let writer = Vec::<u8>::new();",
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let mut serializer_with_failing_writer = Serializer { writer: failing_writer, formatter };",
+            "    let result = serializer_with_failing_writer.serialize_u32(0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let writer = Vec::<u8>::new();",
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let mut serializer_with_failing_writer = Serializer { writer: failing_writer, formatter };",
+            "    let result = serializer_with_failing_writer.serialize_u32(0);",
+            "    let result = serializer_with_failing_writer.serialize_u32(1);",
+            "    assert!(result.is_err());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let writer = Vec::new();",
+            "    let formatter = MockFormatter;",
+            "    let mut serializer = Serializer { writer, formatter };",
+            "",
+            "    let _ = serializer.serialize_u32(0);",
+            "    let _ = serializer.serialize_u32(1);",
+            "    let writer = Vec::<u8>::new();",
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let mut serializer_with_failing_writer = Serializer { writer: failing_writer, formatter };",
+            "    let result = serializer_with_failing_writer.serialize_u32(0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let writer = Vec::new();",
+            "    let formatter = MockFormatter;",
+            "    let mut serializer = Serializer { writer, formatter };",
+            "",
+            "    let _ = serializer.serialize_u32(0);",
+            "    let _ = serializer.serialize_u32(1);",
+            "    let writer = Vec::<u8>::new();",
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let mut serializer_with_failing_writer = Serializer { writer: failing_writer, formatter };",
+            "    let result = serializer_with_failing_writer.serialize_u32(0);",
+            "    let result = serializer_with_failing_writer.serialize_u32(1);",
+            "    assert!(result.is_err());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let failing_writer = FailingWriter;",
+          "    let formatter = MockFormatter;",
+          "    let serializer = Serializer { writer: failing_writer, formatter };",
+          "",
+          "    let _ = serializer.serialize_u32(2);",
+          "    let _ = serializer.serialize_u32(u32::MAX);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let serializer = Serializer { writer: failing_writer, formatter };",
+            "    assert!(serializer.serialize_u32(2).is_err());"
+          ],
+          [
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let serializer = Serializer { writer: failing_writer, formatter };",
+            "    assert!(serializer.serialize_u32(u32::MAX).is_err());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let serializer = Serializer { writer: failing_writer, formatter };",
+            "",
+            "    let _ = serializer.serialize_u32(2);",
+            "    let _ = serializer.serialize_u32(u32::MAX);",
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let serializer = Serializer { writer: failing_writer, formatter };",
+            "    assert!(serializer.serialize_u32(2).is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let serializer = Serializer { writer: failing_writer, formatter };",
+            "",
+            "    let _ = serializer.serialize_u32(2);",
+            "    let _ = serializer.serialize_u32(u32::MAX);",
+            "    let failing_writer = FailingWriter;",
+            "    let formatter = MockFormatter;",
+            "    let serializer = Serializer { writer: failing_writer, formatter };",
+            "    assert!(serializer.serialize_u32(u32::MAX).is_err());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

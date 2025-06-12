@@ -1,0 +1,174 @@
+{
+  "name": "strsim::GrowingHashmapChar<ValueType>::get_mut",
+  "name_with_impl": "strsim::{impl#5}::get_mut",
+  "mod_info": {
+    "name": "",
+    "loc": "src/lib.rs:1:1:1307:2"
+  },
+  "visible": true,
+  "loc": "src/lib.rs:471:5:500:6",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Default)]",
+            "struct ValueType {",
+            "    value: i32,",
+            "}",
+            "",
+            "struct MyMap {",
+            "    map: Option<Vec<MyEntry>>,",
+            "    fill: usize,",
+            "    used: usize,",
+            "    mask: usize,",
+            "}",
+            "",
+            "#[derive(Default)]",
+            "struct MyEntry {",
+            "    key: u32,",
+            "    value: ValueType,",
+            "}",
+            "",
+            "impl MyMap {",
+            "    fn new(mask: usize) -> Self {",
+            "        MyMap {",
+            "            map: None,",
+            "            fill: 0,",
+            "            used: 0,",
+            "            mask,",
+            "        }",
+            "    }",
+            "",
+            "    fn allocate(&mut self) {",
+            "        self.map = Some(vec![MyEntry::default(); self.mask + 1]);",
+            "    }",
+            "",
+            "    fn lookup(&self, key: u32) -> usize {",
+            "        (key as usize) & self.mask",
+            "    }",
+            "",
+            "    fn grow(&mut self, new_size: usize) {",
+            "        // Simplified grow logic for testing purposes",
+            "        self.mask = new_size - 1;",
+            "    }",
+            "",
+            "    fn get_mut(&mut self, key: u32) -> &mut ValueType {",
+            "        if self.map.is_none() {",
+            "            self.allocate();",
+            "        }",
+            "",
+            "        let mut i = self.lookup(key);",
+            "        if self",
+            "            .map",
+            "            .as_ref()",
+            "            .expect(\"map should have been created above\")[i]",
+            "            .value",
+            "            == Default::default()",
+            "        {",
+            "            self.fill += 1;",
+            "            if self.fill * 3 >= (self.mask + 1) * 2 {",
+            "                self.grow((self.used + 1) * 2);",
+            "                i = self.lookup(key);",
+            "            }",
+            "",
+            "            self.used += 1;",
+            "        }",
+            "",
+            "        let elem = &mut self",
+            "            .map",
+            "            .as_mut()",
+            "            .expect(\"map should have been created above\")[i];",
+            "        elem.key = key;",
+            "        &mut elem.value",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut my_map = MyMap::new(3);",
+                  "    let value_ref = my_map.get_mut(1);",
+                  "    value_ref.value = 42;",
+                  "    assert_eq!(my_map.map.as_ref().unwrap()[my_map.lookup(1)].value.value, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling strsim v0.11.1 (/home/abezbm/rust-utgen-test-crates-new/strsim-rs)\nwarning: unused macro definition: `assert_delta`\n   --> src/lib.rs:760:18\n    |\n760 |     macro_rules! assert_delta {\n    |                  ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/lib.rs:1311:8\n     |\n1311 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/lib.rs:1312:8\n     |\n1312 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `MyEntry: Clone` is not satisfied\n    --> src/lib.rs:1342:30\n     |\n1342 |         self.map = Some(vec![MyEntry::default(); self.mask + 1]);\n     |                         -----^^^^^^^^^^^^^^^^^^----------------\n     |                         |    |\n     |                         |    the trait `Clone` is not implemented for `MyEntry`\n     |                         required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\n\nerror[E0369]: binary operation `==` cannot be applied to type `ValueType`\n    --> src/lib.rs:1365:13\n     |\n1360 |           if self\n     |  ____________-\n1361 | |             .map\n1362 | |             .as_ref()\n1363 | |             .expect(\"map should have been created above\")[i]\n1364 | |             .value\n     | |__________________- ValueType\n1365 |               == Default::default()\n     |               ^^ ------------------ _\n     |\nnote: an implementation of `PartialEq<_>` might be missing for `ValueType`\n    --> src/lib.rs:1314:1\n     |\n1314 | struct ValueType {\n     | ^^^^^^^^^^^^^^^^ must implement `PartialEq<_>`\nhelp: consider annotating `ValueType` with `#[derive(PartialEq)]`\n     |\n1314 + #[derive(PartialEq)]\n1315 | struct ValueType {\n     |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `strsim` (lib test) generated 3 warnings\nerror: could not compile `strsim` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut my_map = MyMap::new(3);",
+                  "    let value_ref1 = my_map.get_mut(1);",
+                  "    value_ref1.value = 42;",
+                  "    ",
+                  "    let value_ref2 = my_map.get_mut(1);",
+                  "    value_ref2.value = 100;",
+                  "",
+                  "    assert_eq!(my_map.map.as_ref().unwrap()[my_map.lookup(1)].value.value, 100);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling strsim v0.11.1 (/home/abezbm/rust-utgen-test-crates-new/strsim-rs)\nwarning: unused macro definition: `assert_delta`\n   --> src/lib.rs:760:18\n    |\n760 |     macro_rules! assert_delta {\n    |                  ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/lib.rs:1311:8\n     |\n1311 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/lib.rs:1312:8\n     |\n1312 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `MyEntry: Clone` is not satisfied\n    --> src/lib.rs:1342:30\n     |\n1342 |         self.map = Some(vec![MyEntry::default(); self.mask + 1]);\n     |                         -----^^^^^^^^^^^^^^^^^^----------------\n     |                         |    |\n     |                         |    the trait `Clone` is not implemented for `MyEntry`\n     |                         required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\n\nerror[E0369]: binary operation `==` cannot be applied to type `ValueType`\n    --> src/lib.rs:1365:13\n     |\n1360 |           if self\n     |  ____________-\n1361 | |             .map\n1362 | |             .as_ref()\n1363 | |             .expect(\"map should have been created above\")[i]\n1364 | |             .value\n     | |__________________- ValueType\n1365 |               == Default::default()\n     |               ^^ ------------------ _\n     |\nnote: an implementation of `PartialEq<_>` might be missing for `ValueType`\n    --> src/lib.rs:1314:1\n     |\n1314 | struct ValueType {\n     | ^^^^^^^^^^^^^^^^ must implement `PartialEq<_>`\nhelp: consider annotating `ValueType` with `#[derive(PartialEq)]`\n     |\n1314 + #[derive(PartialEq)]\n1315 | struct ValueType {\n     |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `strsim` (lib test) generated 3 warnings\nerror: could not compile `strsim` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut my_map = MyMap::new(2); // mask is 2, size is 3",
+                  "    for i in 0..3 {",
+                  "        my_map.get_mut(i);",
+                  "    }",
+                  "    let value_ref = my_map.get_mut(3);",
+                  "    value_ref.value = 56;",
+                  "    assert_eq!(my_map.map.as_ref().unwrap().len(), 8); // Check if resized correctly",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling strsim v0.11.1 (/home/abezbm/rust-utgen-test-crates-new/strsim-rs)\nwarning: unused macro definition: `assert_delta`\n   --> src/lib.rs:760:18\n    |\n760 |     macro_rules! assert_delta {\n    |                  ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_macros)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/lib.rs:1311:8\n     |\n1311 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n    --> src/lib.rs:1312:8\n     |\n1312 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `MyEntry: Clone` is not satisfied\n    --> src/lib.rs:1342:30\n     |\n1342 |         self.map = Some(vec![MyEntry::default(); self.mask + 1]);\n     |                         -----^^^^^^^^^^^^^^^^^^----------------\n     |                         |    |\n     |                         |    the trait `Clone` is not implemented for `MyEntry`\n     |                         required by a bound introduced by this call\n     |\nnote: required by a bound in `from_elem`\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/vec/mod.rs:2743:21\n     |\n2743 | pub fn from_elem<T: Clone>(elem: T, n: usize) -> Vec<T> {\n     |                     ^^^^^ required by this bound in `from_elem`\n\nerror[E0369]: binary operation `==` cannot be applied to type `ValueType`\n    --> src/lib.rs:1365:13\n     |\n1360 |           if self\n     |  ____________-\n1361 | |             .map\n1362 | |             .as_ref()\n1363 | |             .expect(\"map should have been created above\")[i]\n1364 | |             .value\n     | |__________________- ValueType\n1365 |               == Default::default()\n     |               ^^ ------------------ _\n     |\nnote: an implementation of `PartialEq<_>` might be missing for `ValueType`\n    --> src/lib.rs:1314:1\n     |\n1314 | struct ValueType {\n     | ^^^^^^^^^^^^^^^^ must implement `PartialEq<_>`\nhelp: consider annotating `ValueType` with `#[derive(PartialEq)]`\n     |\n1314 + #[derive(PartialEq)]\n1315 | struct ValueType {\n     |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `strsim` (lib test) generated 3 warnings\nerror: could not compile `strsim` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

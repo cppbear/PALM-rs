@@ -1,0 +1,52 @@
+// Answer 0
+
+#[test]
+fn test_line_col_iterator_line() {
+    struct MockIterator {
+        data: Vec<u8>,
+        index: usize,
+    }
+
+    impl Iterator for MockIterator {
+        type Item = io::Result<u8>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.index < self.data.len() {
+                let value = self.data[self.index];
+                self.index += 1;
+                Some(Ok(value))
+            } else {
+                None
+            }
+        }
+    }
+
+    // Test case 1: Initial state
+    let data1 = b"Hello, world!\nThis is a test.\n";
+    let iter1 = MockIterator { data: data1.to_vec(), index: 0 };
+    let iterator1 = LineColIterator::new(iter1);
+    assert_eq!(iterator1.line(), 1); // Check initial line
+
+    // Test case 2: After reading the first line
+    let data2 = b"First line.\nSecond line.\n";
+    let mut iter2 = MockIterator { data: data2.to_vec(), index: 0 };
+    let mut iterator2 = LineColIterator::new(iter2);
+    
+    while iterator2.iter.next().is_some() {
+        // Simulate processing until line count increments
+    }
+    assert_eq!(iterator2.line(), 2); // Check after 2 lines
+
+    // Test case 3: Edge case with just a newline
+    let data3 = b"\n";
+    let iter3 = MockIterator { data: data3.to_vec(), index: 0 };
+    let iterator3 = LineColIterator::new(iter3);
+    assert_eq!(iterator3.line(), 1); // Check after newline but no additional line
+
+    // Test case 4: Boundary case with no input 
+    let data4 = b"";
+    let iter4 = MockIterator { data: data4.to_vec(), index: 0 };
+    let iterator4 = LineColIterator::new(iter4);
+    assert_eq!(iterator4.line(), 1); // Check initial line without any characters
+}
+

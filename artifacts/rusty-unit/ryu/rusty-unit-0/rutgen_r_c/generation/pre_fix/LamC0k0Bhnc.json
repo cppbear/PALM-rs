@@ -1,0 +1,292 @@
+{
+  "name": "ryu::buffer::<f32 as buffer::Sealed>::format_nonfinite",
+  "name_with_impl": "ryu::buffer::{impl#6}::format_nonfinite",
+  "mod_info": {
+    "name": "buffer",
+    "loc": "src/lib.rs:106:1:106:12"
+  },
+  "visible": true,
+  "loc": "src/buffer/mod.rs:125:5:136:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: bits & MANTISSA_MASK != 0 is true\n",
+        "// expected return value/type: NAN\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct(f64);",
+                  "",
+                  "    let val: TestStruct = TestStruct(f64::from_bits(0x7ff8000000000000)); // NaN representation",
+                  "    assert_eq!(val.0.format_nonfinite(), \"NaN\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: bits & MANTISSA_MASK != 0 is false\n",
+        "// constraint: bits & SIGN_MASK != 0 is true\n",
+        "// expected return value/type: NEG_INFINITY\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct(f64);",
+                  "",
+                  "    impl Copy for TestStruct {}",
+                  "",
+                  "    impl Sealed for TestStruct {",
+                  "        fn is_nonfinite(self) -> bool {",
+                  "            false // Non-finite check can be simplified for this test case",
+                  "        }",
+                  "        ",
+                  "        fn format_nonfinite(self) -> &'static str {",
+                  "            self.0.format_nonfinite()",
+                  "        }",
+                  "",
+                  "        unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                  "            0 // Not tested in this case",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let value = TestStruct(f64::from_bits(0x8000000000000000)); // -Infinity",
+                  "    assert_eq!(value.format_nonfinite(), NEG_INFINITY);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.24\n   Compiling syn v1.0.109\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/buffer/mod.rs:175:8\n    |\n175 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `TestStruct: Clone` is not satisfied\n   --> src/buffer/mod.rs:181:19\n    |\n181 |     impl Copy for TestStruct {}\n    |                   ^^^^^^^^^^ the trait `Clone` is not implemented for `TestStruct`\n    |\nnote: required by a bound in `std::marker::Copy`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/marker.rs:403:17\n    |\n403 | pub trait Copy: Clone {\n    |                 ^^^^^ required by this bound in `Copy`\nhelp: consider annotating `TestStruct` with `#[derive(Clone)]`\n    |\n179 +     #[derive(Clone)]\n180 |     struct TestStruct(f64);\n    |\n\nerror[E0277]: the trait bound `TestStruct: Clone` is not satisfied\n   --> src/buffer/mod.rs:183:21\n    |\n183 |     impl Sealed for TestStruct {\n    |                     ^^^^^^^^^^ the trait `Clone` is not implemented for `TestStruct`, which is required by `TestStruct: std::marker::Copy`\n    |\n    = note: required for `TestStruct` to implement `std::marker::Copy`\nnote: required by a bound in `buffer::Sealed`\n   --> src/buffer/mod.rs:109:19\n    |\n109 | pub trait Sealed: Copy {\n    |                   ^^^^ required by this bound in `Sealed`\nhelp: consider annotating `TestStruct` with `#[derive(Clone)]`\n    |\n179 +     #[derive(Clone)]\n180 |     struct TestStruct(f64);\n    |\n\nwarning: unused variable: `result`\n   --> src/buffer/mod.rs:192:45\n    |\n192 |         unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {\n    |                                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `ryu` (lib test) generated 2 warnings\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct(f64);",
+                  "",
+                  "    impl Copy for TestStruct {}",
+                  "",
+                  "    impl Sealed for TestStruct {",
+                  "        fn is_nonfinite(self) -> bool {",
+                  "            self.0.is_nan()",
+                  "        }",
+                  "        ",
+                  "        fn format_nonfinite(self) -> &'static str {",
+                  "            self.0.format_nonfinite()",
+                  "        }",
+                  "",
+                  "        unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                  "            0 // Not tested in this case",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let value = TestStruct(f64::NAN);",
+                  "    assert_eq!(value.format_nonfinite(), NAN);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/buffer/mod.rs:175:8\n    |\n175 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `TestStruct: Clone` is not satisfied\n   --> src/buffer/mod.rs:181:19\n    |\n181 |     impl Copy for TestStruct {}\n    |                   ^^^^^^^^^^ the trait `Clone` is not implemented for `TestStruct`\n    |\nnote: required by a bound in `std::marker::Copy`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/marker.rs:403:17\n    |\n403 | pub trait Copy: Clone {\n    |                 ^^^^^ required by this bound in `Copy`\nhelp: consider annotating `TestStruct` with `#[derive(Clone)]`\n    |\n179 +     #[derive(Clone)]\n180 |     struct TestStruct(f64);\n    |\n\nerror[E0277]: the trait bound `TestStruct: Clone` is not satisfied\n   --> src/buffer/mod.rs:183:21\n    |\n183 |     impl Sealed for TestStruct {\n    |                     ^^^^^^^^^^ the trait `Clone` is not implemented for `TestStruct`, which is required by `TestStruct: std::marker::Copy`\n    |\n    = note: required for `TestStruct` to implement `std::marker::Copy`\nnote: required by a bound in `buffer::Sealed`\n   --> src/buffer/mod.rs:109:19\n    |\n109 | pub trait Sealed: Copy {\n    |                   ^^^^ required by this bound in `Sealed`\nhelp: consider annotating `TestStruct` with `#[derive(Clone)]`\n    |\n179 +     #[derive(Clone)]\n180 |     struct TestStruct(f64);\n    |\n\nwarning: unused variable: `result`\n   --> src/buffer/mod.rs:192:45\n    |\n192 |         unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {\n    |                                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `ryu` (lib test) generated 2 warnings\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestStruct(f64);",
+                  "",
+                  "    impl Copy for TestStruct {}",
+                  "",
+                  "    impl Sealed for TestStruct {",
+                  "        fn is_nonfinite(self) -> bool {",
+                  "            false // Non-finite check can be simplified for this test case",
+                  "        }",
+                  "        ",
+                  "        fn format_nonfinite(self) -> &'static str {",
+                  "            self.0.format_nonfinite()",
+                  "        }",
+                  "",
+                  "        unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {",
+                  "            0 // Not tested in this case",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let value = TestStruct(f64::INFINITY);",
+                  "    assert_eq!(value.format_nonfinite(), INFINITY);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.24\n   Compiling syn v1.0.109\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/buffer/mod.rs:175:8\n    |\n175 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0277]: the trait bound `TestStruct: Clone` is not satisfied\n   --> src/buffer/mod.rs:181:19\n    |\n181 |     impl Copy for TestStruct {}\n    |                   ^^^^^^^^^^ the trait `Clone` is not implemented for `TestStruct`\n    |\nnote: required by a bound in `std::marker::Copy`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/marker.rs:403:17\n    |\n403 | pub trait Copy: Clone {\n    |                 ^^^^^ required by this bound in `Copy`\nhelp: consider annotating `TestStruct` with `#[derive(Clone)]`\n    |\n179 +     #[derive(Clone)]\n180 |     struct TestStruct(f64);\n    |\n\nerror[E0277]: the trait bound `TestStruct: Clone` is not satisfied\n   --> src/buffer/mod.rs:183:21\n    |\n183 |     impl Sealed for TestStruct {\n    |                     ^^^^^^^^^^ the trait `Clone` is not implemented for `TestStruct`, which is required by `TestStruct: std::marker::Copy`\n    |\n    = note: required for `TestStruct` to implement `std::marker::Copy`\nnote: required by a bound in `buffer::Sealed`\n   --> src/buffer/mod.rs:109:19\n    |\n109 | pub trait Sealed: Copy {\n    |                   ^^^^ required by this bound in `Sealed`\nhelp: consider annotating `TestStruct` with `#[derive(Clone)]`\n    |\n179 +     #[derive(Clone)]\n180 |     struct TestStruct(f64);\n    |\n\nwarning: unused variable: `result`\n   --> src/buffer/mod.rs:192:45\n    |\n192 |         unsafe fn write_to_ryu_buffer(self, result: *mut u8) -> usize {\n    |                                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_result`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `ryu` (lib test) generated 2 warnings\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: bits & MANTISSA_MASK != 0 is false\n",
+        "// constraint: bits & SIGN_MASK != 0 is false\n",
+        "// expected return value/type: INFINITY\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct NonFiniteTest(f64);",
+                  "",
+                  "    impl NonFiniteTest {",
+                  "        fn to_bits(self) -> u64 {",
+                  "            self.0.to_bits()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let test_value = NonFiniteTest(f64::INFINITY);",
+                  "    assert_eq!(test_value.format_nonfinite(), \"inf\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/buffer/mod.rs:175:8\n    |\n175 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `format_nonfinite` found for struct `NonFiniteTest` in the current scope\n   --> src/buffer/mod.rs:188:27\n    |\n179 |     struct NonFiniteTest(f64);\n    |     -------------------- method `format_nonfinite` not found for this struct\n...\n188 |     assert_eq!(test_value.format_nonfinite(), \"inf\");\n    |                           ^^^^^^^^^^^^^^^^ method not found in `NonFiniteTest`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buffer::Sealed` defines an item `format_nonfinite`, perhaps you need to implement it\n   --> src/buffer/mod.rs:109:1\n    |\n109 | pub trait Sealed: Copy {\n    | ^^^^^^^^^^^^^^^^^^^^^^\nhelp: one of the expressions' fields has a method of the same name\n    |\n188 |     assert_eq!(test_value.0.format_nonfinite(), \"inf\");\n    |                           ++\n\nwarning: unused import: `super`\n   --> src/buffer/mod.rs:174:8\n    |\n174 |    use super::*;\n    |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `ryu` (lib test) generated 2 warnings\nerror: could not compile `ryu` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct NonFiniteTest(f64);",
+                  "",
+                  "    impl NonFiniteTest {",
+                  "        fn to_bits(self) -> u64 {",
+                  "            self.0.to_bits()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let test_value = NonFiniteTest(f64::NEG_INFINITY);",
+                  "    assert_eq!(test_value.format_nonfinite(), \"-inf\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.24\n   Compiling syn v1.0.109\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/buffer/mod.rs:175:8\n    |\n175 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `format_nonfinite` found for struct `NonFiniteTest` in the current scope\n   --> src/buffer/mod.rs:188:27\n    |\n179 |     struct NonFiniteTest(f64);\n    |     -------------------- method `format_nonfinite` not found for this struct\n...\n188 |     assert_eq!(test_value.format_nonfinite(), \"-inf\");\n    |                           ^^^^^^^^^^^^^^^^ method not found in `NonFiniteTest`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buffer::Sealed` defines an item `format_nonfinite`, perhaps you need to implement it\n   --> src/buffer/mod.rs:109:1\n    |\n109 | pub trait Sealed: Copy {\n    | ^^^^^^^^^^^^^^^^^^^^^^\nhelp: one of the expressions' fields has a method of the same name\n    |\n188 |     assert_eq!(test_value.0.format_nonfinite(), \"-inf\");\n    |                           ++\n\nwarning: unused import: `super`\n   --> src/buffer/mod.rs:174:8\n    |\n174 |    use super::*;\n    |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `ryu` (lib test) generated 2 warnings\nerror: could not compile `ryu` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct NonFiniteTest(f64);",
+                  "",
+                  "    impl NonFiniteTest {",
+                  "        fn to_bits(self) -> u64 {",
+                  "            self.0.to_bits()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let test_value = NonFiniteTest(f64::NAN);",
+                  "    assert_eq!(test_value.format_nonfinite(), \"NaN\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/buffer/mod.rs:175:8\n    |\n175 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0599]: no method named `format_nonfinite` found for struct `NonFiniteTest` in the current scope\n   --> src/buffer/mod.rs:188:27\n    |\n179 |     struct NonFiniteTest(f64);\n    |     -------------------- method `format_nonfinite` not found for this struct\n...\n188 |     assert_eq!(test_value.format_nonfinite(), \"NaN\");\n    |                           ^^^^^^^^^^^^^^^^ method not found in `NonFiniteTest`\n    |\n    = help: items from traits can only be used if the trait is implemented and in scope\nnote: `buffer::Sealed` defines an item `format_nonfinite`, perhaps you need to implement it\n   --> src/buffer/mod.rs:109:1\n    |\n109 | pub trait Sealed: Copy {\n    | ^^^^^^^^^^^^^^^^^^^^^^\nhelp: one of the expressions' fields has a method of the same name\n    |\n188 |     assert_eq!(test_value.0.format_nonfinite(), \"NaN\");\n    |                           ++\n\nwarning: unused import: `super`\n   --> src/buffer/mod.rs:174:8\n    |\n174 |    use super::*;\n    |        ^^^^^\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `ryu` (lib test) generated 2 warnings\nerror: could not compile `ryu` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

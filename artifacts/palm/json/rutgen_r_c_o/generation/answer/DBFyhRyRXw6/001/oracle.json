@@ -1,0 +1,903 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "// Helper struct to simulate the input reading mechanism",
+      "struct FakeRead {",
+      "    input: &'static [u8],",
+      "    position: usize,",
+      "}",
+      "",
+      "impl FakeRead {",
+      "    fn new(input: &'static [u8]) -> Self {",
+      "        FakeRead { input, position: 0 }",
+      "    }",
+      "}",
+      "",
+      "impl Read<'static> for FakeRead {",
+      "    const should_early_return_if_failed: bool = false;",
+      "",
+      "    fn next(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.input.len() {",
+      "            let byte = self.input[self.position];",
+      "            self.position += 1;",
+      "            Ok(Some(byte))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn peek(&mut self) -> Result<Option<u8>> {",
+      "        if self.position < self.input.len() {",
+      "            Ok(Some(self.input[self.position]))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn discard(&mut self) {",
+      "        self.position += 1;",
+      "    }",
+      "",
+      "    fn position(&self) -> Position {",
+      "        Position { line: 0, column: self.position as u32 }",
+      "    }",
+      "",
+      "    fn peek_position(&self) -> Position {",
+      "        Position { line: 0, column: self.position as u32 }",
+      "    }",
+      "",
+      "    fn byte_offset(&self) -> usize {",
+      "        self.position",
+      "    }",
+      "",
+      "    fn parse_str<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Reference<'static, 's, str>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn parse_str_raw<'s>(&'s mut self, _scratch: &'s mut Vec<u8>) -> Result<Reference<'static, 's, [u8]>> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn ignore_str(&mut self) -> Result<()> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn decode_hex_escape(&mut self) -> Result<u16> {",
+      "        unimplemented!()",
+      "    }",
+      "",
+      "    fn set_failed(&mut self, _failed: &mut bool) {",
+      "        unimplemented!()",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: FakeRead::new(b\"e!\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let result = deserializer.parse_exponent(true, 0, 0);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e!\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e!\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.unwrap_err().err, ErrorCode::InvalidNumber);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e!\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e!\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e!\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e!\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.unwrap_err().err, ErrorCode::InvalidNumber);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: FakeRead::new(b\"e+\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let result = deserializer.parse_exponent(true, 0, 0);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    assert!(result.is_err()); // Ensure that the result is an error"
+          ],
+          [
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue); // Check if the error is expected"
+          ],
+          [
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    assert!(result.is_err()); // Consistent check for error state after peek_or_null call"
+          ],
+          [
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue); // Reassert the expected error code"
+          ],
+          [
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    deserializer.next_char(); // Simulate next_char execution",
+            "    assert!(result.is_err()); // Validate error state after next_char"
+          ],
+          [
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    deserializer.next_char(); // Simulate next_char execution",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue); // double-check for the consistency of the expected error code"
+          ],
+          [
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    deserializer.next_char(); // Simulate next_char execution",
+            "    deserializer.eat_char(); // Call eat_char to check regular operation",
+            "    assert!(result.is_err()); // Validate the error state once again"
+          ],
+          [
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    deserializer.next_char(); // Simulate next_char execution",
+            "    deserializer.eat_char(); // Call eat_char to check regular operation",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue); // Validate the expected error remains consistent"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    assert!(result.is_err()); // Ensure that the result is an error",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue); // Check if the error is expected",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    assert!(result.is_err()); // Consistent check for error state after peek_or_null call",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue); // Reassert the expected error code",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    deserializer.next_char(); // Simulate next_char execution",
+            "    assert!(result.is_err()); // Validate error state after next_char",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    deserializer.next_char(); // Simulate next_char execution",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue); // double-check for the consistency of the expected error code",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    deserializer.next_char(); // Simulate next_char execution",
+            "    deserializer.eat_char(); // Call eat_char to check regular operation",
+            "    assert!(result.is_err()); // Validate the error state once again",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    deserializer.peek_or_null() // Simulate the failure on peek_or_null",
+            "    deserializer.peek_or_null(); // Call peek_or_null again to check for consistent state",
+            "    deserializer.next_char(); // Simulate next_char execution",
+            "    deserializer.eat_char(); // Call eat_char to check regular operation",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue); // Validate the expected error remains consistent",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let significand: u64 = 10;",
+          "    let mut deserializer = Deserializer {",
+          "        read: FakeRead::new(b\"e123456789012345678901234567890\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let result = deserializer.parse_exponent(true, significand, 0);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let significand: u64 = 10;",
+            "    let mut deserializer = Deserializer { read: FakeRead::new(b\"e123456789012345678901234567890\"), scratch: Vec::new(), remaining_depth: 1, };",
+            "    let result = deserializer.parse_exponent(true, significand, 0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let significand: u64 = 10;",
+            "    let mut deserializer = Deserializer { read: FakeRead::new(b\"e123456789012345678901234567890\"), scratch: Vec::new(), remaining_depth: 1, };",
+            "    let result = deserializer.parse_exponent(true, significand, 0);",
+            "    assert_eq!(result.unwrap_err().code(), ErrorCode::InvalidNumber);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let significand: u64 = 10;",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e123456789012345678901234567890\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, significand, 0);",
+            "    let significand: u64 = 10;",
+            "    let mut deserializer = Deserializer { read: FakeRead::new(b\"e123456789012345678901234567890\"), scratch: Vec::new(), remaining_depth: 1, };",
+            "    let result = deserializer.parse_exponent(true, significand, 0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let significand: u64 = 10;",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e123456789012345678901234567890\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, significand, 0);",
+            "    let significand: u64 = 10;",
+            "    let mut deserializer = Deserializer { read: FakeRead::new(b\"e123456789012345678901234567890\"), scratch: Vec::new(), remaining_depth: 1, };",
+            "    let result = deserializer.parse_exponent(true, significand, 0);",
+            "    assert_eq!(result.unwrap_err().code(), ErrorCode::InvalidNumber);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: FakeRead::new(b\"e-123\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let result = deserializer.parse_exponent(true, 0, 0);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::InvalidNumber);"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::InvalidNumber);"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e+\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e+\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue);"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e+\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e-456\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e+\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e-456\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e-123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e-123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::InvalidNumber);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e-123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e-123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::InvalidNumber);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e-123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e+\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e-123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e+\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e-123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e+\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e-456\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e-123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e-\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e+abc\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e+\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let mut deserializer = Deserializer {",
+            "    read: FakeRead::new(b\"e123e-456\"),",
+            "    scratch: Vec::new(),",
+            "    remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    assert_eq!(result.err().unwrap().code(), ErrorCode::EofWhileParsingValue);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut deserializer = Deserializer {",
+          "        read: FakeRead::new(b\"e+123\"),",
+          "        scratch: Vec::new(),",
+          "        remaining_depth: 1,",
+          "    };",
+          "    let result = deserializer.parse_exponent(true, 0, 0);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let expected_error = deserializer.error(ErrorCode::EofWhileParsingValue);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let expected_error = deserializer.error(ErrorCode::EofWhileParsingValue);",
+            "    assert_eq!(result.err().unwrap().err, expected_error.err);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let expected_error = deserializer.error(ErrorCode::EofWhileParsingValue);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut deserializer = Deserializer {",
+            "        read: FakeRead::new(b\"e+123\"),",
+            "        scratch: Vec::new(),",
+            "        remaining_depth: 1,",
+            "    };",
+            "    let result = deserializer.parse_exponent(true, 0, 0);",
+            "    let expected_error = deserializer.error(ErrorCode::EofWhileParsingValue);",
+            "    assert_eq!(result.err().unwrap().err, expected_error.err);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,1701 @@
+{
+  "name": "ryu::d2s::d2d",
+  "name_with_impl": "ryu::d2s::d2d",
+  "mod_info": {
+    "name": "d2s",
+    "loc": "src/lib.rs:108:1:108:9"
+  },
+  "visible": true,
+  "loc": "src/d2s.rs:91:1:302:2",
+  "fn_tests": [
+    {
+      "chain_id": 1599,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is false\n",
+        "// constraint: ieee_mantissa != 0 is true\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is false\n",
+        "// constraint: q < 63 is false, with bound q == 63\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is false, with bound vp_div100 == vm_div100\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {",
+            "    let (e2, m2) = if ieee_exponent == 0 {",
+            "        (0, ieee_mantissa)",
+            "    } else {",
+            "        (ieee_exponent as i32 - 1023 - 52 - 2, (1u64 << 52) | ieee_mantissa)",
+            "    };",
+            "    ",
+            "    let even = (m2 & 1) == 0;",
+            "    let accept_bounds = even;",
+            "",
+            "    let mv = 4 * m2;",
+            "    let mm_shift = (ieee_mantissa != 0 || ieee_exponent <= 1) as u32;",
+            "    ",
+            "    let mut vr: u64;",
+            "    let mut vp: u64;",
+            "    let mut vm: u64;",
+            "    let mut vp_uninit: std::mem::MaybeUninit<u64> = std::mem::MaybeUninit::uninit();",
+            "    let mut vm_uninit: std::mem::MaybeUninit<u64> = std::mem::MaybeUninit::uninit();",
+            "    let mut vr_is_trailing_zeros = false;",
+            "    let mut vm_is_trailing_zeros = false;",
+            "    let e10: i32;",
+            "",
+            "    if e2 >= 0 {",
+            "        let q = log10_pow2(e2) - (e2 > 3) as u32;",
+            "        e10 = q as i32;",
+            "",
+            "        vr = unsafe {",
+            "            mul_shift_all_64(m2,",
+            "                &compute_inv_pow5(q),",
+            "                &1,",
+            "                0,",
+            "                &mut vp_uninit,",
+            "                &mut vm_uninit,",
+            "                mm_shift,",
+            "            )",
+            "        };",
+            "",
+            "        vp = unsafe { vp_uninit.assume_init() };",
+            "        vm = unsafe { vm_uninit.assume_init() };",
+            "    } else {",
+            "        let q = log10_pow2(-e2) - (-e2 > 1) as u32;",
+            "        e10 = q as i32 + e2;",
+            "        ",
+            "        vr = unsafe {",
+            "            mul_shift_all_64(m2,",
+            "                &1,",
+            "                &1,",
+            "                0,",
+            "                &mut vp_uninit,",
+            "                &mut vm_uninit,",
+            "                mm_shift,",
+            "            )",
+            "        };",
+            "        ",
+            "        vp = unsafe { vp_uninit.assume_init() };",
+            "        vm = unsafe { vm_uninit.assume_init() };",
+            "    }",
+            "",
+            "    FloatingDecimal64 {",
+            "        exponent: e10,",
+            "        mantissa: vr,",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    const DOUBLE_BIAS: i32 = 1023;",
+                  "    const DOUBLE_MANTISSA_BITS: u32 = 52;",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 64] = [1; 64]; // A dummy initialization for testing.",
+                  "    const DOUBLE_POW5_BITCOUNT: u32 = 55;",
+                  "",
+                  "    fn log10_pow2(x: i32) -> u32 {",
+                  "        (x as f64).log(2.0).floor() as u32",
+                  "    }",
+                  "",
+                  "    fn pow5bits(x: i32) -> u32 {",
+                  "        (x as f64).log(5.0).floor() as u32",
+                  "    }",
+                  "",
+                  "    fn multiple_of_power_of_5(x: u64, q: u32) -> bool {",
+                  "        // Dummy implementation",
+                  "        false",
+                  "    }",
+                  "",
+                  "    // This function should be adjusted to avoid accessing out of bounds.",
+                  "    fn compute_inv_pow5(q: u32) -> u64 {",
+                  "        1 // Dummy implementation",
+                  "    }",
+                  "",
+                  "    fn div10(x: u64) -> u64 {",
+                  "        x / 10",
+                  "    }",
+                  "",
+                  "    fn div100(x: u64) -> u64 {",
+                  "        x / 100",
+                  "    }",
+                  "",
+                  "    fn mul_shift_all_64(",
+                  "        m2: u64,",
+                  "        _inv_pow5: &u64,",
+                  "        _split_inv: &u64,",
+                  "        _i: u32,",
+                  "        vp: &mut std::mem::MaybeUninit<u64>,",
+                  "        vm: &mut std::mem::MaybeUninit<u64>,",
+                  "        _mm_shift: u32,",
+                  "    ) -> u64 {",
+                  "        let result = m2 * 10; // Dummy calculation for testing",
+                  "        unsafe {",
+                  "            vp.as_mut_ptr().write(result);",
+                  "            vm.as_mut_ptr().write(result);",
+                  "        }",
+                  "        result",
+                  "    }",
+                  "",
+                  "    // Input that meets the constraints",
+                  "    let ieee_mantissa = 1;",
+                  "    let ieee_exponent = 5; // ieee_exponent != 0",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    assert!(result.exponent >= 0); // Ensure valid exponent",
+                  "    assert!(result.mantissa != 0); // Ensure non-zero mantissa",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0425]: cannot find function `compute_inv_pow5` in this scope\n   --> src/d2s.rs:335:18\n    |\n335 |                 &compute_inv_pow5(q),\n    |                  ^^^^^^^^^^^^^^^^ not found in this scope\n\nerror[E0061]: this function takes 6 arguments but 7 arguments were supplied\n   --> src/d2s.rs:334:13\n    |\n334 |               mul_shift_all_64(m2,\n    |               ^^^^^^^^^^^^^^^^\n335 |                   &compute_inv_pow5(q),\n336 |                   &1,\n    |                   -- unexpected argument #3 of type `&{integer}`\n337 |                   0,\n    |                   - unexpected argument #4 of type `usize`\n    |  _________________|\n    | |\n338 | |                 &mut vp_uninit,\n    | |                 -------------- unexpected argument #5 of type `&mut MaybeUninit<u64>`\n339 | |                 &mut vm_uninit,\n    | |                 --------------\n    | |_________________|____________|\n    |                   |            three arguments of type `*mut u64`, `*mut u64`, and `u32` are missing\n    |                   unexpected argument #6 of type `&mut MaybeUninit<u64>`\n    |\nnote: function defined here\n   --> src/d2s_intrinsics.rs:78:15\n    |\n78  | pub unsafe fn mul_shift_all_64(\n    |               ^^^^^^^^^^^^^^^^\n79  |     m: u64,\n    |     ------\n80  |     mul: &(u64, u64),\n    |     ----------------\n81  |     j: u32,\n    |     ------\n82  |     vp: *mut u64,\n    |     ------------\n83  |     vm: *mut u64,\n    |     ------------\n84  |     mm_shift: u32,\n    |     -------------\nhelp: did you mean\n    |\n334 |             mul_shift_all_64(m2, &compute_inv_pow5(q), mm_shift, /* *mut u64 */, /* *mut u64 */, /* u32 */)\n    |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nerror[E0061]: this function takes 6 arguments but 7 arguments were supplied\n   --> src/d2s.rs:351:13\n    |\n351 |               mul_shift_all_64(m2,\n    |               ^^^^^^^^^^^^^^^^\n352 |                   &1,\n353 |                   &1,\n    |                   -- unexpected argument #3 of type `&{integer}`\n354 |                   0,\n    |                   - unexpected argument #4 of type `usize`\n    |  _________________|\n    | |\n355 | |                 &mut vp_uninit,\n    | |                 -------------- unexpected argument #5 of type `&mut MaybeUninit<u64>`\n356 | |                 &mut vm_uninit,\n    | |                 --------------\n    | |_________________|____________|\n    |                   |            three arguments of type `*mut u64`, `*mut u64`, and `u32` are missing\n    |                   unexpected argument #6 of type `&mut MaybeUninit<u64>`\n    |\nnote: expected `&(u64, u64)`, found `&{integer}`\n   --> src/d2s.rs:352:17\n    |\n352 |                 &1,\n    |                 ^^\n    = note: expected reference `&(u64, u64)`\n               found reference `&{integer}`\nnote: function defined here\n   --> src/d2s_intrinsics.rs:78:15\n    |\n78  | pub unsafe fn mul_shift_all_64(\n    |               ^^^^^^^^^^^^^^^^\n79  |     m: u64,\n    |     ------\n80  |     mul: &(u64, u64),\n    |     ----------------\n81  |     j: u32,\n    |     ------\n82  |     vp: *mut u64,\n    |     ------------\n83  |     vm: *mut u64,\n    |     ------------\n84  |     mm_shift: u32,\n    |     -------------\nhelp: did you mean\n    |\n351 |             mul_shift_all_64(m2, /* &(u64, u64) */, mm_shift, /* *mut u64 */, /* *mut u64 */, /* u32 */)\n    |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nwarning: unused variable: `x`\n   --> src/d2s.rs:392:31\n    |\n392 |     fn multiple_of_power_of_5(x: u64, q: u32) -> bool {\n    |                               ^ help: if this is intentional, prefix it with an underscore: `_x`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `q`\n   --> src/d2s.rs:392:39\n    |\n392 |     fn multiple_of_power_of_5(x: u64, q: u32) -> bool {\n    |                                       ^ help: if this is intentional, prefix it with an underscore: `_q`\n\nwarning: unused variable: `q`\n   --> src/d2s.rs:398:25\n    |\n398 |     fn compute_inv_pow5(q: u32) -> u64 {\n    |                         ^ help: if this is intentional, prefix it with an underscore: `_q`\n\nSome errors have detailed explanations: E0061, E0425.\nFor more information about an error, try `rustc --explain E0061`.\nwarning: `ryu` (lib test) generated 4 warnings\nerror: could not compile `ryu` (lib test) due to 3 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5004,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is true\n",
+        "// may panic: DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize) may panic in certain situations\n",
+        "// constraint: q <= 21 is true, with bound q == 21\n",
+        "// constraint: mv_mod5 == 0 is false\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is false, with bound vp_div100 == vm_div100\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 0; // This should be handled to respect the constraint ieee_mantissa != 0",
+                  "    let ieee_exponent: u32 = 0;",
+                  "",
+                  "    // We will adjust the ieee_mantissa to ensure it is non-zero but will test the case for exponent zero.",
+                  "    let result = d2d(1, ieee_exponent); // Use a valid mantissa",
+                  "",
+                  "    assert_eq!(result.mantissa, 1); // Assume the expected mantissa for this case",
+                  "    assert_eq!(result.exponent, -1022); // The expected exponent for a normalized number with mantissa 1",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 1; // Ensure non-zero mantissa",
+                  "    let ieee_exponent: u32 = 0; ",
+                  "    // Here we expect an invalid situation to trigger a panic",
+                  "    let _result = d2d(ieee_mantissa, ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 5; // Use any valid mantissa that respects the conditions",
+                  "    let ieee_exponent: u32 = 1;",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    // Assuming you set conditions that this must be false based on the input",
+                  "    assert!(!result.mantissa.is_trailing_zeros); ",
+                  "    assert!(result.exponent >= 0); // Ensure some valid exponent",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.24\n   Compiling syn v1.0.109\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0610]: `u64` is a primitive type and therefore doesn't have fields\n   --> src/d2s.rs:321:30\n    |\n321 |     assert!(!result.mantissa.is_trailing_zeros); \n    |                              ^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0610`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 7; // Ensure non-zero",
+                  "    let ieee_exponent: u32 = 4; // For example, ensure some higher exponent",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    assert!(result.mantissa > 0);",
+                  "    assert!(result.exponent > 0); // Test upper boundaries",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 10; // Valid mantissa",
+                  "    let ieee_exponent: u32 = 3; // A normal exponent",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert!(result.mantissa != 0); // Check typical output validity",
+                  "    assert!(result.exponent != 0); // Ensure it's not producing zeroes erroneously",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5204,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is true\n",
+        "// may panic: DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize) may panic in certain situations\n",
+        "// constraint: q <= 21 is true, with bound q == 21\n",
+        "// constraint: mv_mod5 == 0 is true\n",
+        "// constraint: accept_bounds is true\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is false, with bound vp_div100 == vm_div100\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {",
+                  "        // Simulated function body from context (truncated for brevity)",
+                  "        // This part would use the provided logic to calculate the output",
+                  "        FloatingDecimal64 {",
+                  "            exponent: 0,",
+                  "            mantissa: 1,",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let ieee_exponent: u32 = 0; // constraint: ieee_exponent == 0",
+                  "    let ieee_mantissa: u64 = 0; // constraint: ieee_mantissa != 0 (will remain as a placeholder)",
+                  "",
+                  "    // Panics must be managed here, using the constraints and bounds as defined in the scenarios",
+                  "    ",
+                  "    let ieee_mantissa: u64 = 1; // changing to meet the constraint",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert_eq!(result.exponent, 0); // expected exponent",
+                  "    assert_eq!(result.mantissa, 1); // expected mantissa",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {",
+                  "        // Simulated function body from context (would trigger panic)",
+                  "        // This part would use the provided logic to calculate the output",
+                  "        FloatingDecimal64 {",
+                  "            exponent: 0,",
+                  "            mantissa: 1,",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 0; // This input should trigger a panic",
+                  "    let ieee_exponent: u32 = 1; // Example with non-zero exponent to trigger panic conditions",
+                  "    ",
+                  "    d2d(ieee_mantissa, ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5308,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is true\n",
+        "// may panic: DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize) may panic in certain situations\n",
+        "// constraint: q <= 21 is true, with bound q == 21\n",
+        "// constraint: mv_mod5 == 0 is true\n",
+        "// constraint: accept_bounds is false\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is true\n",
+        "// constraint: vm_mod10 != 0 is true\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: last_removed_digit == 5 is false\n",
+        "// constraint: vr % 2 == 0 is true\n",
+        "// constraint: vr == vm is true\n",
+        "// constraint: accept_bounds is true\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    fn double_bias() -> i32 { 1023 } // Placeholder value for DOUBLE_BIAS",
+                  "    fn double_mantissa_bits() -> u32 { 52 } // Placeholder value for DOUBLE_MANTISSA_BITS",
+                  "",
+                  "    let ieee_exponent: u32 = 0;",
+                  "    let ieee_mantissa: u64 = 0;",
+                  "",
+                  "    // Assuming DOUBLE_POW5_INV_SPLIT is large enough",
+                  "    fn pow5bits(q: i32) -> u32 { // Mock implementation",
+                  "        q as u32",
+                  "    }",
+                  "    fn log10_pow2(e: i32) -> u32 {",
+                  "        (e as u32).min(63) // Mock implementation",
+                  "    }",
+                  "    fn div5(m: u64) -> usize {",
+                  "        (m / 5) as usize // Mock implementation",
+                  "    }",
+                  "    fn multiple_of_power_of_5(m: u64, q: u32) -> bool {",
+                  "        m % (5u64.pow(q as u32)) == 0 // Mock implementation",
+                  "    }",
+                  "    fn multiple_of_power_of_2(m: u64, q: u32) -> bool {",
+                  "        m % (2u64.pow(q as u32)) == 0 // Mock implementation",
+                  "    }",
+                  "    fn div10(m: u64) -> u64 {",
+                  "        m / 10 // Mock implementation",
+                  "    }",
+                  "",
+                  "    let (e2, m2) = if ieee_exponent == 0 {",
+                  "        (1 - double_bias() - double_mantissa_bits() as i32 - 2, ieee_mantissa)",
+                  "    } else {",
+                  "        (ieee_exponent as i32 - double_bias() - double_mantissa_bits() as i32 - 2,",
+                  "        (1u64 << double_mantissa_bits()) | ieee_mantissa)",
+                  "    };",
+                  "",
+                  "    assert_eq!(m2, 0); // This satisfies ieee_mantissa != 0 is false",
+                  "",
+                  "    let even = (m2 & 1) == 0;",
+                  "    let accept_bounds: bool = false; // <-- Setting this to false based on constraints",
+                  "    let mm_shift = (ieee_mantissa != 0 || ieee_exponent <= 1) as u32;",
+                  "",
+                  "    let mv = 4 * m2;",
+                  "    let q = log10_pow2(e2) - (e2 > 3) as u32;",
+                  "    assert!(q <= 21); // <-- Using the constraint that q <= 21",
+                  "",
+                  "    let mut vr: u64 = 0; // Placeholder for implementation details",
+                  "    let mut vp: u64 = 0; // Placeholder for implementation details",
+                  "    let mut vm: u64 = 0; // Placeholder for implementation details",
+                  "    ",
+                  "    // Assuming conditions:",
+                  "    assert!(multiple_of_power_of_5(mv, q)); // mv_mod5 == 0",
+                  "    assert!(!multiple_of_power_of_2(mv, q)); // vm_is_trailing_zeros is false",
+                  "    assert!(div10(vp) <= div10(vm)); // vp_div10 <= vm_div10",
+                  "    ",
+                  "    // Output and exponent calculations depend on the logic; placeholders are used.",
+                  "    let output: u64 = vr; // Placeholder for actual logic",
+                  "    let exp: i32 = e2; // Placeholder for actual calculations",
+                  "",
+                  "    let result = FloatingDecimal64 { exponent: exp, mantissa: output };",
+                  "",
+                  "    assert_eq!(result.exponent, exp); // Validate expected output",
+                  "    assert_eq!(result.mantissa, output); // Validate expected output",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5535,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is true\n",
+        "// may panic: DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize) may panic in certain situations\n",
+        "// constraint: q <= 21 is false\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: last_removed_digit == 5 is false\n",
+        "// constraint: vr % 2 == 0 is false\n",
+        "// constraint: vr == vm is true\n",
+        "// constraint: accept_bounds is true\n",
+        "// constraint: vm_is_trailing_zeros is true\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::mem::MaybeUninit;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::MaybeUninit;",
+                  "    ",
+                  "    // Define required constants",
+                  "    const DOUBLE_BIAS: i32 = 1023;",
+                  "    const DOUBLE_MANTISSA_BITS: u32 = 52;",
+                  "    const DOUBLE_POW5_INV_BITCOUNT: u32 = 0; // Appropriate value based on context",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 22] = [0; 22]; // Placeholder values",
+                  "",
+                  "    // Helper structures",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    fn log10_pow2(x: i32) -> u32 { ",
+                  "        // Dummy implementation, replace with actual logic",
+                  "        (x as u32) ",
+                  "    }",
+                  "",
+                  "    fn pow5bits(x: i32) -> u32 { ",
+                  "        // Dummy implementation, replace with actual logic",
+                  "        (x as u32) ",
+                  "    }",
+                  "",
+                  "    fn multiple_of_power_of_5(mv: u64, q: u32) -> bool { ",
+                  "        // Dummy implementation, replace with actual logic",
+                  "        false ",
+                  "    }",
+                  "",
+                  "    fn div5(val: u64) -> u64 { ",
+                  "        val / 5 ",
+                  "    }",
+                  "",
+                  "    fn div10(val: u64) -> u64 { ",
+                  "        val / 10 ",
+                  "    }",
+                  "",
+                  "    fn div100(val: u64) -> u64 { ",
+                  "        val / 100 ",
+                  "    }",
+                  "",
+                  "    fn compute_inv_pow5(q: i32) -> u64 { ",
+                  "        // Dummy implementation",
+                  "        1 ",
+                  "    }",
+                  "",
+                  "    fn compute_pow5(i: u32) -> u64 { ",
+                  "        // Dummy implementation",
+                  "        1 ",
+                  "    }",
+                  "",
+                  "    // Test input: ieee_exponent == 0 and ieee_mantissa == 0",
+                  "    let ieee_exponent = 0;",
+                  "    let ieee_mantissa = 0; // This input should not trigger panic due to the constraints and expected return values.",
+                  "",
+                  "    // Call the function",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    // Assertions to check expected values - replace with actual expected output.",
+                  "    assert_eq!(result.exponent, 0); // Placeholder, replace with actual expected exp based on logic.",
+                  "    assert_eq!(result.mantissa, 0); // Placeholder, replace with actual expected mantissa based on logic.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::mem::MaybeUninit;",
+                  "",
+                  "    const DOUBLE_BIAS: i32 = 1023;",
+                  "    const DOUBLE_MANTISSA_BITS: u32 = 52;",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 22] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];",
+                  "    ",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    fn log10_pow2(x: i32) -> u32 {",
+                  "        (x as u32)",
+                  "    }",
+                  "",
+                  "    fn pow5bits(x: i32) -> u32 {",
+                  "        (x as u32)",
+                  "    }",
+                  "",
+                  "    fn multiple_of_power_of_5(mv: u64, q: u32) -> bool {",
+                  "        false",
+                  "    }",
+                  "",
+                  "    fn div5(val: u64) -> u64 {",
+                  "        val / 5",
+                  "    }",
+                  "",
+                  "    fn div10(val: u64) -> u64 {",
+                  "        val / 10",
+                  "    }",
+                  "",
+                  "    fn div100(val: u64) -> u64 {",
+                  "        val / 100",
+                  "    }",
+                  "",
+                  "    fn compute_inv_pow5(q: i32) -> u64 {",
+                  "        1",
+                  "    }",
+                  "",
+                  "    fn compute_pow5(i: u32) -> u64 {",
+                  "        1",
+                  "    }",
+                  "",
+                  "    // Test input that ensures function returns correct and expected results.",
+                  "    let ieee_exponent = 1; // Non-zero exponent to reflect the variety of scenarios",
+                  "    let ieee_mantissa = 5; // Non-zero mantissa",
+                  "",
+                  "    // Call the function",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    // Simple assertions - code should reflect actual expected outputs",
+                  "    assert_eq!(result.exponent, 1); // Replace with expected value",
+                  "    assert_eq!(result.mantissa, 5); // Replace with expected value",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5607,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is false, with bound q == DOUBLE_POW5_INV_SPLIT.len() as u32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    // Assuming DOUBLE_BIAS and DOUBLE_MANTISSA_BITS are defined as per the function context",
+                  "    const DOUBLE_BIAS: i32 = 1023; // Adjust if the bias value is different",
+                  "    const DOUBLE_MANTISSA_BITS: usize = 52; // Adjust if the mantissa bits are different",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 23] = [1, 5, 25, 125, 625, 3125, 15625, 78125, 390625, 1953125, 9765625, 48828125, 244140625, 1220703125, 6103515625, 30517578125, 152587890625, 762939453125, 3814697265625, 19073486328125, 95367431640625, 476837158203125, 2384185791015625];",
+                  "    ",
+                  "    let ieee_exponent = 0;",
+                  "    let ieee_mantissa = 1; // This must be non-zero",
+                  "    ",
+                  "    let result: FloatingDecimal64 = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert_eq!(result.exponent, 1 - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS as i32 - 2);",
+                  "    assert_eq!(result.mantissa, ieee_mantissa);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.24\n   Compiling syn v1.0.109\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n   --> src/d2s.rs:323:37\n    |\n323 |     let result: FloatingDecimal64 = d2d(ieee_mantissa, ieee_exponent);\n    |                 -----------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `FloatingDecimal64`, found `d2s::FloatingDecimal64`\n    |                 |\n    |                 expected due to this\n    |\n    = note: `d2s::FloatingDecimal64` and `FloatingDecimal64` have similar names, but are actually distinct types\nnote: `d2s::FloatingDecimal64` is defined in module `crate::d2s` of the current crate\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nnote: `FloatingDecimal64` is defined in module `crate::d2s::llmtests` of the current crate\n   --> src/d2s.rs:310:5\n    |\n310 |     struct FloatingDecimal64 {\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "    ",
+                  "    let ieee_exponent = 0;",
+                  "    let ieee_mantissa = 0; // This should trigger a panic",
+                  "",
+                  "    // This call is expected to panic",
+                  "    let _result: FloatingDecimal64 = d2d(ieee_mantissa, ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.24\n   Compiling syn v1.0.109\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n   --> src/d2s.rs:320:38\n    |\n320 |     let _result: FloatingDecimal64 = d2d(ieee_mantissa, ieee_exponent);\n    |                  -----------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `FloatingDecimal64`, found `d2s::FloatingDecimal64`\n    |                  |\n    |                  expected due to this\n    |\n    = note: `d2s::FloatingDecimal64` and `FloatingDecimal64` have similar names, but are actually distinct types\nnote: `d2s::FloatingDecimal64` is defined in module `crate::d2s` of the current crate\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nnote: `FloatingDecimal64` is defined in module `crate::d2s::llmtests` of the current crate\n   --> src/d2s.rs:311:5\n    |\n311 |     struct FloatingDecimal64 {\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    // Assuming DOUBLE_BIAS and DOUBLE_MANTISSA_BITS are defined as per the function context",
+                  "    const DOUBLE_BIAS: i32 = 1023; // Adjust if the bias value is different",
+                  "    const DOUBLE_MANTISSA_BITS: usize = 52; // Adjust if the mantissa bits are different",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 23] = [1, 5, 25, 125, 625, 3125, 15625, 78125, 390625, 1953125, 9765625, 48828125, 244140625, 1220703125, 6103515625, 30517578125, 152587890625, 762939453125, 3814697265625, 19073486328125, 95367431640625, 476837158203125, 2384185791015625];",
+                  "",
+                  "    let ieee_exponent = DOUBLE_POW5_INV_SPLIT.len() as u32; // Setting q at the earlier limit",
+                  "    let ieee_mantissa = 1; // This must be non-zero",
+                  "    ",
+                  "    let result: FloatingDecimal64 = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert_eq!(result.mantissa, ieee_mantissa);",
+                  "    // Additional assertions can be made based on expected behaviour with this edge case.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n   --> src/d2s.rs:323:37\n    |\n323 |     let result: FloatingDecimal64 = d2d(ieee_mantissa, ieee_exponent);\n    |                 -----------------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `FloatingDecimal64`, found `d2s::FloatingDecimal64`\n    |                 |\n    |                 expected due to this\n    |\n    = note: `d2s::FloatingDecimal64` and `FloatingDecimal64` have similar names, but are actually distinct types\nnote: `d2s::FloatingDecimal64` is defined in module `crate::d2s` of the current crate\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nnote: `FloatingDecimal64` is defined in module `crate::d2s::llmtests` of the current crate\n   --> src/d2s.rs:310:5\n    |\n310 |     struct FloatingDecimal64 {\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5746,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is true, with bound q == 1\n",
+        "// constraint: accept_bounds is true\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: last_removed_digit == 5 is true\n",
+        "// constraint: vr == vm is true\n",
+        "// constraint: accept_bounds is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    const DOUBLE_BIAS: i32 = 1023;",
+                  "    const DOUBLE_MANTISSA_BITS: u32 = 52;",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 100] = [1; 100]; // Simplified for testing purposes",
+                  "    const DOUBLE_POW5_BITCOUNT: i32 = 24; // Placeholder value",
+                  "",
+                  "    fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {",
+                  "        // Implementation from your provided function",
+                  "        // ...",
+                  "        // (Omitted for brevity, paste the entire `d2d` function here)",
+                  "        todo!()",
+                  "    }",
+                  "",
+                  "    // Test inputs based on provided constraints",
+                  "    let ieee_mantissa: u64 = 0; // Should be false for the provided contraint",
+                  "    let ieee_exponent: u32 = 0;  // Should match the case where ieee_exponent == 0",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    // Expected output checking",
+                  "    assert_eq!(result.exponent, /* expected exponent value here based on constraints */);",
+                  "    assert_eq!(result.mantissa, /* expected mantissa value here based on constraints */);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:334:32\n    |\n334 |     assert_eq!(result.exponent, /* expected exponent value here based on constraints */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:335:32\n    |\n335 |     assert_eq!(result.mantissa, /* expected mantissa value here based on constraints */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/d2s.rs:305:8\n    |\n305 |    use super::*;\n    |        ^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused variable: `ieee_mantissa`\n   --> src/d2s.rs:320:12\n    |\n320 |     fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {\n    |            ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ieee_mantissa`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `ieee_exponent`\n   --> src/d2s.rs:320:32\n    |\n320 |     fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {\n    |                                ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_ieee_exponent`\n\nwarning: `ryu` (lib test) generated 4 warnings\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    fn d2d(ieee_mantissa: u64, ieee_exponent: u32) -> FloatingDecimal64 {",
+                  "        // Implementation from your provided function",
+                  "        // ...",
+                  "        // (Omitted for brevity, paste the entire `d2d` function here)",
+                  "        todo!()",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 1; // Triggers panic due to ieee_mantissa expected to be zero",
+                  "    let ieee_exponent: u32 = 0;",
+                  "",
+                  "    d2d(ieee_mantissa, ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5855,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is true, with bound q == 1\n",
+        "// constraint: accept_bounds is false\n",
+        "// constraint: vm_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    const DOUBLE_BIAS: i32 = 1023;",
+                  "    const DOUBLE_MANTISSA_BITS: i32 = 52;",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 22] = [1; 22];",
+                  "    ",
+                  "    let ieee_mantissa: u64 = 0;",
+                  "    let ieee_exponent: u32 = 0; // constraint: ieee_exponent == 0 is true",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert_eq!(result.exponent, 1 - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS - 2);",
+                  "    assert_eq!(result.mantissa, ieee_mantissa); // Using ieee_mantissa which is 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    const DOUBLE_BIAS: i32 = 1023;",
+                  "    const DOUBLE_MANTISSA_BITS: i32 = 52;",
+                  "    const DOUBLE_POW5_SPLIT: [u64; 22] = [5; 22]; // ensuring we access valid data ",
+                  "",
+                  "    let ieee_mantissa: u64 = 0b1111111111111111111111111111111111111111111111111111111111111111; // Simulate a non-zero mantissa.",
+                  "    let ieee_exponent: u32 = 1; // Non-zero exponent but may affect q's computation.",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert!(result.mantissa != ieee_mantissa); // Expecting different output on valid inputs.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    const DOUBLE_BIAS: i32 = 1023;",
+                  "    const DOUBLE_MANTISSA_BITS: i32 = 52;",
+                  "    const DOUBLE_POW5_SPLIT: [u64; 22] = [10; 22]; // ensures valid access manipulations",
+                  "",
+                  "    let ieee_mantissa: u64 = 0b11000011011; // A representative non-zero mantissa.",
+                  "    let ieee_exponent: u32 = 8; // Just a sample exponent",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    assert!(result.exponent >= 0); // Ensuring we cover the e2 >= 0 condition.",
+                  "    assert!(result.mantissa > 0); // Output mantissa should be valid and possibly different as well.",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6200,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is false\n",
+        "// constraint: q < 63 is true\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is true\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    const DOUBLE_BIAS: i32 = 1023; // Example value",
+                  "    const DOUBLE_MANTISSA_BITS: u32 = 52; // Example value",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 64] = [0; 64]; // Placeholder for demonstration",
+                  "",
+                  "    fn log10_pow2(x: i32) -> u32 { // Placeholder implementation",
+                  "        (x as f64).log(10.0) as u32",
+                  "    }",
+                  "    ",
+                  "    fn pow5bits(x: i32) -> u32 { // Placeholder implementation",
+                  "        (x as f64).log(5.0) as u32",
+                  "    }",
+                  "    ",
+                  "    fn multiple_of_power_of_5(x: u64, y: u32) -> bool { true } // Placeholder implementation",
+                  "    fn div5(x: u64) -> u64 { x / 5 } // Placeholder implementation",
+                  "    fn multiple_of_power_of_2(x: u64, y: u32) -> bool { true } // Placeholder implementation",
+                  "    fn div10(x: u64) -> u64 { x / 10 } // Placeholder implementation",
+                  "    fn div100(x: u64) -> u64 { x / 100 } // Placeholder implementation",
+                  "",
+                  "    let ieee_mantissa = 0u64; // Setting ieee_mantissa to zero to meet one of the constraints",
+                  "    let ieee_exponent = 0u32; // Ensuring ieee_exponent is 0 as per constraint",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    assert_eq!(result.exponent, /* expected exponent */);",
+                  "    assert_eq!(result.mantissa, /* expected mantissa */);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.24\n   Compiling syn v1.0.109\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:338:32\n    |\n338 |     assert_eq!(result.exponent, /* expected exponent */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:339:32\n    |\n339 |     assert_eq!(result.mantissa, /* expected mantissa */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused variable: `x`\n   --> src/d2s.rs:327:31\n    |\n327 |     fn multiple_of_power_of_5(x: u64, y: u32) -> bool { true } // Placeholder implementation\n    |                               ^ help: if this is intentional, prefix it with an underscore: `_x`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nwarning: unused variable: `y`\n   --> src/d2s.rs:327:39\n    |\n327 |     fn multiple_of_power_of_5(x: u64, y: u32) -> bool { true } // Placeholder implementation\n    |                                       ^ help: if this is intentional, prefix it with an underscore: `_y`\n\nwarning: unused variable: `x`\n   --> src/d2s.rs:329:31\n    |\n329 |     fn multiple_of_power_of_2(x: u64, y: u32) -> bool { true } // Placeholder implementation\n    |                               ^ help: if this is intentional, prefix it with an underscore: `_x`\n\nwarning: unused variable: `y`\n   --> src/d2s.rs:329:39\n    |\n329 |     fn multiple_of_power_of_2(x: u64, y: u32) -> bool { true } // Placeholder implementation\n    |                                       ^ help: if this is intentional, prefix it with an underscore: `_y`\n\nwarning: `ryu` (lib test) generated 5 warnings\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 5 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    const DOUBLE_BIAS: i32 = 1023; // Example value",
+                  "    const DOUBLE_MANTISSA_BITS: u32 = 52; // Example value",
+                  "    const DOUBLE_POW5_INV_SPLIT: [u64; 64] = [0; 64]; // Placeholder for demonstration",
+                  "",
+                  "    fn log10_pow2(x: i32) -> u32 { ",
+                  "        (x as f64).log(10.0) as u32 ",
+                  "    }",
+                  "    ",
+                  "    fn pow5bits(x: i32) -> u32 { ",
+                  "        (x as f64).log(5.0) as u32 ",
+                  "    }",
+                  "    ",
+                  "    fn multiple_of_power_of_5(x: u64, y: u32) -> bool { ",
+                  "        true ",
+                  "    }",
+                  "    fn div5(x: u64) -> u64 { ",
+                  "        x / 5 ",
+                  "    }",
+                  "    fn multiple_of_power_of_2(x: u64, y: u32) -> bool { ",
+                  "        true ",
+                  "    }",
+                  "    fn div10(x: u64) -> u64 { ",
+                  "        x / 10 ",
+                  "    }",
+                  "    fn div100(x: u64) -> u64 { ",
+                  "        x / 100 ",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa = 1u64; // Avoiding zero to test panic",
+                  "    let ieee_exponent = 0u32; // Ensuring ieee_exponent is 0 as per constraint",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent); // Should trigger panic",
+                  "    ",
+                  "    // No assertions as this should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6383,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is false\n",
+        "// constraint: q < 63 is false, with bound q == 63\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is false\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is true\n",
+        "// constraint: vm_mod10 != 0 is false\n",
+        "// constraint: vm_mod10 != 0 is true\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Testing with ieee_exponent == 0, ieee_mantissa == 1",
+                  "    let ieee_mantissa: u64 = 1;",
+                  "    let ieee_exponent: u32 = 0;",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, /* expected exponent value */);",
+                  "    assert_eq!(result.mantissa, /* expected mantissa value */);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:315:32\n    |\n315 |     assert_eq!(result.exponent, /* expected exponent value */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:316:32\n    |\n316 |     assert_eq!(result.mantissa, /* expected mantissa value */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Testing with ieee_exponent > 0, ieee_mantissa = 0 (expecting panic)",
+                  "    let ieee_mantissa: u64 = 0;",
+                  "    let ieee_exponent: u32 = 1;",
+                  "",
+                  "    std::panic::catch_unwind(|| {",
+                  "        d2d(ieee_mantissa, ieee_exponent);",
+                  "    }).unwrap_err();",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Testing with ieee_exponent = 63, ieee_mantissa > 0",
+                  "    let ieee_mantissa: u64 = 37;",
+                  "    let ieee_exponent: u32 = 63;",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, /* expected exponent value */);",
+                  "    assert_eq!(result.mantissa, /* expected mantissa value */);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:315:32\n    |\n315 |     assert_eq!(result.exponent, /* expected exponent value */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:316:32\n    |\n316 |     assert_eq!(result.mantissa, /* expected mantissa value */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Testing with ieee_exponent > 0, non-zero ieee_mantissa",
+                  "    let ieee_mantissa: u64 = 1023;",
+                  "    let ieee_exponent: u32 = 10;",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, /* expected exponent value */);",
+                  "    assert_eq!(result.mantissa, /* expected mantissa value */);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "    Blocking waiting for file lock on package cache\n   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling syn v1.0.109\n   Compiling zerocopy v0.8.24\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:315:32\n    |\n315 |     assert_eq!(result.exponent, /* expected exponent value */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:316:32\n    |\n316 |     assert_eq!(result.mantissa, /* expected mantissa value */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Test input that will not panic but checks behavior where vm_mod10 == 0",
+                  "    let ieee_mantissa: u64 = 15;",
+                  "    let ieee_exponent: u32 = 5;",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, /* expected exponent value */);",
+                  "    assert_eq!(result.mantissa, /* expected mantissa value */);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling libc v0.2.172\n   Compiling proc-macro2 v1.0.95\n   Compiling getrandom v0.3.2\n   Compiling zerocopy v0.8.24\n   Compiling syn v1.0.109\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\n   Compiling quote v1.0.40\n   Compiling num_cpus v1.16.0\n   Compiling rand_core v0.9.3\n   Compiling rand_xorshift v0.4.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.9.0\n   Compiling rand v0.9.1\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:315:32\n    |\n315 |     assert_eq!(result.exponent, /* expected exponent value */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nerror: unexpected end of macro invocation\n   --> src/d2s.rs:316:32\n    |\n316 |     assert_eq!(result.mantissa, /* expected mantissa value */);\n    |                                ^ missing tokens in macro arguments\n    |\nnote: while trying to match meta-variable `$right:expr`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:37:18\n    |\n37  |     ($left:expr, $right:expr $(,)?) => {\n    |                  ^^^^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/d2s.rs:306:8\n    |\n306 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: `ryu` (lib test) generated 1 warning\nerror: could not compile `ryu` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6407,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is false\n",
+        "// constraint: q < 63 is false, with bound q == 63\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is false, with bound vp_div100 == vm_div100\n",
+        "// constraint: vp_div10 <= vm_div10 is false\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 1; // Non-zero mantissa",
+                  "    let ieee_exponent: u32 = 0; // Exponent condition",
+                  "",
+                  "    // Call the d2d function",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    // Check the expected behavior and boundaries of the output",
+                  "    assert_eq!(result.mantissa, 1); // Expected mantissa for the input",
+                  "    assert_eq!(result.exponent, -1074); // The exponent for normalizing to decimal",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_exponent: u32 = 0; // Exponent condition",
+                  "    let ieee_mantissa: u64 = 0; // Testing a mantissa that is zero (but not allowed in our specific edge case)",
+                  "",
+                  "    // Invoking d2d function with zero mantissa should handle edge",
+                  "    let result = d2d(ieee_mantissa + 1, ieee_exponent); // Adjusting to non-zero for the test case",
+                  "",
+                  "    // Verify the results for this edge case",
+                  "    assert_eq!(result.mantissa, 1); // Expected mantissa for this edge",
+                  "    assert_eq!(result.exponent, -1074); // The exponent of normalized output",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_exponent: u32 = 63; // Maximizing the exponent value",
+                  "    let ieee_mantissa: u64 = 0xFFFFFFFFFFFFFFFF; // Max mantissa value",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    // Conducting assertions for expected behavior and conformity to limits",
+                  "    assert!(result.mantissa > 0); // Ensure mantissa is greater than zero",
+                  "    assert_ne!(result.mantissa, ieee_mantissa); // Ensure mantissa has been processed/changed",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct FloatingDecimal64 {",
+                  "        exponent: i32,",
+                  "        mantissa: u64,",
+                  "    }",
+                  "",
+                  "    let ieee_mantissa: u64 = 1; // Valid mantissa",
+                  "    let ieee_exponent: u32 = u32::MAX; // Out of bounds for `i`",
+                  "",
+                  "    // This invocation should panic due to the value being beyond the allowed index",
+                  "    let _ = d2d(ieee_mantissa, ieee_exponent); ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6408,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is false, with bound i == DOUBLE_POW5_SPLIT.len() as i32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0; // Triggering condition where ieee_mantissa == 0",
+                  "    let ieee_exponent: u32 = 0; // This leads to e2 being valid but ieee_mantissa zero, which is invalid",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    // Expected behaviour: Function might panic or return an invalid result",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; // Valid ieee_mantissa",
+                  "    let ieee_exponent: u32 = 0; // This should lead to e2 being set to a negative state",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    // Expected behaviour: Function is expected to panic due to internal calculation with negative e2",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    const DOUBLE_POW5_SPLIT: [u64; 5] = [1, 5, 25, 125, 625]; // Hypothetical split based on previous assumption",
+                  "    ",
+                  "    let ieee_mantissa: u64 = 10; // Valid, non-zero ieee_mantissa",
+                  "    let ieee_exponent: u32 = 0; // Triggers case where e2 should compute negative",
+                  "    // Here we are testing when i == DOUBLE_POW5_SPLIT.len() as i32 (invalid)",
+                  "    let i: i32 = DOUBLE_POW5_SPLIT.len() as i32; // This value should be out of bounds for valid cases",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    // Expected behaviour: Function should handle the list index gracefully",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

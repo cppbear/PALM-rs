@@ -1,0 +1,231 @@
+{
+  "name": "bytes::bytes::release_shared",
+  "name_with_impl": "bytes::bytes::release_shared",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1564:1:1594:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: (*ptr).ref_cnt.fetch_sub(1, Ordering::Release) != 1 is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn release_shared(ptr: *mut Shared) {",
+                  "        if (*ptr).ref_cnt.fetch_sub(1, Ordering::Release) != 1 {",
+                  "            return;",
+                  "        }",
+                  "",
+                  "        (*ptr).ref_cnt.load(Ordering::Acquire);",
+                  "        drop(Box::from_raw(ptr));",
+                  "    }",
+                  "",
+                  "    // Create a Shared instance with a reference count of 2",
+                  "    let shared = Shared {",
+                  "        ref_cnt: AtomicUsize::new(2),",
+                  "    };",
+                  "",
+                  "    // Create a mutable pointer to the Shared instance",
+                  "    let shared_ptr = Box::into_raw(Box::new(shared));",
+                  "",
+                  "    // Call release_shared and expect no panic",
+                  "    unsafe {",
+                  "        release_shared(shared_ptr);",
+                  "    }",
+                  "",
+                  "    // Ensure ref count is now 1 as we decremented it",
+                  "    let ref_count = unsafe { (*shared_ptr).ref_cnt.load(Ordering::SeqCst) };",
+                  "    assert_eq!(ref_count, 1);",
+                  "",
+                  "    // Clean up to avoid memory leaks",
+                  "    unsafe {",
+                  "        release_shared(shared_ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    unsafe fn release_shared(ptr: *mut Shared) {",
+                  "        if (*ptr).ref_cnt.fetch_sub(1, Ordering::Release) != 1 {",
+                  "            return;",
+                  "        }",
+                  "",
+                  "        (*ptr).ref_cnt.load(Ordering::Acquire);",
+                  "        drop(Box::from_raw(ptr));",
+                  "    }",
+                  "",
+                  "    // Create a Shared instance with a reference count of 1",
+                  "    let shared = Shared {",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    };",
+                  "",
+                  "    // Create a mutable pointer to the Shared instance",
+                  "    let shared_ptr = Box::into_raw(Box::new(shared));",
+                  "",
+                  "    // Call release_shared to decrement ref count to 0",
+                  "    unsafe {",
+                  "        release_shared(shared_ptr);",
+                  "    }",
+                  "",
+                  "    // The next call should panic since the ref count is now 0",
+                  "    unsafe {",
+                  "        release_shared(shared_ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: (*ptr).ref_cnt.fetch_sub(1, Ordering::Release) != 1 is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::Ordering;",
+            "use std::sync::atomic::AtomicUsize;",
+            "use std::ptr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "    use std::ptr;",
+                  "",
+                  "    struct Shared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let shared_instance = Box::new(Shared {",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    });",
+                  "",
+                  "    let ptr = Box::into_raw(shared_instance);",
+                  "    ",
+                  "    // Call the unsafe function",
+                  "    unsafe {",
+                  "        release_shared(ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `Ordering`\n    --> src/bytes.rs:1688:42\n     |\n1688 |     use std::sync::atomic::{AtomicUsize, Ordering};\n     |                                          ^^^^^^^^\n\nwarning: unused import: `std::ptr`\n    --> src/bytes.rs:1689:9\n     |\n1689 |     use std::ptr;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1703:24\n     |\n1703 |         release_shared(ptr);\n     |         -------------- ^^^ expected `bytes::Shared`, found `Shared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: `Shared` and `bytes::Shared` have similar names, but are actually distinct types\nnote: `Shared` is defined in module `crate::bytes::llmtests` of the current crate\n    --> src/bytes.rs:1691:5\n     |\n1691 |     struct Shared {\n     |     ^^^^^^^^^^^^^\nnote: `bytes::Shared` is defined in module `crate::bytes` of the current crate\n    --> src/bytes.rs:1357:1\n     |\n1357 | struct Shared {\n     | ^^^^^^^^^^^^^\nnote: function defined here\n    --> src/bytes.rs:1564:11\n     |\n1564 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 4 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "    use std::ptr;",
+                  "",
+                  "    struct Shared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let shared_instance = Box::new(Shared {",
+                  "        ref_cnt: AtomicUsize::new(2),",
+                  "    });",
+                  "",
+                  "    let ptr = Box::into_raw(shared_instance);",
+                  "",
+                  "    // Call the unsafe function",
+                  "    unsafe {",
+                  "        release_shared(ptr);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `Ordering`\n    --> src/bytes.rs:1688:42\n     |\n1688 |     use std::sync::atomic::{AtomicUsize, Ordering};\n     |                                          ^^^^^^^^\n\nwarning: unused import: `std::ptr`\n    --> src/bytes.rs:1689:9\n     |\n1689 |     use std::ptr;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1703:24\n     |\n1703 |         release_shared(ptr);\n     |         -------------- ^^^ expected `bytes::Shared`, found `Shared`\n     |         |\n     |         arguments to this function are incorrect\n     |\n     = note: `Shared` and `bytes::Shared` have similar names, but are actually distinct types\nnote: `Shared` is defined in module `crate::bytes::llmtests` of the current crate\n    --> src/bytes.rs:1691:5\n     |\n1691 |     struct Shared {\n     |     ^^^^^^^^^^^^^\nnote: `bytes::Shared` is defined in module `crate::bytes` of the current crate\n    --> src/bytes.rs:1357:1\n     |\n1357 | struct Shared {\n     | ^^^^^^^^^^^^^\nnote: function defined here\n    --> src/bytes.rs:1564:11\n     |\n1564 | unsafe fn release_shared(ptr: *mut Shared) {\n     |           ^^^^^^^^^^^^^^ ----------------\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 4 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

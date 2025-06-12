@@ -1,0 +1,244 @@
+{
+  "name": "once_cell::race::once_box::race::once_box::OnceBox<T>::set",
+  "name_with_impl": "once_cell::race::once_box::{impl#3}::set",
+  "mod_info": {
+    "name": "race::once_box",
+    "loc": "src/race.rs:354:1:498:2"
+  },
+  "visible": true,
+  "loc": "src/race.rs:411:9:424:10",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: exchange.is_err() is true\n",
+        "// expected return value/type: Err(value)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct MockCell<T> {",
+            "    inner: std::sync::atomic::AtomicPtr<T>,",
+            "}",
+            "",
+            "impl<T> MockCell<T> {",
+            "    pub fn new() -> Self {",
+            "        Self {",
+            "            inner: std::sync::atomic::AtomicPtr::new(std::ptr::null_mut()),",
+            "        }",
+            "    }",
+            "",
+            "    pub fn set(&self, value: Box<T>) -> Result<(), Box<T>> {",
+            "        let ptr = Box::into_raw(value);",
+            "        let exchange = self.inner.compare_exchange(",
+            "            std::ptr::null_mut(),",
+            "            ptr,",
+            "            std::sync::atomic::Ordering::Release,",
+            "            std::sync::atomic::Ordering::Acquire,",
+            "        );",
+            "        if exchange.is_err() {",
+            "            let value = unsafe { Box::from_raw(ptr) };",
+            "            return Err(value);",
+            "        }",
+            "        Ok(())",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let cell = MockCell::new();",
+                  "    ",
+                  "    // Initially set the cell to a value to make it full",
+                  "    let _ = cell.set(Box::new(42)); // First call, should succeed",
+                  "",
+                  "    // Now attempt to set another value, which should fail",
+                  "    let result = cell.set(Box::new(99)); // Second call, should fail",
+                  "    assert!(result.is_err()); // We expect an Err here",
+                  "",
+                  "    // Furthermore, test that the returned value is what we expected",
+                  "    if let Err(value) = result {",
+                  "        assert_eq!(*value, 99); // The returned value should be the one attempted to set",
+                  "    } else {",
+                  "        panic!(\"Expected an error from the set function\");",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let cell = MockCell::new();",
+                  "    ",
+                  "    // Attempt to set a null value should panic",
+                  "    let _ = cell.set(Box::from_raw(std::ptr::null_mut()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed for `MockCell<_>`\n   --> src/race.rs:535:9\n    |\n535 |     let cell = MockCell::new();\n    |         ^^^^\n...\n538 |     let _ = cell.set(Box::from_raw(std::ptr::null_mut()));\n    |                      ----------------------------------- type must be known at this point\n    |\nhelp: consider giving `cell` an explicit type, where the type for type parameter `T` is specified\n    |\n535 |     let cell: MockCell<T> = MockCell::new();\n    |             +++++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nwarning: `once_cell` (lib test) generated 3 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: exchange.is_err() is false\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::sync::atomic::Ordering;",
+            "use std::ptr;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use std::ptr;",
+                  "",
+                  "    struct Cell<T> {",
+                  "        inner: AtomicPtr<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> Cell<T> {",
+                  "        pub fn new() -> Self {",
+                  "            Cell {",
+                  "                inner: AtomicPtr::new(ptr::null_mut()),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn set(&self, value: Box<T>) -> Result<(), Box<T>> {",
+                  "            let ptr = Box::into_raw(value);",
+                  "            let exchange = self.inner.compare_exchange(",
+                  "                ptr::null_mut(),",
+                  "                ptr,",
+                  "                Ordering::Release,",
+                  "                Ordering::Acquire,",
+                  "            );",
+                  "            if exchange.is_err() {",
+                  "                let value = unsafe { Box::from_raw(ptr) };",
+                  "                return Err(value);",
+                  "            }",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell: Cell<i32> = Cell::new();",
+                  "    let result = cell.set(Box::new(42));",
+                  "    assert!(result.is_ok());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    use std::ptr;",
+                  "",
+                  "    struct Cell<T> {",
+                  "        inner: AtomicPtr<T>,",
+                  "    }",
+                  "",
+                  "    impl<T> Cell<T> {",
+                  "        pub fn new() -> Self {",
+                  "            Cell {",
+                  "                inner: AtomicPtr::new(ptr::null_mut()),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn set(&self, value: Box<T>) -> Result<(), Box<T>> {",
+                  "            let ptr = Box::into_raw(value);",
+                  "            let exchange = self.inner.compare_exchange(",
+                  "                ptr::null_mut(),",
+                  "                ptr,",
+                  "                Ordering::Release,",
+                  "                Ordering::Acquire,",
+                  "            );",
+                  "            if exchange.is_err() {",
+                  "                let value = unsafe { Box::from_raw(ptr) };",
+                  "                return Err(value);",
+                  "            }",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell: Cell<i32> = Cell::new();",
+                  "    // First call to set should succeed",
+                  "    let _ = cell.set(Box::new(42));",
+                  "    // Then second call should fail",
+                  "    let result = cell.set(Box::new(43));",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

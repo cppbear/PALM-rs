@@ -1,0 +1,301 @@
+{
+  "name": "bytes::bytes::promotable_odd_clone",
+  "name_with_impl": "bytes::bytes::promotable_odd_clone",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1303:1:1313:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null_mut;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  " ",
+                  "   // Create a shared memory block  ",
+                  "",
+                  "   let buf = Box::into_raw(Box::new([0u8; 10])) as *mut u8; // Buffer of size 10  ",
+                  "   let shared = Box::new(Shared {  ",
+                  "       buf,  ",
+                  "       cap: 10,  ",
+                  "       ref_cnt: AtomicUsize::new(1),  ",
+                  "    });",
+                  "",
+                  "   // Point to the shared memory",
+                  "   let atom = AtomicPtr::new(Box::into_raw(shared) as *mut _);",
+                  "    let ptr = buf as *const u8; // Pointer to the buffer",
+                  "    let len = 10; // Length of the buffer",
+                  "",
+                  "    // Perform the promotable_odd_clone operation",
+                  "    let clone_result = unsafe { promotable_odd_clone(&atom, ptr, len) };",
+                  "",
+                  "    // Check the result",
+                  "    assert_eq!(clone_result.len, len);",
+                  "    assert_eq!(clone_result.ptr, ptr);",
+                  "    assert_eq!(unsafe { (*clone_result.data.load(Ordering::Acquire)).ref_cnt.load(Ordering::Relaxed) }, 2);",
+                  "",
+                  "    // Clean up",
+                  "    unsafe {",
+                  "        let _ = Box::from_raw(clone_result.data.load(Ordering::Acquire));",
+                  "       let _ = Box::from_raw(shared as *mut _);",
+                  "       let _ = Box::from_raw(buf);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0609]: no field `ref_cnt` on type `()`\n    --> src/bytes.rs:1712:70\n     |\n1712 |     assert_eq!(unsafe { (*clone_result.data.load(Ordering::Acquire)).ref_cnt.load(Ordering::Relaxed) }, 2);\n     |                                                                      ^^^^^^^ unknown field\n\nFor more information about this error, try `rustc --explain E0609`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::sync::atomic::AtomicPtr;",
+            "use core::ptr::null_mut;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   use core::sync::atomic::AtomicPtr;  ",
+                  "",
+                  "",
+                  "    // Prepare a shared buffer for the test.",
+                  "    let buffer: Vec<u8> = vec![1, 2, 3, 4, 5]; // Example data",
+                  "    let buffer_ptr = buffer.as_ptr() as *mut u8; // Cast to *mut u8 for shared buffer",
+                  "",
+                  "    // Create an AtomicPtr with KIND_VEC (0b1)",
+                  "    let shared = Box::new(Shared {",
+                  "        buf: buffer_ptr,",
+                  "        cap: buffer.len(),",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    });",
+                  "    let shared_ptr = Box::into_raw(shared); // Convert Box to raw pointer",
+                  "",
+                  "    // Create the AtomicPtr with kind being KIND_VEC",
+                  "    let data = AtomicPtr::new(shared_ptr as _);",
+                  "",
+                  "    // Define pointer and length for cloning",
+                  "    let clone_ptr = buffer_ptr;",
+                  "    let clone_len = buffer.len();",
+                  "",
+                  "    // Call the function under test",
+                  "    let cloned_bytes = unsafe { promotable_odd_clone(&data, clone_ptr, clone_len) };",
+                  "",
+                  "    // Validate results",
+                  "    assert_eq!(cloned_bytes.len, clone_len);",
+                  "    assert_eq!(cloned_bytes.ptr, clone_ptr);",
+                  "",
+                  "   let shared_clone = cloned_bytes.data.load(Ordering::Acquire) as *mut Shared;  ",
+                  "   assert!(!shared_clone.is_null());  ",
+                  " ",
+                  "   // Verify reference count increased  ",
+                  "   unsafe { assert_eq!((*shared_clone).ref_cnt.load(Ordering::Relaxed), 2); }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::AtomicPtr;",
+                  "",
+                  "    // Create an AtomicPtr with an invalid kind (0b0)",
+                  "    let shared = Box::new(Shared {",
+                  "        buf: null_mut(),",
+                  "        cap: 0,",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "    });",
+                  "    let shared_ptr = Box::into_raw(shared); // Convert Box to raw pointer",
+                  "",
+                  "    // Create the AtomicPtr with kind being KIND_ARC (0b0)",
+                  "    let data = AtomicPtr::new(shared_ptr as _);",
+                  "",
+                  "    // Define pointer and length for cloning",
+                  "    let clone_ptr = null_mut();",
+                  "    let clone_len = 0;",
+                  "",
+                  "    // Call the function under test, should panic",
+                  "    let _ = unsafe { promotable_odd_clone(&data, clone_ptr, clone_len) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use alloc::sync::Arc;",
+            "use core::ptr::null_mut;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   use alloc::sync::Arc;",
+                  "",
+                  "",
+                  "    struct DummyData {",
+                  "        ptr: *const u8,",
+                  "        data: AtomicPtr<()>,",
+                  "    }",
+                  "",
+                  "    let original_buf = Box::new([1, 2, 3, 4, 5]); // Create a buffer to share",
+                  "    let arc_data = Arc::new(original_buf); // Create an Arc for KIND_ARC simulation",
+                  "",
+                  "    // Create a `DummyData` instance with kind set to KIND_VEC",
+                  "    let dummy_data = DummyData {",
+                  "        ptr: arc_data.as_ref() as *const _ as *const u8,",
+                  "        data: AtomicPtr::new(Box::into_raw(arc_data) as _),",
+                  "    };",
+                  "",
+                  "    let result = unsafe {",
+                  "        promotable_odd_clone(&dummy_data.data, dummy_data.ptr, 3)",
+                  "    };",
+                  "",
+                  "    // Check the results",
+                  "    assert_eq!(result.len, 3);",
+                  "    assert_ne!(result.ptr as *const u8, dummy_data.ptr); // Ensure it did not point to the same location",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1705:44\n     |\n1705 |         data: AtomicPtr::new(Box::into_raw(arc_data) as _),\n     |                              ------------- ^^^^^^^^ expected `Box<_, _>`, found `Arc<Box<[{integer}; 5]>>`\n     |                              |\n     |                              arguments to this function are incorrect\n     |\n     = note: expected struct `std::boxed::Box<_, _>`\n                found struct `Arc<std::boxed::Box<[{integer}; 5], std::alloc::Global>>`\n     = note: for more on the distinction between the stack and the heap, read https://doc.rust-lang.org/book/ch15-01-box.html, https://doc.rust-lang.org/rust-by-example/std/box.html, and https://doc.rust-lang.org/std/boxed/index.html\nnote: associated function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/boxed.rs:1102:12\n     |\n1102 |     pub fn into_raw(b: Self) -> *mut T {\n     |            ^^^^^^^^\nhelp: store this in the heap by calling `Box::new`\n     |\n1705 |         data: AtomicPtr::new(Box::into_raw(Box::new(arc_data)) as _),\n     |                                            +++++++++        +\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use alloc::sync::Arc;",
+                  "",
+                  "    struct DummyData {",
+                  "        ptr: *const u8,",
+                  "        data: AtomicPtr<()>,",
+                  "    }",
+                  "",
+                  "    // Create a buffer to simulate panic condition.",
+                  "   let original_buf = Box::new([1, 2, 3, 4, 5]);",
+                  "   let shared_data = Arc::new(original_buf);",
+                  "   ",
+                  "   // Mimicking a scenario that would lead to an overflow of ref count",
+                  "   let shared_data_ref = Arc::into_raw(shared_data);",
+                  "   unsafe { (*shared_data_ref).ref_cnt.store(usize::MAX >> 1, Ordering::Relaxed); } // Set to max before panic",
+                  "    ",
+                  "    // Create a `DummyData` instance",
+                  "    let dummy_data = DummyData {",
+                  "        ptr: shared_data.as_ref() as *const _ as *const u8,",
+                  "        data: AtomicPtr::new(shared_data_ref as _),",
+                  "    };",
+                  "",
+                  "    // Call the function, expecting a panic",
+                  "    unsafe {",
+                  "        let _ = promotable_odd_clone(&dummy_data.data, dummy_data.ptr, 5);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0609]: no field `ref_cnt` on type `std::boxed::Box<[{integer}; 5]>`\n    --> src/bytes.rs:1705:32\n     |\n1705 |    unsafe { (*shared_data_ref).ref_cnt.store(usize::MAX >> 1, Ordering::Relaxed); } // Set to max before panic\n     |                                ^^^^^^^ unknown field\n\nFor more information about this error, try `rustc --explain E0609`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

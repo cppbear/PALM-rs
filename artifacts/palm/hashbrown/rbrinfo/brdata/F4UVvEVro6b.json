@@ -1,0 +1,141 @@
+{
+  "name": "hashbrown::raw::raw::RawTable<T, A>::clone_from_impl",
+  "name_with_impl": "hashbrown::raw::{impl#16}::clone_from_impl",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:3354:5:3388:6",
+  "doc": "/// Common code for `clone` and `clone_from`. Assumes:\n/// - `self.buckets() == source.buckets()`.\n/// - Any existing elements have been dropped.\n/// - The control bytes are not initialized yet.\n",
+  "code": [
+    "unsafe fn clone_from_impl(&mut self, source: &Self) {",
+    "    // Copy the control bytes unchanged. We do this in a single pass",
+    "    source",
+    "        .table",
+    "        .ctrl(0)",
+    "        .copy_to_nonoverlapping(self.table.ctrl(0), self.table.num_ctrl_bytes());",
+    "",
+    "    // The cloning of elements may panic, in which case we need",
+    "    // to make sure we drop only the elements that have been",
+    "    // cloned so far.",
+    "    let mut guard = guard((0, &mut *self), |(index, self_)| {",
+    "        if T::NEEDS_DROP {",
+    "            for i in 0..*index {",
+    "                if self_.is_bucket_full(i) {",
+    "                    self_.bucket(i).drop();",
+    "                }",
+    "            }",
+    "        }",
+    "    });",
+    "",
+    "    for from in source.iter() {",
+    "        let index = source.bucket_index(&from);",
+    "        let to = guard.1.bucket(index);",
+    "        to.write(from.as_ref().clone());",
+    "",
+    "        // Update the index in case we need to unwind.",
+    "        guard.0 = index + 1;",
+    "    }",
+    "",
+    "    // Successfully cloned all items, no need to clean up.",
+    "    mem::forget(guard);",
+    "",
+    "    self.table.items = source.table.items;",
+    "    self.table.growth_left = source.table.growth_left;",
+    "}"
+  ],
+  "size": {
+    "chain": 2,
+    "contra": 1,
+    "min_set": 2
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "from in source.iter()",
+          "norm": null,
+          "value": "true",
+          "line": 3374,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "from in source.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 3374,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        13,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        8,
+        9,
+        10,
+        12,
+        14,
+        23,
+        24
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "from in source.iter()",
+          "norm": null,
+          "value": "false",
+          "line": 3374,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        12,
+        14,
+        23,
+        24
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

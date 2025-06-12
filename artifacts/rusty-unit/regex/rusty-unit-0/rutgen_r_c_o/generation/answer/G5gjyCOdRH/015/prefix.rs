@@ -1,0 +1,57 @@
+// Answer 0
+
+#[test]
+fn test_visit_class_set_item_post_range_unicode() {
+    use ast::{ClassSetItem, ClassSetRange, Literal};
+    
+    // Initialize necessary components for the test
+    let trans = Translator {
+        stack: RefCell::new(vec![]),
+        flags: Cell::new(Flags { unicode: Some(true), ..Flags::default() }),
+        allow_invalid_utf8: false,
+    };
+    let pattern = "test";
+    let mut translator_i = TranslatorI::new(&trans, pattern);
+
+    // Construct a range for unicode characters
+    let start_literal = Literal { span: Span { start: Position(0), end: Position(1) }, kind: LiteralKind::Character, c: 'a' };
+    let end_literal = Literal { span: Span { start: Position(2), end: Position(3) }, kind: LiteralKind::Character, c: 'z' };
+    let range_item = ClassSetItem::Range(ClassSetRange {
+        span: Span { start: Position(0), end: Position(5) },
+        start: start_literal,
+        end: end_literal,
+    });
+
+    // Push a dummy frame before invoking the method
+    translator_i.push(HirFrame::ClassUnicode(hir::ClassUnicode::empty()));
+    
+    // Invoke the method under test with the range item
+    translator_i.visit_class_set_item_post(&range_item).unwrap();
+}
+
+#[test]
+fn test_visit_class_set_item_post_range_unicode_empty() {
+    // Similar setup but with empty range
+    use ast::{ClassSetItem, ClassSetRange, Literal};
+
+    let trans = Translator {
+        stack: RefCell::new(vec![]),
+        flags: Cell::new(Flags { unicode: Some(true), ..Flags::default() }),
+        allow_invalid_utf8: false,
+    };
+    let pattern = "test";
+    let mut translator_i = TranslatorI::new(&trans, pattern);
+
+    let start_literal = Literal { span: Span { start: Position(0), end: Position(1) }, kind: LiteralKind::Character, c: ' ' };
+    let end_literal = Literal { span: Span { start: Position(2), end: Position(3) }, kind: LiteralKind::Character, c: ' ' };
+    let range_item = ClassSetItem::Range(ClassSetRange {
+        span: Span { start: Position(0), end: Position(5) },
+        start: start_literal,
+        end: end_literal,
+    });
+
+    translator_i.push(HirFrame::ClassUnicode(hir::ClassUnicode::empty()));
+
+    translator_i.visit_class_set_item_post(&range_item).unwrap();
+}
+

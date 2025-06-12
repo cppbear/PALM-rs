@@ -1,0 +1,262 @@
+{
+  "name": "hashbrown::raw::raw::RawTableInner::prepare_rehash_in_place",
+  "name_with_impl": "hashbrown::raw::{impl#13}::prepare_rehash_in_place",
+  "mod_info": {
+    "name": "raw",
+    "loc": "src/lib.rs:62:1:62:9"
+  },
+  "visible": false,
+  "loc": "src/raw/mod.rs:2034:5:2069:6",
+  "doc": "/// Prepares for rehashing data in place (that is, without allocating new memory).\n/// Converts all full index `control bytes` to `Tag::DELETED` and all `Tag::DELETED` control\n/// bytes to `Tag::EMPTY`, i.e. performs the following conversion:\n///\n/// - `Tag::EMPTY` control bytes   -> `Tag::EMPTY`;\n/// - `Tag::DELETED` control bytes -> `Tag::EMPTY`;\n/// - `FULL` control bytes    -> `Tag::DELETED`.\n///\n/// This function does not make any changes to the `data` parts of the table,\n/// or any changes to the `items` or `growth_left` field of the table.\n///\n/// # Safety\n///\n/// You must observe the following safety rules when calling this function:\n///\n/// * The [`RawTableInner`] has already been allocated;\n///\n/// * The caller of this function must convert the `Tag::DELETED` bytes back to `FULL`\n///   bytes when re-inserting them into their ideal position (which was impossible\n///   to do during the first insert due to tombstones). If the caller does not do\n///   this, then calling this function may result in a memory leak.\n///\n/// * The [`RawTableInner`] must have properly initialized control bytes otherwise\n///   calling this function results in [`undefined behavior`].\n///\n/// Calling this function on a table that has not been allocated results in\n/// [`undefined behavior`].\n///\n/// See also [`Bucket::as_ptr`] method, for more information about of properly removing\n/// or saving `data element` from / into the [`RawTable`] / [`RawTableInner`].\n///\n/// [`Bucket::as_ptr`]: Bucket::as_ptr\n/// [`undefined behavior`]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html\n",
+  "code": [
+    "unsafe fn prepare_rehash_in_place(&mut self) {",
+    "    // Bulk convert all full control bytes to DELETED, and all DELETED control bytes to EMPTY.",
+    "    // This effectively frees up all buckets containing a DELETED entry.",
+    "    //",
+    "    // SAFETY:",
+    "    // 1. `i` is guaranteed to be within bounds since we are iterating from zero to `buckets - 1`;",
+    "    // 2. Even if `i` will be `i == self.bucket_mask`, it is safe to call `Group::load_aligned`",
+    "    //    due to the extended control bytes range, which is `self.bucket_mask + 1 + Group::WIDTH`;",
+    "    // 3. The caller of this function guarantees that [`RawTableInner`] has already been allocated;",
+    "    // 4. We can use `Group::load_aligned` and `Group::store_aligned` here since we start from 0",
+    "    //    and go to the end with a step equal to `Group::WIDTH` (see TableLayout::calculate_layout_for).",
+    "    for i in (0..self.buckets()).step_by(Group::WIDTH) {",
+    "        let group = Group::load_aligned(self.ctrl(i));",
+    "        let group = group.convert_special_to_empty_and_full_to_deleted();",
+    "        group.store_aligned(self.ctrl(i));",
+    "    }",
+    "",
+    "    // Fix up the trailing control bytes. See the comments in set_ctrl",
+    "    // for the handling of tables smaller than the group width.",
+    "    //",
+    "    // SAFETY: The caller of this function guarantees that [`RawTableInner`]",
+    "    // has already been allocated",
+    "    if unlikely(self.buckets() < Group::WIDTH) {",
+    "        // SAFETY: We have `self.bucket_mask + 1 + Group::WIDTH` number of control bytes,",
+    "        // so copying `self.buckets() == self.bucket_mask + 1` bytes with offset equal to",
+    "        // `Group::WIDTH` is safe",
+    "        self.ctrl(0)",
+    "            .copy_to(self.ctrl(Group::WIDTH), self.buckets());",
+    "    } else {",
+    "        // SAFETY: We have `self.bucket_mask + 1 + Group::WIDTH` number of",
+    "        // control bytes,so copying `Group::WIDTH` bytes with offset equal",
+    "        // to `self.buckets() == self.bucket_mask + 1` is safe",
+    "        self.ctrl(0)",
+    "            .copy_to(self.ctrl(self.buckets()), Group::WIDTH);",
+    "    }",
+    "}"
+  ],
+  "size": {
+    "chain": 4,
+    "contra": 2,
+    "min_set": 3
+  },
+  "cond_chains": [
+    {
+      "id": 1,
+      "conds": [
+        {
+          "cond": "i in (0..self.buckets()).step_by(Group::WIDTH)",
+          "norm": null,
+          "value": "true",
+          "line": 2045,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "i in (0..self.buckets()).step_by(Group::WIDTH)",
+          "norm": null,
+          "value": "false",
+          "line": 2045,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "unlikely(self.buckets() < Group::WIDTH)",
+          "norm": null,
+          "value": "true",
+          "line": 2056,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        4,
+        5,
+        6,
+        8,
+        10,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        28
+      ],
+      "may_contra": true,
+      "min_set": false
+    },
+    {
+      "id": 2,
+      "conds": [
+        {
+          "cond": "i in (0..self.buckets()).step_by(Group::WIDTH)",
+          "norm": null,
+          "value": "true",
+          "line": 2045,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "i in (0..self.buckets()).step_by(Group::WIDTH)",
+          "norm": null,
+          "value": "false",
+          "line": 2045,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "unlikely(self.buckets() < Group::WIDTH)",
+          "norm": null,
+          "value": "false",
+          "line": 2056,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        4,
+        5,
+        6,
+        8,
+        10,
+        16,
+        17,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
+      ],
+      "may_contra": true,
+      "min_set": true
+    },
+    {
+      "id": 3,
+      "conds": [
+        {
+          "cond": "i in (0..self.buckets()).step_by(Group::WIDTH)",
+          "norm": null,
+          "value": "false",
+          "line": 2045,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "unlikely(self.buckets() < Group::WIDTH)",
+          "norm": null,
+          "value": "true",
+          "line": 2056,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        28
+      ],
+      "may_contra": false,
+      "min_set": true
+    },
+    {
+      "id": 4,
+      "conds": [
+        {
+          "cond": "i in (0..self.buckets()).step_by(Group::WIDTH)",
+          "norm": null,
+          "value": "false",
+          "line": 2045,
+          "bound": null,
+          "may_panic": false
+        },
+        {
+          "cond": "unlikely(self.buckets() < Group::WIDTH)",
+          "norm": null,
+          "value": "false",
+          "line": 2056,
+          "bound": null,
+          "may_panic": false
+        }
+      ],
+      "ret": null,
+      "path": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        8,
+        10,
+        16,
+        17,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28
+      ],
+      "may_contra": false,
+      "min_set": true
+    }
+  ]
+}

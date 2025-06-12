@@ -1,0 +1,311 @@
+{
+  "name": "once_cell::race::race::OnceNonZeroUsize::get_or_init",
+  "name_with_impl": "once_cell::race::{impl#0}::get_or_init",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:120:5:129:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.get_or_try_init(|| Ok::<NonZeroUsize, Void>(f())) matches Err(void) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::Mutex;",
+            "use std::sync::Arc;",
+            "use std::num::NonZeroUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::num::NonZeroUsize;",
+                  "    use std::sync::{Arc, Mutex};",
+                  "    ",
+                  "    struct Cell {",
+                  "        value: Option<NonZeroUsize>,",
+                  "    }",
+                  "",
+                  "    impl Cell {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "        ",
+                  "        pub fn get_or_try_init<F>(&mut self, f: F) -> Result<NonZeroUsize, ()>",
+                  "        where",
+                  "            F: FnOnce() -> Result<NonZeroUsize, ()>,",
+                  "        {",
+                  "            if let Some(value) = self.value {",
+                  "                Ok(value)",
+                  "            } else {",
+                  "                match f() {",
+                  "                    Ok(val) => {",
+                  "                        self.value = Some(val);",
+                  "                        Ok(val)",
+                  "                    },",
+                  "                    Err(_) => Err(()),",
+                  "                }",
+                  "            }",
+                  "        }",
+                  "        ",
+                  "        pub fn get_or_init<F>(&mut self, f: F) -> NonZeroUsize",
+                  "        where",
+                  "            F: FnOnce() -> NonZeroUsize,",
+                  "        {",
+                  "            match self.get_or_try_init(|| Ok::<NonZeroUsize, ()>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(_) => panic!(\"Unexpected error occurred\"),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    let value = cell.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+                  "    assert_eq!(value.get(), 1);",
+                  "    ",
+                  "    let value2 = cell.get_or_init(|| NonZeroUsize::new(2).unwrap());",
+                  "    assert_eq!(value2.get(), 1); // Should return the same value",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::num::NonZeroUsize;",
+                  "    use std::sync::{Arc, Mutex};",
+                  "",
+                  "    struct Cell {",
+                  "        value: Option<NonZeroUsize>,",
+                  "    }",
+                  "",
+                  "    impl Cell {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "        ",
+                  "        pub fn get_or_try_init<F>(&mut self, f: F) -> Result<NonZeroUsize, ()>",
+                  "        where",
+                  "            F: FnOnce() -> Result<NonZeroUsize, ()>,",
+                  "        {",
+                  "            if let Some(value) = self.value {",
+                  "                Ok(value)",
+                  "            } else {",
+                  "                match f() {",
+                  "                    Ok(val) => {",
+                  "                        self.value = Some(val);",
+                  "                        Ok(val)",
+                  "                    },",
+                  "                    Err(_) => Err(()),",
+                  "                }",
+                  "            }",
+                  "        }",
+                  "        ",
+                  "        pub fn get_or_init<F>(&mut self, f: F) -> NonZeroUsize",
+                  "        where",
+                  "            F: FnOnce() -> NonZeroUsize,",
+                  "        {",
+                  "            match self.get_or_try_init(|| Ok::<NonZeroUsize, ()>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(_) => match panic::catch_unwind(panic::AssertUnwindSafe(|| {",
+                  "                    panic!(\"Hypothetical error\")",
+                  "                })) {",
+                  "                    Ok(_) => NonZeroUsize::new(0).unwrap(), // this line will not be reached",
+                  "                    Err(_) => panic!(\"Unexpected error occurred\"),",
+                  "                },",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    // Forcing a panic in the get_or_try_init",
+                  "    cell.get_or_init(|| NonZeroUsize::new(0).unwrap());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0433]: failed to resolve: use of undeclared crate or module `panic`\n   --> src/race.rs:542:33\n    |\n542 |                 Err(_) => match panic::catch_unwind(panic::AssertUnwindSafe(|| {\n    |                                 ^^^^^ use of undeclared crate or module `panic`\n    |\nhelp: consider importing this module\n    |\n501 +    use std::panic;\n    |\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `panic`\n   --> src/race.rs:542:53\n    |\n542 |                 Err(_) => match panic::catch_unwind(panic::AssertUnwindSafe(|| {\n    |                                                     ^^^^^ use of undeclared crate or module `panic`\n    |\nhelp: consider importing this module\n    |\n501 +    use std::panic;\n    |\n\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused imports: `Arc` and `Mutex`\n   --> src/race.rs:508:21\n    |\n508 |     use std::sync::{Arc, Mutex};\n    |                     ^^^  ^^^^^\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `once_cell` (lib test) generated 5 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 5 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.get_or_try_init(|| Ok::<NonZeroUsize, Void>(f())) matches Ok(val) is true\n",
+        "// constraint: self.get_or_try_init(|| Ok::<NonZeroUsize, Void>(f())) matches Ok(val) is true\n",
+        "// expected return value/type: val\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::num::NonZeroUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::num::NonZeroUsize;",
+                  "",
+                  "    struct Cell {",
+                  "        value: Option<NonZeroUsize>,",
+                  "    }",
+                  "",
+                  "    impl Cell {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F>(&mut self, f: F) -> Result<NonZeroUsize, ()>",
+                  "        where",
+                  "            F: FnOnce() -> NonZeroUsize,",
+                  "        {",
+                  "            if let Some(val) = self.value {",
+                  "                Ok(val)",
+                  "            } else {",
+                  "                let val = f();",
+                  "                self.value = Some(val);",
+                  "                Ok(val)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_init<F>(&mut self, f: F) -> NonZeroUsize",
+                  "        where",
+                  "            F: FnOnce() -> NonZeroUsize,",
+                  "        {",
+                  "            enum Void {}",
+                  "            match self.get_or_try_init(|| Ok::<NonZeroUsize, Void>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    ",
+                  "    // Test with a non-zero value",
+                  "    let result = cell.get_or_init(|| NonZeroUsize::new(1).unwrap());",
+                  "    assert_eq!(result, NonZeroUsize::new(1).unwrap());",
+                  "",
+                  "    // Test to ensure the same value is returned across multiple calls",
+                  "    let result_again = cell.get_or_init(|| NonZeroUsize::new(2).unwrap());",
+                  "    assert_eq!(result_again, NonZeroUsize::new(1).unwrap());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:535:43\n    |\n530 |         fn get_or_init<F>(&mut self, f: F) -> NonZeroUsize\n    |                                               ------------ expected `NonZero<usize>` because of return type\n...\n535 |             match self.get_or_try_init(|| Ok::<NonZeroUsize, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `NonZero<usize>`, found `Result<NonZero<usize>, Void>`\n    |\n    = note: expected struct `NonZero<_>`\n                 found enum `Result<NonZero<_>, llmtests::test_get_or_init_02::Cell::get_or_init::Void>`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::num::NonZeroUsize;",
+                  "",
+                  "    struct Cell {",
+                  "        value: Option<NonZeroUsize>,",
+                  "    }",
+                  "",
+                  "    impl Cell {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F>(&mut self, f: F) -> Result<NonZeroUsize, ()>",
+                  "        where",
+                  "            F: FnOnce() -> NonZeroUsize,",
+                  "        {",
+                  "            if let Some(val) = self.value {",
+                  "                Ok(val)",
+                  "            } else {",
+                  "                let val = f();",
+                  "                self.value = Some(val);",
+                  "                Ok(val)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_init<F>(&mut self, f: F) -> NonZeroUsize",
+                  "        where",
+                  "            F: FnOnce() -> NonZeroUsize,",
+                  "        {",
+                  "            enum Void {}",
+                  "            match self.get_or_try_init(|| Ok::<NonZeroUsize, Void>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    ",
+                  "    // This will panic because NonZeroUsize::new(0) is not valid",
+                  "    cell.get_or_init(|| NonZeroUsize::new(0).unwrap());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:536:43\n    |\n531 |         fn get_or_init<F>(&mut self, f: F) -> NonZeroUsize\n    |                                               ------------ expected `NonZero<usize>` because of return type\n...\n536 |             match self.get_or_try_init(|| Ok::<NonZeroUsize, Void>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `NonZero<usize>`, found `Result<NonZero<usize>, Void>`\n    |\n    = note: expected struct `NonZero<_>`\n                 found enum `Result<NonZero<_>, llmtests::test_get_or_init_03::Cell::get_or_init::Void>`\n\nFor more information about this error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

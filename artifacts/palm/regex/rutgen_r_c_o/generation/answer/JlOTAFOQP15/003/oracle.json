@@ -1,0 +1,913 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Debug)]",
+      "struct MockVisitor {",
+      "    calls: Vec<&'static str>,",
+      "    error: Option<&'static str>,",
+      "}",
+      "",
+      "impl MockVisitor {",
+      "    fn new() -> Self {",
+      "        MockVisitor {",
+      "            calls: Vec::new(),",
+      "            error: None,",
+      "        }",
+      "    }",
+      "}",
+      "",
+      "impl Visitor for MockVisitor {",
+      "    type Output = ();",
+      "    type Err = &'static str;",
+      "",
+      "    fn start(&mut self) {",
+      "        self.calls.push(\"start\");",
+      "    }",
+      "",
+      "    fn visit_pre(&mut self, _: &Hir) -> Result<(), Self::Err> {",
+      "        self.calls.push(\"visit_pre\");",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn visit_post(&mut self, _: &Hir) -> Result<(), Self::Err> {",
+      "        self.calls.push(\"visit_post\");",
+      "        if self.error.is_some() {",
+      "            Err(self.error.unwrap())",
+      "        } else {",
+      "            Ok(())",
+      "        }",
+      "    }",
+      "",
+      "    fn visit_alternation_in(&mut self) -> Result<(), Self::Err> {",
+      "        self.calls.push(\"visit_alternation_in\");",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn finish(self) -> Result<Self::Output, Self::Err> {",
+      "        Ok(())",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let visitor = MockVisitor::new();",
+          "    let repetition_hir = Hir { /* appropriate initialization */ };",
+          "    let mut heap_visitor = HeapVisitor::new();",
+          "    heap_visitor.visit(&repetition_hir, visitor);",
+          "}"
+        ],
+        "oracles": [],
+        "codes": [],
+        "can_compile": [],
+        "repaired": []
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let visitor = MockVisitor::new();",
+          "    let group_hir = Hir { /* appropriate initialization */ };",
+          "    let mut heap_visitor = HeapVisitor::new();",
+          "    heap_visitor.visit(&group_hir, visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    assert_eq!(visitor.calls, vec![\"start\", \"visit_pre\", \"visit_post\"]);"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    visitor.error = Some(\"error occurred\");",
+            "    let result_with_error = heap_visitor.visit(&group_hir, visitor);",
+            "    assert!(result_with_error.is_err());"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    visitor.error = Some(\"error occurred\");",
+            "    let result_with_error = heap_visitor.visit(&group_hir, visitor);",
+            "    assert_eq!(visitor.calls, vec![\"start\", \"visit_pre\", \"visit_post\"]);"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    visitor.error = Some(\"error occurred\");",
+            "    let result_with_error = heap_visitor.visit(&group_hir, visitor);",
+            "    assert_eq!(visitor.error, Some(\"error occurred\"));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&group_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&group_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    assert_eq!(visitor.calls, vec![\"start\", \"visit_pre\", \"visit_post\"]);",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&group_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    visitor.error = Some(\"error occurred\");",
+            "    let result_with_error = heap_visitor.visit(&group_hir, visitor);",
+            "    assert!(result_with_error.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&group_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    visitor.error = Some(\"error occurred\");",
+            "    let result_with_error = heap_visitor.visit(&group_hir, visitor);",
+            "    assert_eq!(visitor.calls, vec![\"start\", \"visit_pre\", \"visit_post\"]);",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&group_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let group_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&group_hir, visitor);",
+            "    visitor.error = Some(\"error occurred\");",
+            "    let result_with_error = heap_visitor.visit(&group_hir, visitor);",
+            "    assert_eq!(visitor.error, Some(\"error occurred\"));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let visitor = MockVisitor::new();",
+          "    let concat_hir = Hir { /* appropriate initialization */ };",
+          "    let mut heap_visitor = HeapVisitor::new();",
+          "    heap_visitor.visit(&concat_hir, visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"start\"));"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_pre\"));"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_post\"));"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_alternation_in\"));"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert_eq!(visitor.error, None);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"start\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_pre\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_post\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_alternation_in\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&concat_hir, visitor);",
+            "    assert_eq!(visitor.error, None);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let visitor = MockVisitor::new();",
+          "    let alternation_hir = Hir { /* appropriate initialization */ };",
+          "    let mut heap_visitor = HeapVisitor::new();",
+          "    heap_visitor.visit(&alternation_hir, visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert_eq!(visitor_calls, vec![\"start\", \"visit_pre\"]);"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert!(visitor.error.is_none());"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert!(heap_visitor.stack.is_empty());"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert!(visitor_calls.len() > 2);"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert_eq!(visitor_calls.last(), Some(&\"visit_post\"));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&alternation_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert_eq!(visitor_calls, vec![\"start\", \"visit_pre\"]);",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&alternation_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert!(visitor.error.is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&alternation_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert!(heap_visitor.stack.is_empty());",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&alternation_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert!(visitor_calls.len() > 2);",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&alternation_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let visitor_calls = visitor.calls.clone();",
+            "    assert_eq!(visitor_calls.last(), Some(&\"visit_post\"));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let visitor = MockVisitor::new();",
+          "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+          "    let mut heap_visitor = HeapVisitor::new();",
+          "    heap_visitor.visit(&empty_concat_hir, visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"start\"));"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_pre\"));"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_post\"));"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_alternation_in\"));"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.len() > 0);"
+          ],
+          [
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.error.is_none());"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"start\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_pre\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_post\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.contains(&\"visit_alternation_in\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.calls.len() > 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_concat_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_concat_hir, visitor);",
+            "    assert!(visitor.error.is_none());",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [
+          "#[should_panic]"
+        ],
+        "prefix": [
+          "{",
+          "    let visitor = MockVisitor::new();",
+          "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+          "    let mut heap_visitor = HeapVisitor::new();",
+          "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert_eq!(visitor.calls, vec![\"start\", \"visit_pre\"]);"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(visitor.error.is_none());"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(self.stack.is_empty());"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert_eq!(visitor.calls.last(), Some(&\"visit_post\"));"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(visitor.finish().is_ok());"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(self.stack.len() >= 1);"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(visitor.calls.contains(&\"visit_alternation_in\"));"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert_eq!(self.pop(frame), None);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert_eq!(visitor.calls, vec![\"start\", \"visit_pre\"]);",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(visitor.error.is_none());",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(self.stack.is_empty());",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert_eq!(visitor.calls.last(), Some(&\"visit_post\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(visitor.finish().is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(self.stack.len() >= 1);",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert!(visitor.calls.contains(&\"visit_alternation_in\"));",
+            "}"
+          ],
+          [
+            "{",
+            "    let visitor = MockVisitor::new();",
+            "    let empty_alternation_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    heap_visitor.visit(&empty_alternation_hir, visitor);",
+            "    let mut visitor = MockVisitor::new();",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    assert_eq!(self.pop(frame), None);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut visitor = MockVisitor::new();",
+          "    visitor.error = Some(\"error\");",
+          "    let error_hir = Hir { /* appropriate initialization */ };",
+          "    let mut heap_visitor = HeapVisitor::new();",
+          "    let result = heap_visitor.visit(&error_hir, visitor);",
+          "    assert_eq!(result, Err(\"error\"));",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    visitor.error = Some(\"error\");",
+            "    let error_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&error_hir, visitor);",
+            "    assert!(result.is_err());"
+          ],
+          [
+            "    let mut visitor = MockVisitor::new();",
+            "    visitor.error = Some(\"error\");",
+            "    let error_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&error_hir, visitor);",
+            "    assert_eq!(result.unwrap_err(), \"error\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut visitor = MockVisitor::new();",
+            "    visitor.error = Some(\"error\");",
+            "    let error_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&error_hir, visitor);",
+            "    assert_eq!(result, Err(\"error\"));",
+            "    let mut visitor = MockVisitor::new();",
+            "    visitor.error = Some(\"error\");",
+            "    let error_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&error_hir, visitor);",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut visitor = MockVisitor::new();",
+            "    visitor.error = Some(\"error\");",
+            "    let error_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&error_hir, visitor);",
+            "    assert_eq!(result, Err(\"error\"));",
+            "    let mut visitor = MockVisitor::new();",
+            "    visitor.error = Some(\"error\");",
+            "    let error_hir = Hir { /* appropriate initialization */ };",
+            "    let mut heap_visitor = HeapVisitor::new();",
+            "    let result = heap_visitor.visit(&error_hir, visitor);",
+            "    assert_eq!(result.unwrap_err(), \"error\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

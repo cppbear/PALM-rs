@@ -1,0 +1,129 @@
+{
+  "name": "bytes::bytes::shallow_clone_arc",
+  "name_with_impl": "bytes::bytes::shallow_clone_arc",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1477:1:1490:2",
+  "fn_tests": [
+    {
+      "chain_id": 0,
+      "prompt_conds": [],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::Ordering;",
+            "use std::ptr::null;",
+            "use std::sync::atomic::AtomicUsize;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "    use std::ptr::null;",
+                  "",
+                  "    struct Shared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    struct Bytes {",
+                  "        ptr: *const u8,",
+                  "        len: usize,",
+                  "        data: *mut Shared,",
+                  "        vtable: &'static str,",
+                  "    }",
+                  "",
+                  "    static SHARED_VTABLE: &str = \"shared_vtable\";",
+                  "",
+                  "    unsafe fn shallow_clone_arc(shared: *mut Shared, ptr: *const u8, len: usize) -> Bytes {",
+                  "        let old_size = (*shared).ref_cnt.fetch_add(1, Ordering::Relaxed);",
+                  "",
+                  "        if old_size > usize::MAX >> 1 {",
+                  "            std::process::abort();",
+                  "        }",
+                  "",
+                  "        Bytes {",
+                  "            ptr,",
+                  "            len,",
+                  "            data: shared,",
+                  "            vtable: &SHARED_VTABLE,",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let shared = Box::into_raw(Box::new(Shared {",
+                  "        ref_cnt: AtomicUsize::new(0),",
+                  "    }));",
+                  "",
+                  "    let bytes = unsafe { shallow_clone_arc(shared, null(), 0) };",
+                  "",
+                  "    assert_eq!(unsafe { (*shared).ref_cnt.load(Ordering::Relaxed) }, 1);",
+                  "    assert_eq!(bytes.ptr, null());",
+                  "    assert_eq!(bytes.len, 0);",
+                  "    assert_eq!(bytes.vtable, &SHARED_VTABLE);",
+                  "",
+                  "    // Cleanup",
+                  "    unsafe {",
+                  "        let _ = Box::from_raw(shared);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0277]: can't compare `str` with `&str`\n    --> src/bytes.rs:1728:5\n     |\n1728 |     assert_eq!(bytes.vtable, &SHARED_VTABLE);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no implementation for `str == &str`\n     |\n     = help: the trait `PartialEq<&str>` is not implemented for `str`, which is required by `&str: PartialEq<&&str>`\n     = note: required for `&str` to implement `PartialEq<&&str>`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider dereferencing here\n    -->  /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:40:35\n     |\n40   |                 if !(*left_val == **right_val) {\n     |                                   +\n\nFor more information about this error, try `rustc --explain E0277`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::sync::atomic::{AtomicUsize, Ordering};",
+                  "",
+                  "    struct Shared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "    }",
+                  "",
+                  "    let shared = Box::new(Shared {",
+                  "        ref_cnt: AtomicUsize::new(usize::MAX >> 1), // Set to trigger panic",
+                  "    });",
+                  "",
+                  "    unsafe {",
+                  "        shallow_clone_arc(Box::into_raw(shared), null(), 0);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0425]: cannot find function `null` in this scope\n    --> src/bytes.rs:1700:50\n     |\n1700 |         shallow_clone_arc(Box::into_raw(shared), null(), 0);\n     |                                                  ^^^^ not found in this scope\n     |\nhelp: consider importing this function\n     |\n1683 +    use std::ptr::null;\n     |\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `Ordering`\n    --> src/bytes.rs:1689:42\n     |\n1689 |     use std::sync::atomic::{AtomicUsize, Ordering};\n     |                                          ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1700:41\n     |\n1700 |         shallow_clone_arc(Box::into_raw(shared), null(), 0);\n     |                           ------------- ^^^^^^ expected `Box<Shared, _>`, found `Box<Shared>`\n     |                           |\n     |                           arguments to this function are incorrect\n     |\n     = note: `Shared` and `bytes::Shared` have similar names, but are actually distinct types\nnote: `Shared` is defined in module `crate::bytes::llmtests` of the current crate\n    --> src/bytes.rs:1691:5\n     |\n1691 |     struct Shared {\n     |     ^^^^^^^^^^^^^\nnote: `bytes::Shared` is defined in module `crate::bytes` of the current crate\n    --> src/bytes.rs:1357:1\n     |\n1357 | struct Shared {\n     | ^^^^^^^^^^^^^\nnote: associated function defined here\n    --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/boxed.rs:1102:12\n     |\n1102 |     pub fn into_raw(b: Self) -> *mut T {\n     |            ^^^^^^^^\n\nSome errors have detailed explanations: E0308, E0425.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 2 previous errors; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

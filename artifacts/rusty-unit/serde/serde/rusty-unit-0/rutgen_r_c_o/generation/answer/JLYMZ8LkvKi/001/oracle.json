@@ -1,0 +1,473 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "#[derive(Debug)]",
+      "struct MockMapAccess {",
+      "    data: Vec<(String, f32)>,",
+      "    index: usize,",
+      "}",
+      "",
+      "impl<'de> MapAccess<'de> for MockMapAccess {",
+      "    type Error = Error;",
+      "",
+      "    fn next_key_seed<K>(&mut self, _seed: K) -> Result<Option<K::Value>, Self::Error>",
+      "    where",
+      "        K: DeserializeSeed<'de>,",
+      "    {",
+      "        if self.index < self.data.len() {",
+      "            let key = &self.data[self.index].0;",
+      "            Ok(Some(key.clone()))",
+      "        } else {",
+      "            Ok(None)",
+      "        }",
+      "    }",
+      "",
+      "    fn next_value_seed<V>(&mut self, _seed: V) -> Result<V::Value, Self::Error>",
+      "    where",
+      "        V: DeserializeSeed<'de>,",
+      "    {",
+      "        if self.index < self.data.len() {",
+      "            let value = self.data[self.index].1;",
+      "            self.index += 1;",
+      "            Ok(value)",
+      "        } else {",
+      "            Err(Error)",
+      "        }",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+          "    let result = map_access.next_entry::<String, f32>();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result, Ok(None));"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result, Ok(Some((\"key1\".to_string(), 1.0))));"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result_first = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result_first, Ok(Some((\"key1\".to_string(), 1.0))));"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result_first = map_access.next_entry::<String, f32>();",
+            "    let result_second = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result_second, Ok(Some((\"key2\".to_string(), 2.0))));"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result_first = map_access.next_entry::<String, f32>();",
+            "    let result_second = map_access.next_entry::<String, f32>();",
+            "    let result_after = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result_after, Ok(None));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result, Ok(None));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result, Ok(Some((\"key1\".to_string(), 1.0))));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result_first = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result_first, Ok(Some((\"key1\".to_string(), 1.0))));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result_first = map_access.next_entry::<String, f32>();",
+            "    let result_second = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result_second, Ok(Some((\"key2\".to_string(), 2.0))));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result_first = map_access.next_entry::<String, f32>();",
+            "    let result_second = map_access.next_entry::<String, f32>();",
+            "    let result_after = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result_after, Ok(None));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+          "    let result = map_access.next_entry::<String, f32>();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result.unwrap(), Some((\"key1\".to_string(), 1.0)));"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result.unwrap(), None);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result.unwrap(), Some((\"key1\".to_string(), 1.0)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result.unwrap(), None);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+          "    let result1 = map_access.next_entry::<String, f32>();",
+          "    let result2 = map_access.next_entry::<String, f32>();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    assert!(result1.is_ok());"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result1.unwrap(), Some((\"key1\".to_string(), 1.0)));"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    let result2 = map_access.next_entry::<String, f32>();",
+            "    assert!(result2.is_ok());"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    let result2 = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result2.unwrap(), Some((\"key2\".to_string(), 2.0)));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    let result2 = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    assert!(result1.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    let result2 = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result1.unwrap(), Some((\"key1\".to_string(), 1.0)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    let result2 = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    let result2 = map_access.next_entry::<String, f32>();",
+            "    assert!(result2.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    let result2 = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0), (\"key2\".to_string(), 2.0)], index: 0 };",
+            "    let result1 = map_access.next_entry::<String, f32>();",
+            "    let result2 = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result2.unwrap(), Some((\"key2\".to_string(), 2.0)));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 1 };",
+          "    let result = map_access.next_entry::<String, f32>();",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result.unwrap(), Some((\"key1\".to_string(), 1.0)));"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert!(result.is_ok());"
+          ],
+          [
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result.unwrap(), None);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 1 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 1 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result.unwrap(), Some((\"key1\".to_string(), 1.0)));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 1 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert!(result.is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 1 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![(\"key1\".to_string(), 1.0)], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    let mut map_access = MockMapAccess { data: vec![], index: 0 };",
+            "    let result = map_access.next_entry::<String, f32>();",
+            "    assert_eq!(result.unwrap(), None);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

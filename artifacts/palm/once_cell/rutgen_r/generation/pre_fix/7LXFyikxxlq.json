@@ -1,0 +1,262 @@
+{
+  "name": "once_cell::race::race::OnceRef<'a, T>::get_or_try_init",
+  "name_with_impl": "once_cell::race::{impl#5}::get_or_try_init",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:299:5:307:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.get() matches Some(val) is true\n",
+        "// constraint: self.get() matches Some(val) is true\n",
+        "// expected return value/type: Ok(val)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<'a>(&'a str);",
+                  "    ",
+                  "    impl<'a> Cell<'a> {",
+                  "        fn get(&self) -> Option<&'a str> {",
+                  "            Some(self.0)",
+                  "        }",
+                  "        ",
+                  "        fn init<F, E>(&self, f: F) -> Result<&'a str, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<&'a str, E>,",
+                  "        {",
+                  "            f()",
+                  "        }",
+                  "        ",
+                  "        fn get_or_try_init<F, E>(&self, f: F) -> Result<&'a str, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<&'a str, E>,",
+                  "        {",
+                  "            match self.get() {",
+                  "                Some(val) => Ok(val),",
+                  "                None => self.init(f),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = Cell(\"Test value\");",
+                  "    let result: Result<&str, &str> = cell.get_or_try_init(|| Ok(\"Initialized value\"));",
+                  "",
+                  "    assert_eq!(result, Ok(\"Test value\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<'a>(&'a str);",
+                  "",
+                  "    impl<'a> Cell<'a> {",
+                  "        fn get(&self) -> Option<&'a str> {",
+                  "            Some(self.0)",
+                  "        }",
+                  "        ",
+                  "        fn init<F, E>(&self, f: F) -> Result<&'a str, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<&'a str, E>,",
+                  "        {",
+                  "            f()",
+                  "        }",
+                  "        ",
+                  "        fn get_or_try_init<F, E>(&self, f: F) -> Result<&'a str, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<&'a str, E>,",
+                  "        {",
+                  "            match self.get() {",
+                  "                Some(val) => Ok(val),",
+                  "                None => self.init(f),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let cell = Cell(\"Concurrent Test value\");",
+                  "    let result1: Result<&str, &str> = cell.get_or_try_init(|| Ok(\"Initialized value 1\"));",
+                  "    let result2: Result<&str, &str> = cell.get_or_try_init(|| Ok(\"Initialized value 2\"));",
+                  "",
+                  "    assert_eq!(result1, Ok(\"Concurrent Test value\"));",
+                  "    assert_eq!(result2, Ok(\"Concurrent Test value\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.get() matches None is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell<'a> {",
+                  "        value: Option<&'a str>,",
+                  "    }",
+                  "",
+                  "    impl<'a> TestCell<'a> {",
+                  "        fn new() -> Self {",
+                  "            TestCell { value: None }",
+                  "        }",
+                  "",
+                  "        fn get(&self) -> Option<&'a str> {",
+                  "            self.value",
+                  "        }",
+                  "",
+                  "        fn init<F, E>(&mut self, f: F) -> Result<&'a str, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<&'a str, E>,",
+                  "        {",
+                  "            match f() {",
+                  "                Ok(val) => {",
+                  "                    self.value = Some(val);",
+                  "                    Ok(val)",
+                  "                }",
+                  "                Err(err) => Err(err),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F, E>(&mut self, f: F) -> Result<&'a str, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<&'a str, E>,",
+                  "        {",
+                  "            match self.get() {",
+                  "                Some(val) => Ok(val),",
+                  "                None => self.init(f),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = TestCell::new();",
+                  "    let result = cell.get_or_try_init(|| Ok(\"Initialized Value\")).unwrap();",
+                  "    assert_eq!(result, \"Initialized Value\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0282]: type annotations needed\n   --> src/race.rs:544:42\n    |\n544 |     let result = cell.get_or_try_init(|| Ok(\"Initialized Value\")).unwrap();\n    |                                          ^^ cannot infer type of the type parameter `E` declared on the enum `Result`\n    |\nhelp: consider specifying the generic arguments\n    |\n544 |     let result = cell.get_or_try_init(|| Ok::<&str, E>(\"Initialized Value\")).unwrap();\n    |                                            +++++++++++\n\nFor more information about this error, try `rustc --explain E0282`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 1 previous error; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestCell<'a> {",
+                  "        value: Option<&'a str>,",
+                  "    }",
+                  "",
+                  "    impl<'a> TestCell<'a> {",
+                  "        fn new() -> Self {",
+                  "            TestCell { value: None }",
+                  "        }",
+                  "",
+                  "        fn get(&self) -> Option<&'a str> {",
+                  "            self.value",
+                  "        }",
+                  "",
+                  "        fn init<F, E>(&mut self, f: F) -> Result<&'a str, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<&'a str, E>,",
+                  "        {",
+                  "            match f() {",
+                  "                Ok(val) => {",
+                  "                    self.value = Some(val);",
+                  "                    Ok(val)",
+                  "                }",
+                  "                Err(err) => Err(err),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F, E>(&mut self, f: F) -> Result<&'a str, E>",
+                  "        where",
+                  "            F: FnOnce() -> Result<&'a str, E>,",
+                  "        {",
+                  "            match self.get() {",
+                  "                Some(val) => Ok(val),",
+                  "                None => self.init(f),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = TestCell::new();",
+                  "    let result: Result<&str, &str> = cell.get_or_try_init(|| Err(\"Initialization Failed\"));",
+                  "    assert_eq!(result, Err(\"Initialization Failed\"));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+fn eof() -> Self { Byte(256) }

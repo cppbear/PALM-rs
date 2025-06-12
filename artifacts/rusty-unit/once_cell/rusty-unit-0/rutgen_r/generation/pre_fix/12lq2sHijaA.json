@@ -1,0 +1,213 @@
+{
+  "name": "once_cell::race::race::OnceRef<'a, T>::get_or_init",
+  "name_with_impl": "once_cell::race::{impl#5}::get_or_init",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:281:5:290:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.get_or_try_init(|| Ok::<&'a T, Void>(f())) matches Err(void) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell {",
+                  "        initialized: bool,",
+                  "    }",
+                  "",
+                  "    impl Cell {",
+                  "        pub fn new() -> Self {",
+                  "            Cell { initialized: false }",
+                  "        }",
+                  "",
+                  "        pub fn get_or_try_init<F>(&mut self, f: F) -> Result<&'static str, ()>",
+                  "        where",
+                  "            F: FnOnce() -> &'static str,",
+                  "        {",
+                  "            if self.initialized {",
+                  "                Ok(\"already initialized\")",
+                  "            } else {",
+                  "                self.initialized = true;",
+                  "                Err(())",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn get_or_init<F>(&mut self, f: F) -> &'static str",
+                  "        where",
+                  "            F: FnOnce() -> &'static str,",
+                  "        {",
+                  "            match self.get_or_try_init(|| Ok::<&'static str, ()>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(_) => panic!(\"get_or_try_init returned an error\"),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    let value = cell.get_or_init(|| \"initialized value\");",
+                  "    assert_eq!(value, \"initialized value\");",
+                  "    ",
+                  "    // Calling again should trigger a panic due to the error case",
+                  "    let result = std::panic::catch_unwind(|| {",
+                  "        cell.get_or_init(|| \"should not be called\");",
+                  "    });",
+                  "",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0277]: the type `&mut llmtests::test_get_or_init_00::Cell` may not be safely transferred across an unwind boundary\n   --> src/race.rs:543:43\n    |\n543 |       let result = std::panic::catch_unwind(|| {\n    |                    ------------------------ ^-\n    |                    |                        |\n    |  __________________|________________________within this `{closure@src/race.rs:543:43: 543:45}`\n    | |                  |\n    | |                  required by a bound introduced by this call\n544 | |         cell.get_or_init(|| \"should not be called\");\n545 | |     });\n    | |_____^ `&mut llmtests::test_get_or_init_00::Cell` may not be safely transferred across an unwind boundary\n    |\n    = help: within `{closure@src/race.rs:543:43: 543:45}`, the trait `UnwindSafe` is not implemented for `&mut llmtests::test_get_or_init_00::Cell`, which is required by `{closure@src/race.rs:543:43: 543:45}: UnwindSafe`\n    = note: `UnwindSafe` is implemented for `&llmtests::test_get_or_init_00::Cell`, but not for `&mut llmtests::test_get_or_init_00::Cell`\nnote: required because it's used within this closure\n   --> src/race.rs:543:43\n    |\n543 |     let result = std::panic::catch_unwind(|| {\n    |                                           ^^\nnote: required by a bound in `std::panic::catch_unwind`\n   --> /home/abezbm/.rustup/toolchains/nightly-2024-07-21-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:349:40\n    |\n349 | pub fn catch_unwind<F: FnOnce() -> R + UnwindSafe, R>(f: F) -> Result<R> {\n    |                                        ^^^^^^^^^^ required by this bound in `catch_unwind`\n\nerror[E0308]: mismatched types\n   --> src/race.rs:531:43\n    |\n527 |         pub fn get_or_init<F>(&mut self, f: F) -> &'static str\n    |                                                   ------------ expected `&'static str` because of return type\n...\n531 |             match self.get_or_try_init(|| Ok::<&'static str, ()>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&str`, found `Result<&str, ()>`\n    |\n    = note: expected reference `&'static str`\n                    found enum `Result<&'static str, ()>`\n\nwarning: unused variable: `f`\n   --> src/race.rs:515:46\n    |\n515 |         pub fn get_or_try_init<F>(&mut self, f: F) -> Result<&'static str, ()>\n    |                                              ^ help: if this is intentional, prefix it with an underscore: `_f`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nSome errors have detailed explanations: E0277, E0308.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `once_cell` (lib test) generated 5 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 5 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.get_or_try_init(|| Ok::<&'a T, Void>(f())) matches Ok(val) is true\n",
+        "// constraint: self.get_or_try_init(|| Ok::<&'a T, Void>(f())) matches Ok(val) is true\n",
+        "// expected return value/type: val\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<'a, T> {",
+                  "        value: Option<&'a T>,",
+                  "    }",
+                  "",
+                  "    impl<'a, T> Cell<'a, T> {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F>(&mut self, f: F) -> Result<&'a T, !>",
+                  "        where",
+                  "            F: FnOnce() -> &'a T,",
+                  "        {",
+                  "            if self.value.is_none() {",
+                  "                self.value = Some(f());",
+                  "            }",
+                  "            Ok(self.value.as_ref().unwrap())",
+                  "        }",
+                  "",
+                  "        fn get_or_init<F>(&mut self, f: F) -> &'a T",
+                  "        where",
+                  "            F: FnOnce() -> &'a T,",
+                  "        {",
+                  "            match self.get_or_try_init(|| Ok::<&'a T, !>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    let result = cell.get_or_init(|| &42);",
+                  "    assert_eq!(*result, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0658]: the `!` type is experimental\n   --> src/race.rs:515:65\n    |\n515 |         fn get_or_try_init<F>(&mut self, f: F) -> Result<&'a T, !>\n    |                                                                 ^\n    |\n    = note: see issue #35121 <https://github.com/rust-lang/rust/issues/35121> for more information\n    = help: add `#![feature(never_type)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nerror[E0658]: the `!` type is experimental\n   --> src/race.rs:529:55\n    |\n529 |             match self.get_or_try_init(|| Ok::<&'a T, !>(f())) {\n    |                                                       ^\n    |\n    = note: see issue #35121 <https://github.com/rust-lang/rust/issues/35121> for more information\n    = help: add `#![feature(never_type)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:529:43\n    |\n525 |         fn get_or_init<F>(&mut self, f: F) -> &'a T\n    |                                               ----- expected `&T` because of return type\n...\n529 |             match self.get_or_try_init(|| Ok::<&'a T, !>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^ expected `&T`, found `Result<&T, !>`\n    |\n    = note: expected reference `&T`\n                    found enum `Result<&'a T, !>`\n\nSome errors have detailed explanations: E0308, E0658.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 3 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<'a, T> {",
+                  "        value: Option<&'a T>,",
+                  "    }",
+                  "",
+                  "    impl<'a, T> Cell<'a, T> {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        fn get_or_try_init<F>(&mut self, f: F) -> Result<&'a T, !>",
+                  "        where",
+                  "            F: FnOnce() -> &'a T,",
+                  "        {",
+                  "            if self.value.is_none() {",
+                  "                self.value = Some(f());",
+                  "            }",
+                  "            Ok(self.value.as_ref().unwrap())",
+                  "        }",
+                  "",
+                  "        fn get_or_init<F>(&mut self, f: F) -> &'a T",
+                  "        where",
+                  "            F: FnOnce() -> &'a T,",
+                  "        {",
+                  "            match self.get_or_try_init(|| Ok::<&'a T, !>(f())) {",
+                  "                Ok(val) => val,",
+                  "                Err(void) => match void {},",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    let first_result = cell.get_or_init(|| &42);",
+                  "    let second_result = cell.get_or_init(|| &100);",
+                  "    assert_eq!(first_result, second_result);",
+                  "    assert_eq!(*first_result, 42);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nerror[E0658]: the `!` type is experimental\n   --> src/race.rs:515:65\n    |\n515 |         fn get_or_try_init<F>(&mut self, f: F) -> Result<&'a T, !>\n    |                                                                 ^\n    |\n    = note: see issue #35121 <https://github.com/rust-lang/rust/issues/35121> for more information\n    = help: add `#![feature(never_type)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nerror[E0658]: the `!` type is experimental\n   --> src/race.rs:529:55\n    |\n529 |             match self.get_or_try_init(|| Ok::<&'a T, !>(f())) {\n    |                                                       ^\n    |\n    = note: see issue #35121 <https://github.com/rust-lang/rust/issues/35121> for more information\n    = help: add `#![feature(never_type)]` to the crate attributes to enable\n    = note: this compiler was built on 2024-07-20; consider upgrading it if it is out of date\n\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0308]: mismatched types\n   --> src/race.rs:529:43\n    |\n525 |         fn get_or_init<F>(&mut self, f: F) -> &'a T\n    |                                               ----- expected `&T` because of return type\n...\n529 |             match self.get_or_try_init(|| Ok::<&'a T, !>(f())) {\n    |                                           ^^^^^^^^^^^^^^^^^^^ expected `&T`, found `Result<&T, !>`\n    |\n    = note: expected reference `&T`\n                    found enum `Result<&'a T, !>`\n\nSome errors have detailed explanations: E0308, E0658.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 3 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

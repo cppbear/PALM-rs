@@ -1,0 +1,40 @@
+type Result = result::Result<Patch, Error>;
+use std::collections::HashMap;
+use std::iter;
+use std::result;
+use std::sync::Arc;
+use syntax::is_word_byte;
+use syntax::hir::{self, Hir};
+use utf8_ranges::{Utf8Range, Utf8Sequence, Utf8Sequences};
+use prog::{
+    Program, Inst, InstPtr, EmptyLook, InstSave, InstSplit, InstEmptyLook, InstChar,
+    InstRanges, InstBytes,
+};
+use Error;
+struct ByteClassSet([bool; 256]);
+impl ByteClassSet {
+    fn new() -> Self {
+        ByteClassSet([false; 256])
+    }
+    fn set_range(&mut self, start: u8, end: u8) {
+        debug_assert!(start <= end);
+        if start > 0 {
+            self.0[start as usize - 1] = true;
+        }
+        self.0[end as usize] = true;
+    }
+    fn set_word_boundary(&mut self) {
+        let iswb = is_word_byte;
+        let mut b1: u16 = 0;
+        let mut b2: u16;
+        while b1 <= 255 {
+            b2 = b1 + 1;
+            while b2 <= 255 && iswb(b1 as u8) == iswb(b2 as u8) {
+                b2 += 1;
+            }
+            self.set_range(b1 as u8, (b2 - 1) as u8);
+            b1 = b2;
+        }
+    }
+    fn byte_classes(&self) -> Vec<u8> {}
+}

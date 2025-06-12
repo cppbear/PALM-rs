@@ -1,0 +1,183 @@
+{
+  "name": "bytes::bytes::bytes::Bytes::inc_start",
+  "name_with_impl": "bytes::bytes::{impl#0}::inc_start",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:672:5:677:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.len >= by is true, with bound self.len == by\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct ByteBuffer {",
+                  "        len: usize,",
+                  "        ptr: *mut u8,",
+                  "    }",
+                  "",
+                  "    impl ByteBuffer {",
+                  "        fn new(len: usize) -> Self {",
+                  "            let layout = std::alloc::Layout::from_size_align(len, 1).unwrap();",
+                  "            let ptr = unsafe { std::alloc::alloc(layout) };",
+                  "            ByteBuffer { len, ptr }",
+                  "        }",
+                  "",
+                  "        unsafe fn inc_start(&mut self, by: usize) {",
+                  "            debug_assert!(self.len >= by, \"internal: inc_start out of bounds\");",
+                  "            self.len -= by;",
+                  "            self.ptr = self.ptr.add(by);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let by = 1;",
+                  "    let mut buffer = ByteBuffer::new(by);",
+                  "    // Initial conditions",
+                  "    assert_eq!(buffer.len, by);",
+                  "    ",
+                  "    unsafe {",
+                  "        buffer.inc_start(by);",
+                  "    }",
+                  "",
+                  "    // After inc_start, len should be 0",
+                  "    assert_eq!(buffer.len, 0);",
+                  "    assert_eq!(buffer.ptr, (buffer.ptr as usize + by) as *mut u8);",
+                  "    ",
+                  "    // Cleanup",
+                  "    unsafe { std::alloc::dealloc(buffer.ptr.sub(by), std::alloc::Layout::from_size_align(by, 1).unwrap()) };",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.len >= by is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[derive(Debug)]",
+            "struct Bytes {",
+            "    len: usize,",
+            "    ptr: *mut u8,",
+            "}",
+            "",
+            "impl Bytes {",
+            "    fn new(len: usize) -> Self {",
+            "        let ptr = unsafe { std::alloc::alloc(std::alloc::Layout::array::<u8>(len).unwrap()) };",
+            "        Bytes { len, ptr }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic(expected = \"internal: inc_start out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes::new(5); // len is 5",
+                  "    unsafe {",
+                  "        bytes.inc_start(10); // by is 10 which exceeds len",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: no method named `inc_start` found for struct `llmtests::Bytes` in the current scope\n    --> src/bytes.rs:1704:15\n     |\n1686 | struct Bytes {\n     | ------------ method `inc_start` not found for this struct\n...\n1704 |         bytes.inc_start(10); // by is 10 which exceeds len\n     |               ^^^^^^^^^ method not found in `Bytes`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes::new(5); // len is 5",
+                  "    unsafe {",
+                  "        bytes.inc_start(5); // by is 5 which equals len",
+                  "    }",
+                  "    assert_eq!(bytes.len, 0); // Expect len to be reduced to 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: no method named `inc_start` found for struct `llmtests::Bytes` in the current scope\n    --> src/bytes.rs:1703:15\n     |\n1686 | struct Bytes {\n     | ------------ method `inc_start` not found for this struct\n...\n1703 |         bytes.inc_start(5); // by is 5 which equals len\n     |               ^^^^^^^^^ method not found in `Bytes`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let mut bytes = Bytes::new(5); // len is 5",
+                  "    unsafe {",
+                  "        bytes.inc_start(0); // by is 0 which should not change anything",
+                  "    }",
+                  "    assert_eq!(bytes.len, 5); // Expect len to remain 5",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0599]: no method named `inc_start` found for struct `llmtests::Bytes` in the current scope\n    --> src/bytes.rs:1703:15\n     |\n1686 | struct Bytes {\n     | ------------ method `inc_start` not found for this struct\n...\n1703 |         bytes.inc_start(0); // by is 0 which should not change anything\n     |               ^^^^^^^^^ method not found in `Bytes`\n\nFor more information about this error, try `rustc --explain E0599`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,249 @@
+{
+  "name": "once_cell::race::race::OnceRef<'a, T>::set",
+  "name_with_impl": "once_cell::race::{impl#5}::set",
+  "mod_info": {
+    "name": "race",
+    "loc": "src/lib.rs:1412:1:1412:14"
+  },
+  "visible": true,
+  "loc": "src/race.rs:268:5:273:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.compare_exchange(value) matches Err(_) is true\n",
+        "// expected return value/type: Err(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<T> {",
+                  "        value: Option<T>,",
+                  "    }",
+                  "",
+                  "    impl<T: PartialEq> Cell<T> {",
+                  "        pub fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        pub fn compare_exchange(&self, value: &T) -> Result<(), ()> {",
+                  "            match &self.value {",
+                  "                Some(v) if v == value => Err(()),",
+                  "                _ => Ok(()),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn set(&mut self, value: T) -> Result<(), ()> {",
+                  "            match self.compare_exchange(&value) {",
+                  "                Ok(_) => {",
+                  "                    self.value = Some(value);",
+                  "                    Ok(())",
+                  "                },",
+                  "                Err(_) => Err(()),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    cell.set(42).unwrap(); // Initialize the cell with a value",
+                  "    // Now, the cell is full, so setting the same value should return Err(())",
+                  "    let result = cell.set(42);",
+                  "    assert_eq!(result, Err(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<T> {",
+                  "        value: Option<T>,",
+                  "    }",
+                  "",
+                  "    impl<T: PartialEq> Cell<T> {",
+                  "        pub fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        pub fn compare_exchange(&self, value: &T) -> Result<(), ()> {",
+                  "            match &self.value {",
+                  "                Some(_) => Err(()),",
+                  "                _ => Ok(()),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn set(&mut self, value: T) -> Result<(), ()> {",
+                  "            match self.compare_exchange(&value) {",
+                  "                Ok(_) => {",
+                  "                    self.value = Some(value);",
+                  "                    Ok(())",
+                  "                },",
+                  "                Err(_) => Err(()),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    cell.set(42).unwrap(); // Initialize the cell with a value",
+                  "    // Now, the cell should return Err(()) for any value since it is already set",
+                  "    let result = cell.set(99);",
+                  "    assert_eq!(result, Err(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.compare_exchange(value) matches Ok(_) is true\n",
+        "// constraint: self.compare_exchange(value) matches Ok(_) is true\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<T> {",
+                  "        value: Option<&'static T>,",
+                  "    }",
+                  "",
+                  "    impl<T> Cell<T> {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        fn compare_exchange(&mut self, value: &'static T) -> Result<(), &'static T> {",
+                  "            if self.value.is_none() {",
+                  "                self.value = Some(value);",
+                  "                Ok(())",
+                  "            } else {",
+                  "                Err(value)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn set(&mut self, value: &'static T) -> Result<(), ()> {",
+                  "            match self.compare_exchange(value) {",
+                  "                Ok(_) => Ok(()),",
+                  "                Err(_) => Err(()),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    let value = \"test value\";",
+                  "    let result = cell.set(&value);",
+                  "    assert_eq!(result, Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0310]: the parameter type `T` may not live long enough\n   --> src/race.rs:507:16\n    |\n507 |         value: Option<&'static T>,\n    |                ^^^^^^^^^^^^^^^^^^\n    |                |\n    |                the parameter type `T` must be valid for the static lifetime...\n    |                ...so that the reference type `&'static T` does not outlive the data it points at\n    |\nhelp: consider adding an explicit lifetime bound\n    |\n506 |     struct Cell<T: 'static> {\n    |                  +++++++++\n\nerror[E0597]: `value` does not live long enough\n   --> src/race.rs:534:27\n    |\n533 |     let value = \"test value\";\n    |         ----- binding `value` declared here\n534 |     let result = cell.set(&value);\n    |                  ---------^^^^^^-\n    |                  |        |\n    |                  |        borrowed value does not live long enough\n    |                  argument requires that `value` is borrowed for `'static`\n535 |     assert_eq!(result, Ok(()));\n536 | }\n    | - `value` dropped here while still borrowed\n\nSome errors have detailed explanations: E0310, E0597.\nFor more information about an error, try `rustc --explain E0310`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 2 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct Cell<T> {",
+                  "        value: Option<&'static T>,",
+                  "    }",
+                  "",
+                  "    impl<T> Cell<T> {",
+                  "        fn new() -> Self {",
+                  "            Cell { value: None }",
+                  "        }",
+                  "",
+                  "        fn compare_exchange(&mut self, value: &'static T) -> Result<(), &'static T> {",
+                  "            if self.value.is_none() {",
+                  "                self.value = Some(value);",
+                  "                Ok(())",
+                  "            } else {",
+                  "                Err(value)",
+                  "            }",
+                  "        }",
+                  "",
+                  "        pub fn set(&mut self, value: &'static T) -> Result<(), ()> {",
+                  "            match self.compare_exchange(value) {",
+                  "                Ok(_) => Ok(()),",
+                  "                Err(_) => Err(()),",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut cell = Cell::new();",
+                  "    let value1 = \"first value\";",
+                  "    let _ = cell.set(&value1); // Fill the cell first",
+                  "    let value2 = \"second value\";",
+                  "    let result = cell.set(&value2); // Try to fill the cell again",
+                  "    assert_eq!(result, Err(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling quote v1.0.40\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling once_cell v1.21.3 (/home/abezbm/rust-utgen-test-crates-new/once_cell)\nwarning: unused import: `std::panic`\n   --> src/imp_std.rs:292:9\n    |\n292 |     use std::panic;\n    |         ^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused imports: `sync::mpsc::channel` and `thread`\n   --> src/imp_std.rs:293:15\n    |\n293 |     use std::{sync::mpsc::channel, thread};\n    |               ^^^^^^^^^^^^^^^^^^^  ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/race.rs:501:8\n    |\n501 |    use super::*;\n    |        ^^^^^^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/race.rs:502:8\n    |\n502 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nerror[E0310]: the parameter type `T` may not live long enough\n   --> src/race.rs:507:16\n    |\n507 |         value: Option<&'static T>,\n    |                ^^^^^^^^^^^^^^^^^^\n    |                |\n    |                the parameter type `T` must be valid for the static lifetime...\n    |                ...so that the reference type `&'static T` does not outlive the data it points at\n    |\nhelp: consider adding an explicit lifetime bound\n    |\n506 |     struct Cell<T: 'static> {\n    |                  +++++++++\n\nerror[E0597]: `value1` does not live long enough\n   --> src/race.rs:534:22\n    |\n533 |     let value1 = \"first value\";\n    |         ------ binding `value1` declared here\n534 |     let _ = cell.set(&value1); // Fill the cell first\n    |             ---------^^^^^^^-\n    |             |        |\n    |             |        borrowed value does not live long enough\n    |             argument requires that `value1` is borrowed for `'static`\n...\n538 | }\n    | - `value1` dropped here while still borrowed\n\nerror[E0597]: `value2` does not live long enough\n   --> src/race.rs:536:27\n    |\n535 |     let value2 = \"second value\";\n    |         ------ binding `value2` declared here\n536 |     let result = cell.set(&value2); // Try to fill the cell again\n    |                  ---------^^^^^^^-\n    |                  |        |\n    |                  |        borrowed value does not live long enough\n    |                  argument requires that `value2` is borrowed for `'static`\n537 |     assert_eq!(result, Err(()));\n538 | }\n    | - `value2` dropped here while still borrowed\n\nSome errors have detailed explanations: E0310, E0597.\nFor more information about an error, try `rustc --explain E0310`.\nwarning: `once_cell` (lib test) generated 4 warnings\nerror: could not compile `once_cell` (lib test) due to 3 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

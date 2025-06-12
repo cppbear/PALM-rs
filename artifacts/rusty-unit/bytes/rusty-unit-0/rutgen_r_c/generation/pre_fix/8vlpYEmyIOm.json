@@ -1,0 +1,145 @@
+{
+  "name": "bytes::bytes::bytes::Bytes::new_empty_with_ptr",
+  "name_with_impl": "bytes::bytes::{impl#0}::new_empty_with_ptr",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:189:5:202:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: ptr.is_null() is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ptr: *const u8 = core::ptr::null();",
+                  "    let _result = Bytes::new_empty_with_ptr(ptr);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ptr: *const u8 = &0u8 as *const u8; // Valid non-null pointer",
+                  "    let result = Bytes::new_empty_with_ptr(ptr);",
+                  "    assert_eq!(result.len, 0);",
+                  "    assert_eq!(result.ptr as usize, without_provenance(ptr as usize) as usize);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let zero_size_ptr: *const u8 = &0u8 as *const u8; // Non-null but treated as ZST in context",
+                  "    let _result = Bytes::new_empty_with_ptr(zero_size_ptr);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: ptr.is_null() is false\n",
+        "// expected return value/type: Bytes {\n            ptr,\n            len: 0,\n            data: AtomicPtr::new(ptr::null_mut()),\n            vtable: &STATIC_VTABLE,\n        }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "#[should_panic]",
+            "fn test_new_empty_with_ptr_null() {",
+            "    let null_ptr: *const u8 = ptr::null(); // Null pointer",
+            "    Bytes::new_empty_with_ptr(null_ptr); // This should panic",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let non_null_ptr: *const u8 = &0u8; // Valid non-null pointer",
+                  "    let bytes = Bytes::new_empty_with_ptr(non_null_ptr);",
+                  "    ",
+                  "    assert_eq!(bytes.len, 0);",
+                  "    assert_eq!(bytes.data.load(Ordering::SeqCst), ptr::null_mut()); // Check that data is null",
+                  "    assert_eq!(bytes.vtable, &STATIC_VTABLE); // Check that vtable is STATIC_VTABLE",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0369]: binary operation `==` cannot be applied to type `&Vtable`\n    --> src/bytes.rs:1699:5\n     |\n1699 |     assert_eq!(bytes.vtable, &STATIC_VTABLE); // Check that vtable is STATIC_VTABLE\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n     |     |\n     |     &Vtable\n     |     &Vtable\n     |\nnote: an implementation of `PartialEq` might be missing for `Vtable`\n    --> src/bytes.rs:110:1\n     |\n110  | pub(crate) struct Vtable {\n     | ^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n     = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `Vtable` with `#[derive(PartialEq)]`\n     |\n110  + #[derive(PartialEq)]\n111  | pub(crate) struct Vtable {\n     |\n\nFor more information about this error, try `rustc --explain E0369`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

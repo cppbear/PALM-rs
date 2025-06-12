@@ -1,0 +1,2 @@
+cd /home/rumono/itoa
+fuzz-target-generator --edition=2018 --crate-type lib --crate-name itoa src/lib.rs -o /home/rumono/itoa/target/doc --check-cfg 'cfg(docsrs)' --check-cfg 'cfg(feature, values("no-panic"))' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat -C metadata=37d591264554e69d -L dependency=/home/rumono/itoa/target/debug/deps --crate-version 1.0.15

@@ -1,0 +1,979 @@
+{
+  "name": "base64::chunked_encoder::chunked_encoder::ChunkedEncoder<'e, E>::encode",
+  "name_with_impl": "base64::chunked_encoder::{impl#0}::encode",
+  "mod_info": {
+    "name": "chunked_encoder",
+    "loc": "src/lib.rs:274:1:274:21"
+  },
+  "visible": true,
+  "loc": "src/chunked_encoder.rs:28:5:46:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: chunk in bytes.chunks(CHUNK_SIZE) is true\n",
+        "// constraint: chunk.len() != CHUNK_SIZE is true\n",
+        "// constraint: self.engine.config().encode_padding() is true\n",
+        "// may panic: buf[len..] may panic in certain situations\n",
+        "// may panic: buf[..len] may panic in certain situations\n",
+        "// constraint: sink.write_encoded_bytes(&buf[..len])? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockSink {",
+                  "        written: Vec<u8>,",
+                  "        error: Option<&'static str>,",
+                  "    }",
+                  "",
+                  "    impl MockSink {",
+                  "        fn new() -> Self {",
+                  "            Self { written: Vec::new(), error: None }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Sink for MockSink {",
+                  "        type Error = &'static str;",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, bytes: &[u8]) -> Result<(), Self::Error> {",
+                  "            if self.error.is_some() {",
+                  "                Err(self.error.unwrap())",
+                  "            } else {",
+                  "                self.written.extend_from_slice(bytes);",
+                  "                Ok(())",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockEngineConfig {",
+                  "        padding: bool,",
+                  "    }",
+                  "",
+                  "    struct MockEngine {",
+                  "        config: MockEngineConfig,",
+                  "    }",
+                  "",
+                  "    impl Config for MockEngineConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            self.padding",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Engine for MockEngine {",
+                  "        type Config = MockEngineConfig;",
+                  "        type DecodeEstimate = ();",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            for (i, byte) in input.iter().enumerate() {",
+                  "                if i < output.len() {",
+                  "                    output[i] = *byte; // Mock encoding by simply copying",
+                  "                }",
+                  "            }",
+                  "            input.len() // Returning length as number of bytes \"encoded\"",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {",
+                  "            ()",
+                  "        }",
+                  "",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _: &[u8],",
+                  "            _: &mut [u8],",
+                  "            _: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &self.config",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mock_config = MockEngineConfig { padding: true };",
+                  "    let mock_engine = MockEngine { config: mock_config };",
+                  "    let encoder = ChunkedEncoder::new(&mock_engine);",
+                  "    let mut sink = MockSink::new();",
+                  "",
+                  "    let input_data = vec![1, 2, 3, 4, 5]; // This will create a partial chunk",
+                  "    encoder.encode(&input_data, &mut sink).unwrap();",
+                  "",
+                  "    assert_eq!(sink.written.len(), 8); // Expected length with padding for 5 bytes",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling libc v0.2.171\n   Compiling semver v1.0.26\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling serde v1.0.219\n   Compiling zerocopy v0.8.24\n   Compiling proc-macro-error v1.0.4\n   Compiling num-traits v0.2.19\n   Compiling indexmap v1.9.3\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140\n   Compiling rayon-core v1.12.1\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling syn v2.0.100\n   Compiling crossbeam-deque v0.8.6\n   Compiling plotters v0.3.7\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-channel v2.3.1\n   Compiling async-lock v3.4.0\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_core v0.6.4\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling clap_derive v3.2.25\n   Compiling async-attributes v1.1.2\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:240:21\n    |\n240 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:240:37\n    |\n240 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `(): DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:220:31\n    |\n220 |         type DecodeEstimate = ();\n    |                               ^^ the trait `DecodeEstimate` is not implemented for `()`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nwarning: unused variable: `input_len`\n   --> src/chunked_encoder.rs:231:49\n    |\n231 |         fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {\n    |                                                 ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_input_len`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 26 warnings\nerror: could not compile `base64` (lib test) due to 3 previous errors; 26 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockSink {",
+                  "        error: &'static str,",
+                  "    }",
+                  "",
+                  "    impl MockSink {",
+                  "        fn new(error: &'static str) -> Self {",
+                  "            Self { error }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Sink for MockSink {",
+                  "        type Error = &'static str;",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, _: &[u8]) -> Result<(), Self::Error> {",
+                  "            Err(self.error)",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockEngineConfig {",
+                  "        padding: bool,",
+                  "    }",
+                  "",
+                  "    struct MockEngine {",
+                  "        config: MockEngineConfig,",
+                  "    }",
+                  "",
+                  "    impl Config for MockEngineConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            self.padding",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Engine for MockEngine {",
+                  "        type Config = MockEngineConfig;",
+                  "        type DecodeEstimate = ();",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            for (i, byte) in input.iter().enumerate() {",
+                  "                if i < output.len() {",
+                  "                    output[i] = *byte; // Mock encoding",
+                  "                }",
+                  "            }",
+                  "            input.len()",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {",
+                  "            ()",
+                  "        }",
+                  "",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _: &[u8],",
+                  "            _: &mut [u8],",
+                  "            _: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &self.config",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mock_config = MockEngineConfig { padding: true };",
+                  "    let mock_engine = MockEngine { config: mock_config };",
+                  "    let encoder = ChunkedEncoder::new(&mock_engine);",
+                  "    let mut sink = MockSink::new(\"Write Error\");",
+                  "",
+                  "    let input_data = vec![1, 2, 3, 4, 5];",
+                  "    encoder.encode(&input_data, &mut sink).unwrap(); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling libc v0.2.171\n   Compiling semver v1.0.26\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling zerocopy v0.8.24\n   Compiling serde v1.0.219\n   Compiling proc-macro-error v1.0.4\n   Compiling indexmap v1.9.3\n   Compiling num-traits v0.2.19\n   Compiling rayon-core v1.12.1\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling crossbeam-deque v0.8.6\n   Compiling syn v2.0.100\n   Compiling event-listener-strategy v0.5.4\n   Compiling plotters v0.3.7\n   Compiling async-lock v3.4.0\n   Compiling async-channel v2.3.1\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling async-attributes v1.1.2\n   Compiling clap_derive v3.2.25\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:235:21\n    |\n235 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:235:37\n    |\n235 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `(): DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:215:31\n    |\n215 |         type DecodeEstimate = ();\n    |                               ^^ the trait `DecodeEstimate` is not implemented for `()`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nwarning: unused variable: `input_len`\n   --> src/chunked_encoder.rs:226:49\n    |\n226 |         fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {\n    |                                                 ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_input_len`\n    |\n    = note: `#[warn(unused_variables)]` on by default\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 26 warnings\nerror: could not compile `base64` (lib test) due to 3 previous errors; 26 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: chunk in bytes.chunks(CHUNK_SIZE) is true\n",
+        "// constraint: chunk.len() != CHUNK_SIZE is true\n",
+        "// constraint: self.engine.config().encode_padding() is false\n",
+        "// may panic: buf[..len] may panic in certain situations\n",
+        "// constraint: sink.write_encoded_bytes(&buf[..len])? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "struct MockEngine {",
+            "    padding: bool,",
+            "}",
+            "",
+            "impl Config for MockEngine {",
+            "    // Implement necessary methods for MockEngine",
+            "}",
+            "",
+            "impl Engine for MockEngine {",
+            "    type Config = MockEngine;",
+            "    type DecodeEstimate = usize; // or an appropriate type",
+            "",
+            "    fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+            "        // A simple mock implementation that just copies bytes",
+            "        let len = input.len().min(output.len());",
+            "        output[..len].copy_from_slice(&input[..len]);",
+            "        len",
+            "    }",
+            "",
+            "    fn internal_decoded_len_estimate(&self, _input_len: usize) -> Self::DecodeEstimate {",
+            "        0 // Placeholder for the estimate",
+            "    }",
+            "",
+            "    fn internal_decode(",
+            "        &self,",
+            "        _input: &[u8],",
+            "        _output: &mut [u8],",
+            "        _decode_estimate: Self::DecodeEstimate,",
+            "    ) -> Result<DecodeMetadata, DecodeSliceError> {",
+            "        unimplemented!()",
+            "    }",
+            "",
+            "    fn config(&self) -> &Self::Config {",
+            "        &self",
+            "    }",
+            "}",
+            "",
+            "impl MockEngine {",
+            "    fn encode_padding(&self) -> bool {",
+            "        self.padding",
+            "    }",
+            "}",
+            "",
+            "struct MockSink {",
+            "    should_fail: bool,",
+            "}",
+            "",
+            "impl Sink for MockSink {",
+            "    type Error = ();",
+            "",
+            "    fn write_encoded_bytes(&mut self, _data: &[u8]) -> Result<(), Self::Error> {",
+            "        if self.should_fail {",
+            "            Err(())",
+            "        } else {",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let engine = MockEngine { padding: false };",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "    let mut sink = MockSink { should_fail: false };",
+                  "    let input_data = vec![1, 2, 3, 4, 5]; // Partial chunk",
+                  "",
+                  "    let result = encoder.encode(&input_data, &mut sink);",
+                  "    assert_eq!(result, Ok(()));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling semver v1.0.26\n   Compiling libc v0.2.171\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling serde v1.0.219\n   Compiling zerocopy v0.8.24\n   Compiling proc-macro-error v1.0.4\n   Compiling indexmap v1.9.3\n   Compiling num-traits v0.2.19\n   Compiling serde_json v1.0.140\n   Compiling rayon-core v1.12.1\n   Compiling rustversion v1.0.20\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling syn v2.0.100\n   Compiling crossbeam-deque v0.8.6\n   Compiling plotters v0.3.7\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-lock v3.4.0\n   Compiling async-channel v2.3.1\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_core v0.6.4\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling async-attributes v1.1.2\n   Compiling clap_derive v3.2.25\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:205:17\n    |\n205 |     ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                 ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:205:33\n    |\n205 |     ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                 ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0046]: not all trait items implemented, missing: `encode_padding`\n   --> src/chunked_encoder.rs:181:1\n    |\n181 | impl Config for MockEngine {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `encode_padding` in implementation\n    |\n   ::: src/engine/mod.rs:431:5\n    |\n431 |     fn encode_padding(&self) -> bool;\n    |     --------------------------------- `encode_padding` from trait\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:187:27\n    |\n187 |     type DecodeEstimate = usize; // or an appropriate type\n    |                           ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0046, E0277, E0412.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let engine = MockEngine { padding: false };",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "    let mut sink = MockSink { should_fail: true };",
+                  "    let input_data = vec![1, 2, 3, 4, 5]; // Partial chunk",
+                  "",
+                  "    let _ = encoder.encode(&input_data, &mut sink); // This should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling libc v0.2.171\n   Compiling semver v1.0.26\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling serde v1.0.219\n   Compiling zerocopy v0.8.24\n   Compiling proc-macro-error v1.0.4\n   Compiling indexmap v1.9.3\n   Compiling num-traits v0.2.19\n   Compiling rustversion v1.0.20\n   Compiling rayon-core v1.12.1\n   Compiling serde_json v1.0.140\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling crossbeam-deque v0.8.6\n   Compiling syn v2.0.100\n   Compiling plotters v0.3.7\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-channel v2.3.1\n   Compiling async-lock v3.4.0\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling async-attributes v1.1.2\n   Compiling clap_derive v3.2.25\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:205:17\n    |\n205 |     ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                 ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:205:33\n    |\n205 |     ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                 ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0046]: not all trait items implemented, missing: `encode_padding`\n   --> src/chunked_encoder.rs:181:1\n    |\n181 | impl Config for MockEngine {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `encode_padding` in implementation\n    |\n   ::: src/engine/mod.rs:431:5\n    |\n431 |     fn encode_padding(&self) -> bool;\n    |     --------------------------------- `encode_padding` from trait\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:187:27\n    |\n187 |     type DecodeEstimate = usize; // or an appropriate type\n    |                           ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0046, E0277, E0412.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5,
+      "prompt_conds": [
+        "// constraint: chunk in bytes.chunks(CHUNK_SIZE) is true\n",
+        "// constraint: chunk.len() != CHUNK_SIZE is false\n",
+        "// may panic: buf[..len] may panic in certain situations\n",
+        "// constraint: sink.write_encoded_bytes(&buf[..len])? is Err/None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct DummyEngine;",
+                  "    struct DummyConfig;",
+                  "    struct DummySink {",
+                  "        encoded_data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl Engine for DummyEngine {",
+                  "        type Config = DummyConfig;",
+                  "        type DecodeEstimate = usize; // Placeholder for the type",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            let len = input.len(); // Simulate encoding",
+                  "            output[..len].copy_from_slice(input);",
+                  "            len",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, _input_len: usize) -> Self::DecodeEstimate {",
+                  "            0",
+                  "        }",
+                  "",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _input: &[u8],",
+                  "            _output: &mut [u8],",
+                  "            _decode_estimate: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &DummyConfig",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Config for DummyConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            false",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl DummySink {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                encoded_data: Vec::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, data: &[u8]) -> Result<(), ()> {",
+                  "            self.encoded_data.extend_from_slice(data);",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let engine = DummyEngine;",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "    let mut sink = DummySink::new();",
+                  "",
+                  "    let input_data = vec![1u8; 1024]; // Full chunk, no padding",
+                  "    let result = encoder.encode(&input_data, &mut sink);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(sink.encoded_data.len(), input_data.len());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling libc v0.2.171\n   Compiling semver v1.0.26\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling zerocopy v0.8.24\n   Compiling serde v1.0.219\n   Compiling proc-macro-error v1.0.4\n   Compiling indexmap v1.9.3\n   Compiling num-traits v0.2.19\n   Compiling rustversion v1.0.20\n   Compiling rayon-core v1.12.1\n   Compiling serde_json v1.0.140\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling crossbeam-deque v0.8.6\n   Compiling plotters v0.3.7\n   Compiling syn v2.0.100\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-lock v3.4.0\n   Compiling async-channel v2.3.1\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_core v0.6.4\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling clap_derive v3.2.25\n   Compiling async-attributes v1.1.2\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:205:21\n    |\n205 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:205:37\n    |\n205 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:188:31\n    |\n188 |         type DecodeEstimate = usize; // Placeholder for the type\n    |                               ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nerror[E0277]: the trait bound `DummySink: chunked_encoder::Sink` is not satisfied\n   --> src/chunked_encoder.rs:238:46\n    |\n238 |     let result = encoder.encode(&input_data, &mut sink);\n    |                          ------              ^^^^^^^^^ the trait `chunked_encoder::Sink` is not implemented for `DummySink`\n    |                          |\n    |                          required by a bound introduced by this call\n    |\n    = help: the trait `chunked_encoder::Sink` is implemented for `chunked_encoder::StringSink<'a>`\nnote: required by a bound in `chunked_encoder::ChunkedEncoder::<'e, E>::encode`\n   --> src/chunked_encoder.rs:28:22\n    |\n28  |     pub fn encode<S: Sink>(&self, bytes: &[u8], sink: &mut S) -> Result<(), S::Error> {\n    |                      ^^^^ required by this bound in `ChunkedEncoder::<'e, E>::encode`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct DummyEngine;",
+                  "    struct DummyConfig;",
+                  "    struct DummySink {",
+                  "        encoded_data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl Engine for DummyEngine {",
+                  "        type Config = DummyConfig;",
+                  "        type DecodeEstimate = usize;",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            let len = input.len(); // Simulate encoding",
+                  "            output[..len].copy_from_slice(input);",
+                  "            len",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, _input_len: usize) -> Self::DecodeEstimate {",
+                  "            0",
+                  "        }",
+                  "",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _input: &[u8],",
+                  "            _output: &mut [u8],",
+                  "            _decode_estimate: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &DummyConfig",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Config for DummyConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            true",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl DummySink {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                encoded_data: Vec::new(),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, data: &[u8]) -> Result<(), ()> {",
+                  "            self.encoded_data.extend_from_slice(data);",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let engine = DummyEngine;",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "    let mut sink = DummySink::new();",
+                  "",
+                  "    let input_data = vec![1u8; 1500]; // Partial chunk, padding needed",
+                  "    let result = encoder.encode(&input_data, &mut sink);",
+                  "    assert!(result.is_ok());",
+                  "    assert!(!sink.encoded_data.is_empty());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling libc v0.2.171\n   Compiling semver v1.0.26\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling zerocopy v0.8.24\n   Compiling serde v1.0.219\n   Compiling proc-macro-error v1.0.4\n   Compiling num-traits v0.2.19\n   Compiling indexmap v1.9.3\n   Compiling rayon-core v1.12.1\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling crossbeam-deque v0.8.6\n   Compiling syn v2.0.100\n   Compiling plotters v0.3.7\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-channel v2.3.1\n   Compiling async-lock v3.4.0\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling clap_derive v3.2.25\n   Compiling async-attributes v1.1.2\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:205:21\n    |\n205 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:205:37\n    |\n205 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:188:31\n    |\n188 |         type DecodeEstimate = usize;\n    |                               ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nerror[E0277]: the trait bound `DummySink: chunked_encoder::Sink` is not satisfied\n   --> src/chunked_encoder.rs:238:46\n    |\n238 |     let result = encoder.encode(&input_data, &mut sink);\n    |                          ------              ^^^^^^^^^ the trait `chunked_encoder::Sink` is not implemented for `DummySink`\n    |                          |\n    |                          required by a bound introduced by this call\n    |\n    = help: the trait `chunked_encoder::Sink` is implemented for `chunked_encoder::StringSink<'a>`\nnote: required by a bound in `chunked_encoder::ChunkedEncoder::<'e, E>::encode`\n   --> src/chunked_encoder.rs:28:22\n    |\n28  |     pub fn encode<S: Sink>(&self, bytes: &[u8], sink: &mut S) -> Result<(), S::Error> {\n    |                      ^^^^ required by this bound in `ChunkedEncoder::<'e, E>::encode`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct DummyEngine;",
+                  "    struct DummyConfig;",
+                  "",
+                  "    struct DummySink {",
+                  "        write_fail: bool,",
+                  "    }",
+                  "",
+                  "    impl Engine for DummyEngine {",
+                  "        type Config = DummyConfig;",
+                  "        type DecodeEstimate = usize;",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            let len = input.len(); ",
+                  "            output[..len].copy_from_slice(input);",
+                  "            len",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, _input_len: usize) -> Self::DecodeEstimate {",
+                  "            0",
+                  "        }",
+                  "",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _input: &[u8],",
+                  "            _output: &mut [u8],",
+                  "            _decode_estimate: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &DummyConfig",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl Config for DummyConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            false",
+                  "        }",
+                  "    }",
+                  "",
+                  "    impl DummySink {",
+                  "        fn new(write_fail: bool) -> Self {",
+                  "            Self { write_fail }",
+                  "        }",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, _data: &[u8]) -> Result<(), ()> {",
+                  "            if self.write_fail {",
+                  "                Err(())",
+                  "            } else {",
+                  "                Ok(())",
+                  "            }",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let engine = DummyEngine;",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "",
+                  "    let mut sink = DummySink::new(true); // Set to fail write",
+                  "    let input_data = vec![1u8; 1024]; // Full chunk",
+                  "    let result = encoder.encode(&input_data, &mut sink);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling slab v0.4.9\n   Compiling libc v0.2.171\n   Compiling semver v1.0.26\n   Compiling rustix v0.38.44\n   Compiling serde v1.0.219\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling zerocopy v0.8.24\n   Compiling proc-macro-error v1.0.4\n   Compiling num-traits v0.2.19\n   Compiling indexmap v1.9.3\n   Compiling rayon-core v1.12.1\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling quote v1.0.40\n   Compiling crossbeam-deque v0.8.6\n   Compiling plotters v0.3.7\n   Compiling syn v2.0.100\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-channel v2.3.1\n   Compiling async-lock v3.4.0\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_core v0.6.4\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling clap_derive v3.2.25\n   Compiling async-attributes v1.1.2\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:206:21\n    |\n206 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:206:37\n    |\n206 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:189:31\n    |\n189 |         type DecodeEstimate = usize;\n    |                               ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nerror[E0277]: the trait bound `DummySink: chunked_encoder::Sink` is not satisfied\n   --> src/chunked_encoder.rs:240:46\n    |\n240 |     let result = encoder.encode(&input_data, &mut sink);\n    |                          ------              ^^^^^^^^^ the trait `chunked_encoder::Sink` is not implemented for `DummySink`\n    |                          |\n    |                          required by a bound introduced by this call\n    |\n    = help: the trait `chunked_encoder::Sink` is implemented for `chunked_encoder::StringSink<'a>`\nnote: required by a bound in `chunked_encoder::ChunkedEncoder::<'e, E>::encode`\n   --> src/chunked_encoder.rs:28:22\n    |\n28  |     pub fn encode<S: Sink>(&self, bytes: &[u8], sink: &mut S) -> Result<(), S::Error> {\n    |                      ^^^^ required by this bound in `ChunkedEncoder::<'e, E>::encode`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6,
+      "prompt_conds": [
+        "// constraint: chunk in bytes.chunks(CHUNK_SIZE) is true\n",
+        "// constraint: chunk.len() != CHUNK_SIZE is false\n",
+        "// may panic: buf[..len] may panic in certain situations\n",
+        "// constraint: sink.write_encoded_bytes(&buf[..len])? is Ok/Some\n",
+        "// constraint: chunk in bytes.chunks(CHUNK_SIZE) is false\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockEngine {",
+                  "        config: MockConfig,",
+                  "    }",
+                  "",
+                  "    impl Engine for MockEngine {",
+                  "        type Config = MockConfig;",
+                  "        type DecodeEstimate = usize; // Dummy type for the test",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            let encoded_len = input.len(); // For simplicity, not doing real encoding",
+                  "            output[..encoded_len].copy_from_slice(input);",
+                  "            encoded_len",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {",
+                  "            input_len",
+                  "        }",
+                  "",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _input: &[u8],",
+                  "            _output: &mut [u8],",
+                  "            _decode_estimate: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &self.config",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockConfig {",
+                  "        padding: bool,",
+                  "    }",
+                  "",
+                  "    impl Config for MockConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            self.padding",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockSink {",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl MockSink {",
+                  "        fn new() -> Self {",
+                  "            MockSink { data: Vec::new() }",
+                  "        }",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, bytes: &[u8]) -> Result<(), String> {",
+                  "            self.data.extend_from_slice(bytes);",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let engine = MockEngine { config: MockConfig { padding: false } };",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "    let input = vec![1u8; 1024]; // Fill the buffer with 1024 bytes",
+                  "    let mut sink = MockSink::new();",
+                  "    ",
+                  "    let result = encoder.encode(&input, &mut sink);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(sink.data.len(), 1024); // Ensure all input bytes were written",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling libc v0.2.171\n   Compiling semver v1.0.26\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling zerocopy v0.8.24\n   Compiling serde v1.0.219\n   Compiling proc-macro-error v1.0.4\n   Compiling num-traits v0.2.19\n   Compiling indexmap v1.9.3\n   Compiling rayon-core v1.12.1\n   Compiling serde_json v1.0.140\n   Compiling rustversion v1.0.20\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling crossbeam-deque v0.8.6\n   Compiling syn v2.0.100\n   Compiling plotters v0.3.7\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-channel v2.3.1\n   Compiling async-lock v3.4.0\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling ppv-lite86 v0.2.21\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling rand_core v0.6.4\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-attributes v1.1.2\n   Compiling clap_derive v3.2.25\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:203:21\n    |\n203 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:203:37\n    |\n203 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:186:31\n    |\n186 |         type DecodeEstimate = usize; // Dummy type for the test\n    |                               ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nerror[E0277]: the trait bound `MockSink: chunked_encoder::Sink` is not satisfied\n   --> src/chunked_encoder.rs:242:41\n    |\n242 |     let result = encoder.encode(&input, &mut sink);\n    |                          ------         ^^^^^^^^^ the trait `chunked_encoder::Sink` is not implemented for `MockSink`\n    |                          |\n    |                          required by a bound introduced by this call\n    |\n    = help: the trait `chunked_encoder::Sink` is implemented for `chunked_encoder::StringSink<'a>`\nnote: required by a bound in `chunked_encoder::ChunkedEncoder::<'e, E>::encode`\n   --> src/chunked_encoder.rs:28:22\n    |\n28  |     pub fn encode<S: Sink>(&self, bytes: &[u8], sink: &mut S) -> Result<(), S::Error> {\n    |                      ^^^^ required by this bound in `ChunkedEncoder::<'e, E>::encode`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct MockEngine {",
+                  "        config: MockConfig,",
+                  "    }",
+                  "",
+                  "    impl Engine for MockEngine {",
+                  "        type Config = MockConfig;",
+                  "        type DecodeEstimate = usize;",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            let encoded_len = input.len(); ",
+                  "            output[..encoded_len].copy_from_slice(input);",
+                  "            encoded_len",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {",
+                  "            input_len",
+                  "        }",
+                  "",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _input: &[u8],",
+                  "            _output: &mut [u8],",
+                  "            _decode_estimate: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &self.config",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockConfig {",
+                  "        padding: bool,",
+                  "    }",
+                  "",
+                  "    impl Config for MockConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            self.padding",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MockSink {",
+                  "        data: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl MockSink {",
+                  "        fn new() -> Self {",
+                  "            MockSink { data: Vec::new() }",
+                  "        }",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, bytes: &[u8]) -> Result<(), String> {",
+                  "            self.data.extend_from_slice(bytes);",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let engine = MockEngine { config: MockConfig { padding: true } };",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "    let input = vec![1u8; 1025]; // One more than a full chunk",
+                  "    let mut sink = MockSink::new();",
+                  "    ",
+                  "    let result = encoder.encode(&input, &mut sink);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    assert!(!sink.data.is_empty()); // Ensure something was written",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling semver v1.0.26\n   Compiling libc v0.2.171\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling zerocopy v0.8.24\n   Compiling serde v1.0.219\n   Compiling proc-macro-error v1.0.4\n   Compiling indexmap v1.9.3\n   Compiling num-traits v0.2.19\n   Compiling serde_json v1.0.140\n   Compiling rustversion v1.0.20\n   Compiling rayon-core v1.12.1\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling crossbeam-deque v0.8.6\n   Compiling syn v2.0.100\n   Compiling plotters v0.3.7\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-lock v3.4.0\n   Compiling async-channel v2.3.1\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling clap_derive v3.2.25\n   Compiling async-attributes v1.1.2\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:203:21\n    |\n203 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:203:37\n    |\n203 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:186:31\n    |\n186 |         type DecodeEstimate = usize;\n    |                               ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nerror[E0277]: the trait bound `MockSink: chunked_encoder::Sink` is not satisfied\n   --> src/chunked_encoder.rs:242:41\n    |\n242 |     let result = encoder.encode(&input, &mut sink);\n    |                          ------         ^^^^^^^^^ the trait `chunked_encoder::Sink` is not implemented for `MockSink`\n    |                          |\n    |                          required by a bound introduced by this call\n    |\n    = help: the trait `chunked_encoder::Sink` is implemented for `chunked_encoder::StringSink<'a>`\nnote: required by a bound in `chunked_encoder::ChunkedEncoder::<'e, E>::encode`\n   --> src/chunked_encoder.rs:28:22\n    |\n28  |     pub fn encode<S: Sink>(&self, bytes: &[u8], sink: &mut S) -> Result<(), S::Error> {\n    |                      ^^^^ required by this bound in `ChunkedEncoder::<'e, E>::encode`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 7,
+      "prompt_conds": [
+        "// constraint: chunk in bytes.chunks(CHUNK_SIZE) is false\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct DummyEngine;",
+                  "",
+                  "    impl Engine for DummyEngine {",
+                  "        type Config = DummyConfig;",
+                  "        type DecodeEstimate = usize;",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            output[..input.len()].copy_from_slice(input);",
+                  "            input.len()",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {",
+                  "            input_len",
+                  "        }",
+                  "",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _input: &[u8],",
+                  "            _output: &mut [u8],",
+                  "            _decode_estimate: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &DummyConfig",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct DummyConfig;",
+                  "",
+                  "    impl Config for DummyConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            true",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct DummySink {",
+                  "        output: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl DummySink {",
+                  "        fn new() -> Self {",
+                  "            DummySink { output: Vec::new() }",
+                  "        }",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, bytes: &[u8]) -> Result<(), ()> {",
+                  "            self.output.extend_from_slice(bytes);",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let engine = DummyEngine;",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "    let input_data = vec![1, 2, 3, 4, 5, 6]; // total 6 bytes, small enough to prevent chunk conditions",
+                  "    let mut sink = DummySink::new();",
+                  "",
+                  "    let result = encoder.encode(&input_data, &mut sink);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(sink.output, input_data);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling libc v0.2.171\n   Compiling semver v1.0.26\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling zerocopy v0.8.24\n   Compiling serde v1.0.219\n   Compiling proc-macro-error v1.0.4\n   Compiling indexmap v1.9.3\n   Compiling num-traits v0.2.19\n   Compiling rustversion v1.0.20\n   Compiling rayon-core v1.12.1\n   Compiling serde_json v1.0.140\n   Compiling rustc_version v0.4.1\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling syn v2.0.100\n   Compiling plotters v0.3.7\n   Compiling crossbeam-deque v0.8.6\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-lock v3.4.0\n   Compiling async-channel v2.3.1\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-attributes v1.1.2\n   Compiling clap_derive v3.2.25\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:200:21\n    |\n200 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:200:37\n    |\n200 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:184:31\n    |\n184 |         type DecodeEstimate = usize;\n    |                               ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nerror[E0277]: the trait bound `DummySink: chunked_encoder::Sink` is not satisfied\n   --> src/chunked_encoder.rs:237:46\n    |\n237 |     let result = encoder.encode(&input_data, &mut sink);\n    |                          ------              ^^^^^^^^^ the trait `chunked_encoder::Sink` is not implemented for `DummySink`\n    |                          |\n    |                          required by a bound introduced by this call\n    |\n    = help: the trait `chunked_encoder::Sink` is implemented for `chunked_encoder::StringSink<'a>`\nnote: required by a bound in `chunked_encoder::ChunkedEncoder::<'e, E>::encode`\n   --> src/chunked_encoder.rs:28:22\n    |\n28  |     pub fn encode<S: Sink>(&self, bytes: &[u8], sink: &mut S) -> Result<(), S::Error> {\n    |                      ^^^^ required by this bound in `ChunkedEncoder::<'e, E>::encode`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct DummyEngine;",
+                  "",
+                  "    impl Engine for DummyEngine {",
+                  "        type Config = DummyConfig;",
+                  "        type DecodeEstimate = usize;",
+                  "",
+                  "        fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {",
+                  "            output[..input.len()].copy_from_slice(input);",
+                  "            input.len()",
+                  "        }",
+                  "",
+                  "        fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {",
+                  "            input_len",
+                  "        }",
+                  "        ",
+                  "        fn internal_decode(",
+                  "            &self,",
+                  "            _input: &[u8],",
+                  "            _output: &mut [u8],",
+                  "            _decode_estimate: Self::DecodeEstimate,",
+                  "        ) -> Result<DecodeMetadata, DecodeSliceError> {",
+                  "            unimplemented!()",
+                  "        }",
+                  "",
+                  "        fn config(&self) -> &Self::Config {",
+                  "            &DummyConfig",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct DummyConfig;",
+                  "",
+                  "    impl Config for DummyConfig {",
+                  "        fn encode_padding(&self) -> bool {",
+                  "            true",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct DummySink {",
+                  "        output: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl DummySink {",
+                  "        fn new() -> Self {",
+                  "            DummySink { output: Vec::new() }",
+                  "        }",
+                  "",
+                  "        fn write_encoded_bytes(&mut self, bytes: &[u8]) -> Result<(), ()> {",
+                  "            self.output.extend_from_slice(bytes);",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let engine = DummyEngine;",
+                  "    let encoder = ChunkedEncoder::new(&engine);",
+                  "    let input_data = vec![1, 2, 3, 4, 5]; // 5 bytes to ensure padding is required",
+                  "    let mut sink = DummySink::new();",
+                  "",
+                  "    let result = encoder.encode(&input_data, &mut sink);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(sink.output, vec![1, 2, 3, 4, 5, 0, 0, 0]); // Expecting padding added",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.94\n   Compiling crossbeam-utils v0.8.21\n   Compiling syn v1.0.109\n   Compiling semver v1.0.26\n   Compiling libc v0.2.171\n   Compiling rustix v0.38.44\n   Compiling slab v0.4.9\n   Compiling proc-macro-error-attr v1.0.4\n   Compiling serde v1.0.219\n   Compiling zerocopy v0.8.24\n   Compiling proc-macro-error v1.0.4\n   Compiling indexmap v1.9.3\n   Compiling num-traits v0.2.19\n   Compiling serde_json v1.0.140\n   Compiling rayon-core v1.12.1\n   Compiling rustversion v1.0.20\n   Compiling rustc_version v0.4.1\n   Compiling concurrent-queue v2.5.0\n   Compiling crossbeam-epoch v0.9.18\n   Compiling rstest_macros v0.13.0\n   Compiling rstest_reuse v0.6.0\n   Compiling quote v1.0.40\n   Compiling event-listener v5.4.0\n   Compiling async-executor v1.13.1\n   Compiling async-channel v1.9.0\n   Compiling crossbeam-deque v0.8.6\n   Compiling syn v2.0.100\n   Compiling plotters v0.3.7\n   Compiling event-listener-strategy v0.5.4\n   Compiling async-channel v2.3.1\n   Compiling async-lock v3.4.0\n   Compiling blocking v1.6.1\n   Compiling rayon v1.10.0\n   Compiling getrandom v0.2.15\n   Compiling atty v0.2.14\n   Compiling rand_core v0.6.4\n   Compiling ppv-lite86 v0.2.21\n   Compiling rand_chacha v0.3.1\n   Compiling rand v0.8.5\n   Compiling polling v3.7.4\n   Compiling async-io v2.4.0\n   Compiling async-global-executor v2.4.1\n   Compiling serde_derive v1.0.219\n   Compiling futures-macro v0.3.31\n   Compiling strum_macros v0.25.3\n   Compiling async-attributes v1.1.2\n   Compiling clap_derive v3.2.25\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling async-std v1.13.1\n   Compiling ntest v0.9.3\n   Compiling futures-util v0.3.31\n   Compiling strum v0.25.0\n   Compiling clap v3.2.25\n   Compiling futures-executor v0.3.31\n   Compiling futures v0.3.31\n   Compiling rstest v0.13.0\n   Compiling ciborium v0.2.2\n   Compiling tinytemplate v1.2.1\n   Compiling criterion v0.4.0\n   Compiling base64 v0.22.1 (/home/abezbm/rust-utgen-test-crates-new/rust-base64)\nerror[E0412]: cannot find type `DecodeMetadata` in this scope\n   --> src/chunked_encoder.rs:200:21\n    |\n200 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                     ^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this struct\n    |\n175 +    use crate::engine::DecodeMetadata;\n    |\n\nerror[E0412]: cannot find type `DecodeSliceError` in this scope\n   --> src/chunked_encoder.rs:200:37\n    |\n200 |         ) -> Result<DecodeMetadata, DecodeSliceError> {\n    |                                     ^^^^^^^^^^^^^^^^ not found in this scope\n    |\nhelp: consider importing this enum through its public re-export\n    |\n175 +    use crate::DecodeSliceError;\n    |\n\nwarning: unused import: `rstest_reuse`\n   --> src/lib.rs:272:5\n    |\n272 | use rstest_reuse;\n    |     ^^^^^^^^^^^^\n    |\n    = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `PAD`\n  --> src/chunked_encoder.rs:82:73\n   |\n82 |         engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig, PAD},\n   |                                                                         ^^^\n\nwarning: unused import: `ntest::timeout`\n   --> src/chunked_encoder.rs:176:8\n    |\n176 |    use ntest::timeout;\n    |        ^^^^^^^^^^^^^^\n\nwarning: unused import: `chunked_encode_matches_normal_encode_random`\n  --> src/display.rs:58:9\n   |\n58 |         chunked_encode_matches_normal_encode_random, SinkTestHelper,\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n  --> src/display.rs:61:9\n   |\n61 |     use crate::engine::general_purpose::STANDARD;\n   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `iter`\n --> src/read/decoder_tests.rs:4:5\n  |\n4 |     iter,\n  |     ^^^^\n\nwarning: unused import: `RngCore as _`\n --> src/read/decoder_tests.rs:7:22\n  |\n7 | use rand::{Rng as _, RngCore as _};\n  |                      ^^^^^^^^^^^^\n\nwarning: unused imports: `BUF_SIZE` and `DecoderReader`\n --> src/read/decoder_tests.rs:9:22\n  |\n9 | use super::decoder::{DecoderReader, BUF_SIZE};\n  |                      ^^^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `DecodeError`, `Engine`, `GeneralPurpose`, `PAD_BYTE`, `alphabet`, `general_purpose::STANDARD`, `random_alphabet`, `random_config`, and `random_engine`\n  --> src/read/decoder_tests.rs:11:5\n   |\n11 |     alphabet,\n   |     ^^^^^^^^\n12 |     engine::{general_purpose::STANDARD, Engine, GeneralPurpose},\n   |              ^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^  ^^^^^^^^^^^^^^\n13 |     tests::{random_alphabet, random_config, random_engine},\n   |             ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n14 |     DecodeError, PAD_BYTE,\n   |     ^^^^^^^^^^^  ^^^^^^^^\n\nwarning: unused imports: `engine::Engine`, `tests::random_engine`, and `write::encoder_string_writer::EncoderStringWriter`\n   --> src/write/encoder_string_writer.rs:139:9\n    |\n139 |         engine::Engine, tests::random_engine, write::encoder_string_writer::EncoderStringWriter,\n    |         ^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `rand::Rng`\n   --> src/write/encoder_string_writer.rs:141:9\n    |\n141 |     use rand::Rng;\n    |         ^^^^^^^^^\n\nwarning: unused import: `std::cmp`\n   --> src/write/encoder_string_writer.rs:142:9\n    |\n142 |     use std::cmp;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::io::Write`\n   --> src/write/encoder_string_writer.rs:143:9\n    |\n143 |     use std::io::Write;\n    |         ^^^^^^^^^^^^^^\n\nwarning: unused import: `Cursor`\n --> src/write/encoder_tests.rs:1:15\n  |\n1 | use std::io::{Cursor, Write};\n  |               ^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/engine/general_purpose/decode.rs:302:9\n    |\n302 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `crate::engine::general_purpose::STANDARD`\n   --> src/engine/general_purpose/decode.rs:304:9\n    |\n304 |     use crate::engine::general_purpose::STANDARD;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `crate::alphabet::*`\n   --> src/alphabet.rs:211:9\n    |\n211 |     use crate::alphabet::*;\n    |         ^^^^^^^^^^^^^^^^^^\n\nwarning: unused import: `core::convert::TryFrom as _`\n   --> src/alphabet.rs:212:9\n    |\n212 |     use core::convert::TryFrom as _;\n    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: unused imports: `STANDARD`, `random_config`, and `random_engine`\n   --> src/encode.rs:169:59\n    |\n169 |         engine::general_purpose::{GeneralPurpose, NO_PAD, STANDARD},\n    |                                                           ^^^^^^^^\n170 |         tests::{assert_encode_sanity, random_config, random_engine},\n    |                                       ^^^^^^^^^^^^^  ^^^^^^^^^^^^^\n\nwarning: unused imports: `Distribution` and `Uniform`\n   --> src/encode.rs:173:25\n    |\n173 |         distributions::{Distribution, Uniform},\n    |                         ^^^^^^^^^^^^  ^^^^^^^\n\nwarning: unused import: `std::str`\n   --> src/encode.rs:176:9\n    |\n176 |     use std::str;\n    |         ^^^^^^^^\n\nwarning: unused imports: `alphabet` and `general_purpose`\n   --> src/decode.rs:160:9\n    |\n160 |         alphabet,\n    |         ^^^^^^^^\n161 |         engine::{general_purpose, Config, GeneralPurpose},\n    |                  ^^^^^^^^^^^^^^^\n\nwarning: unused import: `super::*`\n   --> src/decode.rs:348:9\n    |\n348 |     use super::*;\n    |         ^^^^^^^^\n\nwarning: unused import: `std::error::Error`\n   --> src/decode.rs:349:9\n    |\n349 |     use std::error::Error;\n    |         ^^^^^^^^^^^^^^^^^\n\nerror[E0277]: the trait bound `usize: DecodeEstimate` is not satisfied\n   --> src/chunked_encoder.rs:184:31\n    |\n184 |         type DecodeEstimate = usize;\n    |                               ^^^^^ the trait `DecodeEstimate` is not implemented for `usize`\n    |\n    = help: the following other types implement trait `DecodeEstimate`:\n              GeneralPurposeEstimate\n              NaiveEstimate\nnote: required by a bound in `engine::Engine::DecodeEstimate`\n   --> src/engine/mod.rs:43:26\n    |\n43  |     type DecodeEstimate: DecodeEstimate;\n    |                          ^^^^^^^^^^^^^^ required by this bound in `Engine::DecodeEstimate`\n\nerror[E0277]: the trait bound `DummySink: chunked_encoder::Sink` is not satisfied\n   --> src/chunked_encoder.rs:237:46\n    |\n237 |     let result = encoder.encode(&input_data, &mut sink);\n    |                          ------              ^^^^^^^^^ the trait `chunked_encoder::Sink` is not implemented for `DummySink`\n    |                          |\n    |                          required by a bound introduced by this call\n    |\n    = help: the trait `chunked_encoder::Sink` is implemented for `chunked_encoder::StringSink<'a>`\nnote: required by a bound in `chunked_encoder::ChunkedEncoder::<'e, E>::encode`\n   --> src/chunked_encoder.rs:28:22\n    |\n28  |     pub fn encode<S: Sink>(&self, bytes: &[u8], sink: &mut S) -> Result<(), S::Error> {\n    |                      ^^^^ required by this bound in `ChunkedEncoder::<'e, E>::encode`\n\nwarning: unused import: `Read`\n --> src/read/decoder_tests.rs:3:16\n  |\n3 |     io::{self, Read as _},\n  |                ^^^^\n\nSome errors have detailed explanations: E0277, E0412.\nFor more information about an error, try `rustc --explain E0277`.\nwarning: `base64` (lib test) generated 25 warnings\nerror: could not compile `base64` (lib test) due to 4 previous errors; 25 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

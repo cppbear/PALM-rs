@@ -1,0 +1,310 @@
+{
+  "name": "serde_json::ser::indent",
+  "name_with_impl": "serde_json::ser::indent",
+  "mod_info": {
+    "name": "ser",
+    "loc": "src/lib.rs:423:1:423:13"
+  },
+  "visible": false,
+  "loc": "src/ser.rs:2268:1:2277:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: _ in 0..n is true\n",
+        "// constraint: wr.write_all(s) matches core::result::Result::Err(err) is true\n",
+        "// expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::cell::RefCell;",
+            "use std::io;",
+            "use std::io::Cursor;"
+          ],
+          "has_test_mod": false,
+          "common": [
+            "fn test_indent_with_zero_iterations() {",
+            "",
+            "    let mut buffer = Cursor::new(Vec::new());",
+            "    let result = indent(&mut buffer, 0, b\"test\");",
+            "    assert!(result.is_ok());",
+            "}",
+            "",
+            "fn test_indent_with_error_on_write() {",
+            "",
+            "    struct FailingWrite {",
+            "        count: usize,",
+            "    }",
+            "",
+            "    impl io::Write for FailingWrite {",
+            "        fn write(&mut self, _: &[u8]) -> io::Result<usize> {",
+            "            if self.count < 1 {",
+            "                self.count += 1;",
+            "                Err(io::Error::new(io::ErrorKind::Other, \"write error\"))",
+            "            } else {",
+            "                Ok(0)",
+            "            }",
+            "        }",
+            "",
+            "        fn flush(&mut self) -> io::Result<()> {",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut failing_writer = FailingWrite { count: 0 };",
+            "    let result = indent(&mut failing_writer, 1, b\"test\");",
+            "    assert!(result.is_err());",
+            "}"
+          ],
+          "chain_tests": []
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: _ in 0..n is true\n",
+        "// constraint: wr.write_all(s) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: wr.write_all(s) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: _ in 0..n is false\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::io::Write;",
+            "use std::io::Cursor;"
+          ],
+          "has_test_mod": false,
+          "common": [
+            "#[should_panic]",
+            "fn test_indent_panic_on_write_error() {",
+            "    struct ErrorWriter;",
+            "",
+            "    impl Write for ErrorWriter {",
+            "        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {",
+            "            Err(std::io::Error::new(std::io::ErrorKind::Other, \"error\"))",
+            "        }",
+            "",
+            "        fn flush(&mut self) -> std::io::Result<()> {",
+            "            Ok(())",
+            "        }",
+            "    }",
+            "",
+            "    let mut writer = ErrorWriter;",
+            "    let n = 1;",
+            "    let s = b\"panic\\n\";",
+            "",
+            "    let _ = indent(&mut writer, n, s);",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::io::Cursor;",
+                  "",
+                  "    let mut writer = Cursor::new(Vec::new());",
+                  "    let n = 3;",
+                  "    let s = b\"test\\n\";",
+                  "",
+                  "    let result = indent(&mut writer, n, s);",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(writer.get_ref(), b\"test\\ntest\\ntest\\n\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling rustversion v1.0.20\n   Compiling ref-cast v1.0.24\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nerror[E0405]: cannot find trait `Write` in this scope\n    --> src/ser.rs:2286:10\n     |\n2286 |     impl Write for ErrorWriter {\n     |          ^^^^^ not found in this scope\n     |\nhelp: consider importing one of these traits\n     |\n2280 +    use crate::io::Write;\n     |\n2280 +    use crate::ser::fmt::Write;\n     |\n2280 +    use std::fmt::Write;\n     |\n2280 +    use std::io::Write;\n     |\n       and 2 other candidates\n\nwarning: unused import: `ntest::timeout`\n    --> src/ser.rs:2281:8\n     |\n2281 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0405`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::io::Cursor;",
+                  "",
+                  "    let mut writer = Cursor::new(Vec::new());",
+                  "    let n = 0;",
+                  "    let s = b\"test\\n\";",
+                  "",
+                  "    let result = indent(&mut writer, n, s);",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(writer.get_ref(), b\"\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling serde_json v1.0.140\n   Compiling target-triple v0.1.4\n   Compiling ref-cast v1.0.24\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling serde_spanned v0.6.8\n   Compiling toml_datetime v0.6.9\n   Compiling serde_stacker v0.1.12\n   Compiling serde_bytes v0.11.17\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nerror[E0405]: cannot find trait `Write` in this scope\n    --> src/ser.rs:2286:10\n     |\n2286 |     impl Write for ErrorWriter {\n     |          ^^^^^ not found in this scope\n     |\nhelp: consider importing one of these traits\n     |\n2280 +    use crate::io::Write;\n     |\n2280 +    use crate::ser::fmt::Write;\n     |\n2280 +    use std::fmt::Write;\n     |\n2280 +    use std::io::Write;\n     |\n       and 2 other candidates\n\nwarning: unused import: `ntest::timeout`\n    --> src/ser.rs:2281:8\n     |\n2281 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0405`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::io::Cursor;",
+                  "",
+                  "    let mut writer = Cursor::new(Vec::new());",
+                  "    let n = 1;",
+                  "    let s = b\"line\\n\";",
+                  "",
+                  "    let result = indent(&mut writer, n, s);",
+                  "",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(writer.get_ref(), b\"line\\n\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling rustversion v1.0.20\n   Compiling ref-cast v1.0.24\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_bytes v0.11.17\n   Compiling serde_stacker v0.1.12\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nerror[E0405]: cannot find trait `Write` in this scope\n    --> src/ser.rs:2286:10\n     |\n2286 |     impl Write for ErrorWriter {\n     |          ^^^^^ not found in this scope\n     |\nhelp: consider importing one of these traits\n     |\n2280 +    use crate::io::Write;\n     |\n2280 +    use crate::ser::fmt::Write;\n     |\n2280 +    use std::fmt::Write;\n     |\n2280 +    use std::io::Write;\n     |\n       and 2 other candidates\n\nwarning: unused import: `ntest::timeout`\n    --> src/ser.rs:2281:8\n     |\n2281 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0405`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: _ in 0..n is false\n",
+        "// expected return value/type: Ok(())\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::io;",
+            "use std::vec::Vec;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::io;",
+                  "    use std::vec::Vec;",
+                  "",
+                  "    // Creating a writable vector",
+                  "    let mut buffer = Vec::new();",
+                  "    let n = 0;",
+                  "    let s = b\"test\";",
+                  "",
+                  "    // Calling indent function with n = 0 should not panic and should return Ok(())",
+                  "    let result = indent(&mut buffer, n, s);",
+                  "    assert!(result.is_ok());",
+                  "    assert!(buffer.is_empty()); // buffer should be empty as n is 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::io;",
+                  "    use std::vec::Vec;",
+                  "",
+                  "    // Creating a writable vector",
+                  "    let mut buffer = Vec::new();",
+                  "    let n = 1;",
+                  "    let s = b\"test\";",
+                  "",
+                  "    // Calling indent function with n = 1 should return Ok(()), and buffer should contain \"test\"",
+                  "    let result = indent(&mut buffer, n, s);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(buffer.as_slice(), b\"test\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::io;",
+                  "    use std::vec::Vec;",
+                  "",
+                  "    // Creating a writable vector",
+                  "    let mut buffer = Vec::new();",
+                  "    let n = 3;",
+                  "    let s = b\"test\";",
+                  "",
+                  "    // Calling indent function with n = 3 should return Ok(()), and buffer should contain \"testtesttest\"",
+                  "    let result = indent(&mut buffer, n, s);",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(buffer.as_slice(), b\"testtesttest\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

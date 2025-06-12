@@ -1,0 +1,43 @@
+// Answer 0
+
+#[test]
+fn test_has_subexprs_group_with_single_literal() {
+    let span = Span { start: 0, end: 1 };
+    let literal = Literal { span, kind: LiteralKind::Unicode, c: 'a' };
+    let hir = Hir { kind: HirKind::Literal(literal), info: HirInfo::default() };
+    let group = Group { span, kind: GroupKind::Capturing(0), ast: Box::new(hir) };
+    let hir_kind = HirKind::Group(group);
+    hir_kind.has_subexprs();
+}
+
+#[test]
+fn test_has_subexprs_group_with_repetition() {
+    let span = Span { start: 0, end: 1 };
+    let repetition = Repetition { span, op: RepetitionOp::Star, greedy: true, ast: Box::new(Hir { kind: HirKind::Literal(Literal { span, kind: LiteralKind::Unicode, c: 'b' }), info: HirInfo::default() }) };
+    let group = Group { span, kind: GroupKind::Capturing(1), ast: Box::new(Hir { kind: HirKind::Repetition(repetition), info: HirInfo::default() }) };
+    let hir_kind = HirKind::Group(group);
+    hir_kind.has_subexprs();
+}
+
+#[test]
+fn test_has_subexprs_group_with_concat() {
+    let span = Span { start: 0, end: 3 };
+    let lit1 = Literal { span: Span { start: 0, end: 1 }, kind: LiteralKind::Unicode, c: 'c' };
+    let lit2 = Literal { span: Span { start: 1, end: 2 }, kind: LiteralKind::Unicode, c: 'd' };
+    let concat = vec![Hir { kind: HirKind::Literal(lit1), info: HirInfo::default() }, Hir { kind: HirKind::Literal(lit2), info: HirInfo::default() }];
+    let group = Group { span, kind: GroupKind::Capturing(2), ast: Box::new(Hir { kind: HirKind::Concat(concat), info: HirInfo::default() }) };
+    let hir_kind = HirKind::Group(group);
+    hir_kind.has_subexprs();
+}
+
+#[test]
+fn test_has_subexprs_group_with_alternation() {
+    let span = Span { start: 0, end: 4 };
+    let lit1 = Literal { span: Span { start: 0, end: 1 }, kind: LiteralKind::Unicode, c: 'e' };
+    let lit2 = Literal { span: Span { start: 1, end: 2 }, kind: LiteralKind::Unicode, c: 'f' };
+    let alternation = vec![Hir { kind: HirKind::Literal(lit1), info: HirInfo::default() }, Hir { kind: HirKind::Literal(lit2), info: HirInfo::default() }];
+    let group = Group { span, kind: GroupKind::Capturing(3), ast: Box::new(Hir { kind: HirKind::Alternation(alternation), info: HirInfo::default() }) };
+    let hir_kind = HirKind::Group(group);
+    hir_kind.has_subexprs();
+}
+

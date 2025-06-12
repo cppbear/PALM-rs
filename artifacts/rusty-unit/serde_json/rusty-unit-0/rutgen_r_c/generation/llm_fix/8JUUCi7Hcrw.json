@@ -1,0 +1,286 @@
+{
+  "name": "serde_json::ser::to_vec_pretty",
+  "name_with_impl": "serde_json::ser::to_vec_pretty",
+  "mod_info": {
+    "name": "ser",
+    "loc": "src/lib.rs:423:1:423:13"
+  },
+  "visible": true,
+  "loc": "src/ser.rs:2221:1:2228:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: to_writer_pretty(&mut writer, value) matches core::result::Result::Err(err) is true\n",
+        "// expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::collections::HashMap;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct NonSerializable;",
+                  "    ",
+                  "    // Attempting to serialize a struct that does not implement Serialize",
+                  "    let value = NonSerializable;",
+                  "    ",
+                  "    let result: Result<Vec<u8>> = to_vec_pretty(&value);",
+                  "    assert!(result.is_err());  // Must return an error due to non-serializability",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0277]: the trait bound `NonSerializable: Serialize` is not satisfied\n    --> src/ser.rs:2293:49\n     |\n2293 |     let result: Result<Vec<u8>> = to_vec_pretty(&value);\n     |                                   ------------- ^^^^^^ the trait `Serialize` is not implemented for `NonSerializable`\n     |                                   |\n     |                                   required by a bound introduced by this call\n     |\n     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `NonSerializable` type\n     = note: for types from other crates check whether the crate offers a `serde` feature flag\n     = help: the following other types implement trait `Serialize`:\n               &'a T\n               &'a mut T\n               ()\n               (T,)\n               (T0, T1)\n               (T0, T1, T2)\n               (T0, T1, T2, T3)\n               (T0, T1, T2, T3, T4)\n             and 131 others\nnote: required by a bound in `ser::to_vec_pretty`\n    --> src/ser.rs:2223:17\n     |\n2221 | pub fn to_vec_pretty<T>(value: &T) -> Result<Vec<u8>>\n     |        ------------- required by a bound in this function\n2222 | where\n2223 |     T: ?Sized + Serialize,\n     |                 ^^^^^^^^^ required by this bound in `to_vec_pretty`\n\nFor more information about this error, try `rustc --explain E0277`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::collections::HashMap;",
+                  "",
+                  "    struct NonStringKeyStruct;",
+                  "",
+                  "    impl Serialize for NonStringKeyStruct {",
+                  "        // Implementing Serialize for a struct that contains a HashMap with non-string keys",
+                  "       fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>",
+                  "       where",
+                  "           S: serde::Serializer,",
+                  "       {",
+                  "           let mut map = HashMap::new();",
+                  "           // Using an integer as a key which is not allowed",
+                  "           map.insert(1, \"value\");",
+                  "           return Err(serde::ser::Error::custom(\"Non-string keys not allowed\"));",
+                  "       }",
+                  "   }",
+                  "",
+                  "   let value = NonStringKeyStruct;",
+                  "   ",
+                  "   let result: Result<Vec<u8>> = to_vec_pretty(&value);",
+                  "   assert!(result.is_err());  // Must return an error due to non-string keys in the map",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0433]: failed to resolve: use of undeclared crate or module `result`\n    --> src/ser.rs:2294:49\n     |\n2294 |        fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>\n     |                                                 ^^^^^^ use of undeclared crate or module `result`\n     |\nhelp: a type alias with a similar name exists\n     |\n2294 |        fn serialize<S>(&self, serializer: S) -> Result::Result<S::Ok, S::Error>\n     |                                                 ~~~~~~\nhelp: consider importing this module\n     |\n2280 +    use std::result;\n     |\n\nFor more information about this error, try `rustc --explain E0433`.\nerror: could not compile `serde_json` (lib test) due to 1 previous error\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: to_writer_pretty(&mut writer, value) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: to_writer_pretty(&mut writer, value) matches core::result::Result::Ok(val) is true\n",
+        "// expected return value/type: Ok(writer)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let value = \"\";",
+                  "   let result = to_string_pretty(&value);",
+                  "   assert!(result.is_ok());",
+                  "   let serialized = result.unwrap();",
+                  "   assert_eq!(serialized.as_bytes(), b\"\\\"\\\"\"); // Pretty-printed JSON for an empty string",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let value = 42;  ",
+                  "   let result = to_vec_pretty(&value);  ",
+                  "   assert!(result.is_ok());  ",
+                  "   let serialized = result.unwrap();  ",
+                  "   assert_eq!(serialized, br#\"42\"#);  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = 3.14;",
+                  "    let result = serde_json::to_vec_pretty(&value);",
+                  "    assert!(result.is_ok());",
+                  "    let serialized = result.unwrap();",
+                  "    assert_eq!(serialized, b\"3.14\"); // Pretty-printed JSON for a float",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nwarning: unused import: `super::*`\n    --> src/ser.rs:2280:8\n     |\n2280 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> src/ser.rs:2289:18\n     |\n2289 |     let result = serde_json::to_vec_pretty(&value);\n     |                  ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let value = true;",
+                  "   let result = to_string_pretty(&value);",
+                  "   assert!(result.is_ok());",
+                  "   let serialized = result.unwrap();",
+                  "   assert_eq!(serialized.as_bytes(), b\"true\"); // Pretty-printed JSON for a boolean",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let value = [1, 2, 3];  ",
+                  "   let result = to_string_pretty(&value);  ",
+                  "   assert!(result.is_ok());  ",
+                  "   let serialized = result.unwrap();  ",
+                  "   assert_eq!(serialized.as_bytes(), b\"[1, 2, 3]\\n\");  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let value = serde_json::json!({\"key\": \"value\", \"number\": 1});",
+                  "    let result = serde_json::to_vec_pretty(&value);",
+                  "    assert!(result.is_ok());",
+                  "    let serialized = result.unwrap();",
+                  "    assert_eq!(serialized, b\"{\\\"key\\\":\\\"value\\\",\\\"number\\\":1}\"); // Pretty-printed JSON for an object",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> src/ser.rs:2288:17\n     |\n2288 |     let value = serde_json::json!({\"key\": \"value\", \"number\": 1});\n     |                 ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nwarning: unused import: `super::*`\n    --> src/ser.rs:2280:8\n     |\n2280 |    use super::*;\n     |        ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0433]: failed to resolve: use of undeclared crate or module `serde_json`\n    --> src/ser.rs:2289:18\n     |\n2289 |     let result = serde_json::to_vec_pretty(&value);\n     |                  ^^^^^^^^^^ use of undeclared crate or module `serde_json`\n\nFor more information about this error, try `rustc --explain E0433`.\nwarning: `serde_json` (lib test) generated 1 warning\nerror: could not compile `serde_json` (lib test) due to 2 previous errors; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   #[derive(serde::Serialize)]",
+                  "   struct NonSerializable;",
+                  "   ",
+                  "   let value = NonSerializable;",
+                  "   let result = to_vec_pretty(&value); // Changed to use local function",
+                  "   assert!(result.is_err()); // Should trigger serialization error",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

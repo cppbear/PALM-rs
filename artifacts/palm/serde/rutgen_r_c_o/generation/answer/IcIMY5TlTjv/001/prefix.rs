@@ -1,0 +1,57 @@
+// Answer 0
+
+#[test]
+fn test_serialize_unit_with_valid_serializer() {
+    struct MockSerializer;
+    impl Serializer for MockSerializer {
+        type Ok = ();
+        type Error = ();
+        type SerializeSeq = Impossible<Self::Ok, Self::Error>;
+        type SerializeTuple = Impossible<Self::Ok, Self::Error>;
+        type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
+        type SerializeMap = Impossible<Self::Ok, Self::Error>;
+        type SerializeStruct = Impossible<Self::Ok, Self::Error>;
+        type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
+        type SerializeStructVariant = Impossible<Self::Ok, Self::Error>;
+        fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
+            Ok(())
+        }
+        fn serialize_unit_struct(self, _: &'static str) -> Result<Self::Ok, Self::Error> {
+            Ok(())
+        }
+        fn serialize_unit_variant(self, _: &'static str, _: u32, _: &'static str) -> Result<Self::Ok, Self::Error> {
+            Ok(())
+        }
+        fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
+            Ok(())
+        }
+        // Implement other required methods as no-op
+    }
+
+    let serializer = MockSerializer;
+    serializer.serialize_unit();
+}
+
+#[test]
+fn test_serialize_unit_on_empty_serializer() {
+    struct EmptySerializer;
+    impl Serializer for EmptySerializer {
+        type Ok = ();
+        type Error = ();
+        type SerializeSeq = Impossible<Self::Ok, Self::Error>;
+        type SerializeTuple = Impossible<Self::Ok, Self::Error>;
+        type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
+        type SerializeMap = Impossible<Self::Ok, Self::Error>;
+        type SerializeStruct = Impossible<Self::Ok, Self::Error>;
+        type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
+        type SerializeStructVariant = Impossible<Self::Ok, Self::Error>;
+        fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
+            Ok(())
+        }
+        // Implement other required methods as no-op
+    }
+
+    let serializer = EmptySerializer;
+    serializer.serialize_unit();
+}
+

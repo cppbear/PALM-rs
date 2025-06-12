@@ -1,0 +1,282 @@
+{
+  "name": "bytes::bytes::promotable_to_vec",
+  "name_with_impl": "bytes::bytes::promotable_to_vec",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1221:1:1245:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::ptr;",
+            "use std::ptr::AtomicPtr;",
+            "use std::sync::Arc;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::AtomicPtr;",
+                  "    use std::ptr;",
+                  "    use std::sync::Arc;",
+                  "    use std::sync::atomic::Ordering;",
+                  "    ",
+                  "    const KIND_MASK: usize = 0b11;",
+                  "    const KIND_ARC: usize = 0;",
+                  "    ",
+                  "    // Simulating the shared state with Arc",
+                  "    let data: AtomicPtr<()> = AtomicPtr::new(Arc::into_raw(Arc::new(0)) as *mut ());",
+                  "    let len: usize = 10;",
+                  "    let ptr: *const u8 = vec![1u8; len].as_ptr(); // Example buffer filled with some data",
+                  "",
+                  "    let result = unsafe {",
+                  "        promotable_to_vec(data.load(Ordering::Acquire), ptr, len, |shared| {",
+                  "            // Since kind == KIND_ARC, we can simulate the Arc point",
+                  "            (shared as *mut usize).cast::<u8>()",
+                  "        })",
+                  "    };",
+                  "",
+                  "    assert_eq!(result.len(), len);",
+                  "    for i in 0..len {",
+                  "        assert_eq!(result[i], 1u8);",
+                  "    }",
+                  "",
+                  "    // Clean up",
+                  "    unsafe {",
+                  "        Arc::from_raw(data.load(Ordering::Acquire) as *mut Arc<usize>);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0432]: unresolved import `std::ptr::AtomicPtr`\n    --> src/bytes.rs:1688:9\n     |\n1688 |     use std::ptr::AtomicPtr;\n     |         ^^^^^^^^^^^^^^^^^^^ no `AtomicPtr` in `ptr`\n     |\nhelp: consider importing one of these structs instead\n     |\n1688 |     use crate::loom::sync::atomic::AtomicPtr;\n     |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n1688 |     use std::sync::atomic::AtomicPtr;\n     |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `std::ptr`\n    --> src/bytes.rs:1689:9\n     |\n1689 |     use std::ptr;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nFor more information about this error, try `rustc --explain E0432`.\nwarning: `bytes` (lib test) generated 3 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 3 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::ptr;",
+            "use std::ptr::AtomicPtr;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::AtomicPtr;",
+                  "    use std::ptr;",
+                  "    use std::sync::atomic::Ordering;",
+                  "",
+                  "    const KIND_MASK: usize = 0x1; // Example value for KIND_MASK, adjust as necessary",
+                  "    const KIND_VEC: usize = 0x0; // Example value for KIND_VEC, adjust as necessary",
+                  "",
+                  "    struct Dummy;",
+                  "",
+                  "    unsafe fn dummy_fn(shared: *mut ()) -> *mut u8 {",
+                  "        shared as *mut u8 // simplification for the sake of testing, adjust as necessary",
+                  "    }",
+                  "",
+                  "    unsafe fn shared_to_vec_impl(shared: *mut (), ptr: *const u8, len: usize) -> Vec<u8> {",
+                  "        // Simplified implementation for testing, to mimic the functionality",
+                  "        Vec::from_raw_parts(shared as *mut u8, len, len)",
+                  "    }",
+                  "",
+                  "    fn offset_from(ptr: *const u8, buf: *mut u8) -> usize {",
+                  "        buf as usize - ptr as usize",
+                  "    }",
+                  "",
+                  "    let data = AtomicPtr::new(Box::into_raw(Box::new(Dummy)) as *mut ());",
+                  "    let len = 5;",
+                  "    let input_ptr: *const u8 = Box::into_raw(Box::new([1, 2, 3, 4, 5])); // Input buffer",
+                  "",
+                  "    // Simulate storing a kind value of KIND_VEC",
+                  "    unsafe {",
+                  "        let kind_vec_value = (KIND_VEC as usize) | (data.load(Ordering::Acquire) as usize & !KIND_MASK);",
+                  "        data.store(kind_vec_value as *mut _);",
+                  "",
+                  "        let result = promotable_to_vec(&data, input_ptr, len, dummy_fn);",
+                  "",
+                  "        assert_eq!(result.len(), len);",
+                  "        assert_eq!(&result[..], &[1, 2, 3, 4, 5]);",
+                  "    }",
+                  "",
+                  "    // Cleanup",
+                  "    unsafe {",
+                  "        Box::from_raw(input_ptr as *mut [u8; 5]);",
+                  "        Box::from_raw(data.load(Ordering::Acquire));",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling syn v1.0.109\n   Compiling serde v1.0.219\n   Compiling quote v1.0.40\n   Compiling serde_test v1.0.177\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest v0.9.3\n   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nerror[E0432]: unresolved import `std::ptr::AtomicPtr`\n    --> src/bytes.rs:1688:9\n     |\n1688 |     use std::ptr::AtomicPtr;\n     |         ^^^^^^^^^^^^^^^^^^^ no `AtomicPtr` in `ptr`\n     |\nhelp: consider importing one of these structs instead\n     |\n1688 |     use crate::loom::sync::atomic::AtomicPtr;\n     |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n1688 |     use std::sync::atomic::AtomicPtr;\n     |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\nwarning: unused import: `ntest::timeout`\n    --> src/bytes.rs:1684:8\n     |\n1684 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `std::ptr`\n    --> src/bytes.rs:1689:9\n     |\n1689 |     use std::ptr;\n     |         ^^^^^^^^\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1712:32\n     |\n1712 |     let input_ptr: *const u8 = Box::into_raw(Box::new([1, 2, 3, 4, 5])); // Input buffer\n     |                    ---------   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `*const u8`, found `*mut [{integer}; 5]`\n     |                    |\n     |                    expected due to this\n     |\n     = note: expected raw pointer `*const u8`\n                found raw pointer `*mut [{integer}; 5]`\n\nerror[E0308]: mismatched types\n    --> src/bytes.rs:1719:63\n     |\n1719 |         let result = promotable_to_vec(&data, input_ptr, len, dummy_fn);\n     |                      -----------------                        ^^^^^^^^ expected safe fn, found unsafe fn\n     |                      |\n     |                      arguments to this function are incorrect\n     |\n     = note: expected fn pointer `fn(_) -> _`\n                   found fn item `unsafe fn(_) -> _ {dummy_fn}`\n     = note: unsafe functions cannot be coerced into safe function pointers\nnote: function defined here\n    --> src/bytes.rs:1221:11\n     |\n1221 | unsafe fn promotable_to_vec(\n     |           ^^^^^^^^^^^^^^^^^\n...\n1225 |     f: fn(*mut ()) -> *mut u8,\n     |     -------------------------\n\nwarning: unused variable: `ptr`\n    --> src/bytes.rs:1701:51\n     |\n1701 |     unsafe fn shared_to_vec_impl(shared: *mut (), ptr: *const u8, len: usize) -> Vec<u8> {\n     |                                                   ^^^ help: if this is intentional, prefix it with an underscore: `_ptr`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nSome errors have detailed explanations: E0308, E0432.\nFor more information about an error, try `rustc --explain E0308`.\nwarning: `bytes` (lib test) generated 4 warnings\nerror: could not compile `bytes` (lib test) due to 3 previous errors; 4 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicPtr;",
+            "use std::ptr;",
+            "use std::sync::atomic::Ordering;",
+            "use std::ptr::NonNull;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::{self, NonNull};",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "    ",
+                  "    const KIND_MASK: usize = 0b11; // Example value",
+                  "    const KIND_VEC: usize = 0b00; // Assuming KIND_VEC is 0",
+                  "    const KIND_ARC: usize = 0b01; // Assuming KIND_ARC is 1",
+                  "    ",
+                  "    struct TestHelper;",
+                  "",
+                  "    let data = AtomicPtr::new(Box::into_raw(Box::new(KIND_VEC as usize)) as *mut ());",
+                  "    let len = 4; // Length of data to copy",
+                  "    let mut buffer = vec![0u8; len]; // Prepare destination buffer",
+                  "",
+                  "    let ptr = buffer.as_mut_ptr();",
+                  "",
+                  "    unsafe {",
+                  "        let result = promotable_to_vec(",
+                  "            &data, ",
+                  "            ptr,",
+                  "            len,",
+                  "            |ptr| {",
+                  "                // When kind is KIND_VEC, we should return a new buffer",
+                  "                // This is a dummy function for the purpose of the test",
+                  "                ptr as *mut u8",
+                  "            }",
+                  "        );",
+                  "",
+                  "        assert_eq!(result.len(), len);",
+                  "        assert_eq!(result.capacity(), len);",
+                  "        assert_eq!(result.as_slice(), &buffer);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::ptr::{self, NonNull};",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    const KIND_MASK: usize = 0b11; // Example value",
+                  "    const KIND_VEC: usize = 0b00; // Assuming KIND_VEC is 0",
+                  "    const KIND_ARC: usize = 0b01; // Assuming KIND_ARC is 1",
+                  "",
+                  "    struct TestHelper;",
+                  "",
+                  "    let data = AtomicPtr::new(Box::into_raw(Box::new(KIND_ARC as usize)) as *mut ());",
+                  "    let len = 4; // Length of data to copy",
+                  "    let mut buffer = vec![1u8; len]; // Prepare destination buffer with different initial values",
+                  "",
+                  "    let ptr = buffer.as_mut_ptr();",
+                  "",
+                  "    unsafe {",
+                  "        let _result = promotable_to_vec(",
+                  "            &data,",
+                  "            ptr,",
+                  "            len,",
+                  "            |ptr| {",
+                  "                // If we need to panic, we return something that will cause our condition",
+                  "                ptr as *mut u8 // This should return something valid",
+                  "            }",
+                  "        );",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

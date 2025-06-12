@@ -1,0 +1,1 @@
+pub fn patterns(&self) -> &[Vec<u8>] { &[] }

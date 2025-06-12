@@ -1,0 +1,342 @@
+{
+  "name": "bytes::bytes::promotable_to_mut",
+  "name_with_impl": "bytes::bytes::promotable_to_mut",
+  "mod_info": {
+    "name": "bytes",
+    "loc": "src/lib.rs:82:1:82:11"
+  },
+  "visible": false,
+  "loc": "src/bytes.rs:1247:1:1274:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is true\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use core::ptr::null_mut;",
+            "use core::sync::atomic::AtomicPtr;",
+            "use core::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::sync::atomic::{AtomicPtr, Ordering};",
+                  "    ",
+                  "    // Create a dummy implementation for the function pointer",
+                  "    let dummy_fn: fn(*mut ()) -> *mut u8 = |ptr| ptr as *mut u8;",
+                  "",
+                  "    // Create an AtomicPtr with kind set to KIND_ARC",
+                  "    let shared_data = Box::into_raw(Box::new(0u8)) as *mut ();",
+                  "    let atomic_ptr = AtomicPtr::new(shared_data);",
+                  "",
+                  "    // Call the promotable_to_mut function",
+                  "    unsafe {",
+                  "        let result = promotable_to_mut(&atomic_ptr, null_mut(), 0, dummy_fn);",
+                  "    ",
+                  "        // Validate that the result is a new BytesMut instance and has expected properties",
+                  "        assert_eq!(result.len(), 0);",
+                  "        assert_eq!(result.capacity(), 0);",
+                  "        // add additional checks if necessary based on the expected properties of result",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// constraint: (*left_val == *right_val) is true\n",
+        "// may panic: b.advance_unchecked(off) may panic in certain situations\n",
+        "// expected return value/type: b\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicPtr;",
+            "use core::mem::MaybeUninit;",
+            "use core::ptr::null_mut;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   // use core::ptr::null_mut;",
+                  "",
+                  "   use std::sync::atomic::AtomicPtr;",
+                  "",
+                  "    struct MockShared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "    }",
+                  "",
+                  "    let buffer: Vec<u8> = vec![1, 2, 3, 4, 5];",
+                  "    let buf_ptr = buffer.as_ptr() as *mut u8;",
+                  "    let length = buffer.len();",
+                  "    ",
+                  "    let shared = Box::into_raw(Box::new(MockShared {",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "        buf: buf_ptr,",
+                  "        cap: length,",
+                  "    }));",
+                  "",
+                  "    let data = AtomicPtr::new(shared as *mut ());",
+                  "",
+                  "    unsafe {",
+                  "        let output = promotable_to_mut(&data, buf_ptr, length, |ptr| {",
+                  "            ptr as *mut u8",
+                  "        });",
+                  "",
+                  "        assert_eq!(output.len(), length);",
+                  "        assert!(!output.is_empty());",
+                  "        for i in 0..length {",
+                  "            assert_eq!(output.as_slice()[i], buffer[i]);",
+                  "        }",
+                  "    }",
+                  "",
+                  "    // Cleanup",
+                  "    unsafe {",
+                  "        let _ = Box::from_raw(shared);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0624]: method `as_slice` is private\n    --> src/bytes.rs:1721:31\n     |\n1721 |             assert_eq!(output.as_slice()[i], buffer[i]);\n     |                               ^^^^^^^^ private method\n     |\n    ::: src/bytes_mut.rs:942:5\n     |\n942  |     fn as_slice(&self) -> &[u8] {\n     |     --------------------------- private method defined here\n     |\n     = help: items from traits can only be used if the trait is in scope\nhelp: trait `SlicePattern` which provides `as_slice` is implemented but not in scope; perhaps you want to import it\n     |\n1683 +    use core::slice::SlicePattern;\n     |\n\nFor more information about this error, try `rustc --explain E0624`.\nwarning: `bytes` (lib test) generated 1 warning\nerror: could not compile `bytes` (lib test) due to 1 previous error; 1 warning emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use core::mem::MaybeUninit;",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    struct MockShared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "    }",
+                  "",
+                  "    let buffer: Vec<u8> = vec![1, 2, 3, 4, 5];",
+                  "    let buf_ptr = buffer.as_ptr() as *mut u8;",
+                  "    let length = buffer.len();",
+                  "",
+                  "    // Creating a shared mock where we set an invalid condition for offset",
+                  "    let shared = Box::into_raw(Box::new(MockShared {",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "        buf: buf_ptr,",
+                  "        cap: length,",
+                  "    }));",
+                  "",
+                  "    let data = AtomicPtr::new(shared as *mut ());",
+                  "",
+                  "    unsafe {",
+                  "        // Trying to promote with an invalid offset (greater than capacity)",
+                  "        let _ = promotable_to_mut(&data, buf_ptr.add(10), length, |ptr| {",
+                  "            ptr as *mut u8",
+                  "        });",
+                  "    }",
+                  "",
+                  "    // Cleanup",
+                  "    unsafe {",
+                  "        let _ = Box::from_raw(shared);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: kind == KIND_ARC is false\n",
+        "// constraint: (*left_val == *right_val) is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::sync::atomic::AtomicPtr;",
+            "use core::ptr::null_mut;",
+            "use std::sync::atomic::Ordering;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "   use std::sync::atomic::AtomicPtr;  ",
+                  " ",
+                  "    struct DummyShared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "    }",
+                  "",
+                  "    // Create a dummy buffer to simulate a Vec backing storage.",
+                  "    let capacity = 10;",
+                  "    let vec = vec![1u8; capacity];",
+                  "    let buffer = vec.as_ptr() as *mut u8;",
+                  "",
+                  "    // Create a shared structure with KIND_VEC",
+                  "    let shared = Box::into_raw(Box::new(DummyShared {",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "        buf: buffer,",
+                  "        cap: capacity,",
+                  "    }));",
+                  "",
+                  "    // Using AtomicPtr to simulate behavior in the function.",
+                  "    let atomic_ptr = AtomicPtr::new(shared as *mut ());",
+                  "",
+                  "    // This is a dummy function that returns the original buffer for KIND_VEC.",
+                  "    let dummy_fn: fn(*mut ()) -> *mut u8 = |ptr| {",
+                  "        let shared: *mut DummyShared = ptr.cast();",
+                  "        unsafe { (*shared).buf }",
+                  "    };",
+                  "",
+                  "    // Call the function",
+                  "    let result = unsafe { promotable_to_mut(&atomic_ptr, buffer, capacity, dummy_fn) };",
+                  "",
+                  "    // Check the conditions:",
+                  "    // 1. The length of result should equal the capacity.",
+                  "    // 2. The values in result should match the original values in the Vec used for the buffer.",
+                  "    assert_eq!(result.len(), capacity);",
+                  "    for i in 0..capacity {",
+                  "        assert_eq!(result.as_slice()[i], 1);",
+                  "    }",
+                  "",
+                  "    // Clean up the memory to prevent leaks",
+                  "    unsafe {",
+                  "        let _ = Box::from_raw(shared);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling bytes v1.10.1 (/home/abezbm/rust-utgen-test-crates-new/bytes)\nwarning: unused import: `core::ptr::null_mut`\n    --> src/bytes.rs:1691:9\n     |\n1691 |     use core::ptr::null_mut;\n     |         ^^^^^^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nwarning: unused import: `super::*`\n    --> src/bytes_mut.rs:1500:9\n     |\n1500 |     use super::*;\n     |         ^^^^^^^^\n\nerror[E0624]: method `as_slice` is private\n    --> src/bytes.rs:1729:27\n     |\n1729 |         assert_eq!(result.as_slice()[i], 1);\n     |                           ^^^^^^^^ private method\n     |\n    ::: src/bytes_mut.rs:942:5\n     |\n942  |     fn as_slice(&self) -> &[u8] {\n     |     --------------------------- private method defined here\n     |\n     = help: items from traits can only be used if the trait is in scope\nhelp: trait `SlicePattern` which provides `as_slice` is implemented but not in scope; perhaps you want to import it\n     |\n1683 +    use core::slice::SlicePattern;\n     |\n\nFor more information about this error, try `rustc --explain E0624`.\nwarning: `bytes` (lib test) generated 2 warnings\nerror: could not compile `bytes` (lib test) due to 1 previous error; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic(expected = \"internal: set_start out of bounds\")]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use core::ptr::null_mut;",
+                  "    use std::sync::atomic::{AtomicPtr, Ordering};",
+                  "",
+                  "    struct DummyShared {",
+                  "        ref_cnt: AtomicUsize,",
+                  "        buf: *mut u8,",
+                  "        cap: usize,",
+                  "    }",
+                  "",
+                  "    let capacity = 10;",
+                  "    let vec = vec![1u8; capacity];",
+                  "    let buffer = vec.as_ptr() as *mut u8;",
+                  "",
+                  "    let shared = Box::into_raw(Box::new(DummyShared {",
+                  "        ref_cnt: AtomicUsize::new(1),",
+                  "        buf: buffer,",
+                  "        cap: capacity,",
+                  "    }));",
+                  "",
+                  "    let atomic_ptr = AtomicPtr::new(shared as *mut ());",
+                  "",
+                  "    // This function returns a pointer to a buffer that is out of bounds",
+                  "    let dummy_fn: fn(*mut ()) -> *mut u8 = |_| {",
+                  "        null_mut() // Returning null for testing panic condition",
+                  "    };",
+                  "",
+                  "    // Trigger the panic due to out of bounds access",
+                  "    unsafe {",
+                  "        promotable_to_mut(&atomic_ptr, buffer, capacity, dummy_fn);",
+                  "    }",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,353 @@
+{
+  "name": "serde_json::ser::<ser::PrettyFormatter<'a> as ser::Formatter>::end_object",
+  "name_with_impl": "serde_json::ser::{impl#16}::end_object",
+  "mod_info": {
+    "name": "ser",
+    "loc": "src/lib.rs:423:1:423:13"
+  },
+  "visible": true,
+  "loc": "src/ser.rs:2040:5:2052:6",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: self.has_value is true\n",
+        "// constraint: writer.write_all(b\"\\n\") matches core::result::Result::Err(err) is true\n",
+        "// expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::io;",
+            "use std::io::Write;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::io::{self, Write};",
+                  "",
+                  "    struct TestWriter {",
+                  "        should_fail: bool,",
+                  "    }",
+                  "",
+                  "    impl Write for TestWriter {",
+                  "        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {",
+                  "            if self.should_fail {",
+                  "                Err(io::Error::new(io::ErrorKind::Other, \"test error\"))",
+                  "            } else {",
+                  "                Ok(buf.len())",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn flush(&mut self) -> io::Result<()> {",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct MyStruct {",
+                  "        current_indent: usize,",
+                  "        has_value: bool,",
+                  "        indent: usize,",
+                  "    }",
+                  "",
+                  "    impl MyStruct {",
+                  "        fn end_object<W>(&mut self, writer: &mut W) -> io::Result<()>",
+                  "        where",
+                  "            W: ?Sized + Write,",
+                  "        {",
+                  "            self.current_indent -= 1;",
+                  "",
+                  "            if self.has_value {",
+                  "                writer.write_all(b\"\\n\")?;",
+                  "            }",
+                  "",
+                  "            writer.write_all(b\"}\")?;",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut my_struct = MyStruct {",
+                  "        current_indent: 1,",
+                  "        has_value: true,",
+                  "        indent: 0,",
+                  "    };",
+                  "",
+                  "    let mut writer = TestWriter { should_fail: true };",
+                  "    ",
+                  "    let result = my_struct.end_object(&mut writer);",
+                  "    assert!(result.is_err());",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: self.has_value is true\n",
+        "// constraint: writer.write_all(b\"\\n\") matches core::result::Result::Ok(val) is true\n",
+        "// constraint: indent(writer, self.current_indent, self.indent) matches core::result::Result::Ok(val) is true\n",
+        "// constraint: indent(writer, self.current_indent, self.indent) matches core::result::Result::Err(err) is true\n",
+        "// expected return value/type: core::result::Result::Err(err)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [
+            "fn test_end_object_with_value() -> std::io::Result<()> {",
+            "    struct TestWriter {",
+            "        buffer: Vec<u8>,",
+            "    }",
+            "",
+            "    impl std::io::Write for TestWriter {",
+            "        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {",
+            "            self.buffer.extend_from_slice(buf);",
+            "            Ok(buf.len())",
+            "        }",
+            "    }",
+            "",
+            "    struct TestStruct {",
+            "        current_indent: usize,",
+            "        indent: usize,",
+            "        has_value: bool,",
+            "    }",
+            "",
+            "    impl TestStruct {",
+            "        fn end_object<W>(&mut self, writer: &mut W) -> std::io::Result<()>",
+            "        where",
+            "            W: ?Sized + std::io::Write,",
+            "        {",
+            "            self.current_indent -= 1;",
+            "",
+            "            if self.has_value {",
+            "                writer.write_all(b\"\\n\")?;",
+            "                self.indent(writer)?;",
+            "            }",
+            "",
+            "            writer.write_all(b\"}\")",
+            "        }",
+            "",
+            "        fn indent<W>(&self, writer: &mut W) -> std::io::Result<()>",
+            "        where",
+            "            W: ?Sized + std::io::Write,",
+            "        {",
+            "            // Simulate error condition for testing",
+            "            Err(std::io::Error::new(std::io::ErrorKind::Other, \"Indent error\"))",
+            "        }",
+            "    }",
+            "",
+            "    let mut writer = TestWriter { buffer: Vec::new() };",
+            "    let mut test_struct = TestStruct {",
+            "        current_indent: 1,",
+            "        indent: 2,",
+            "        has_value: true,",
+            "    };",
+            "",
+            "    let result = test_struct.end_object(&mut writer);",
+            "    assert!(result.is_err()); // expects Err",
+            "    assert_eq!(writer.buffer, b\"\\n\"); // Ensures that the newline has been written",
+            "",
+            "    Ok(())",
+            "}"
+          ],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestWriter {",
+                  "        buffer: Vec<u8>,",
+                  "    }",
+                  "",
+                  "    impl std::io::Write for TestWriter {",
+                  "        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {",
+                  "            self.buffer.extend_from_slice(buf);",
+                  "            Ok(buf.len())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct TestStruct {",
+                  "        current_indent: usize,",
+                  "        indent: usize,",
+                  "        has_value: bool,",
+                  "    }",
+                  "",
+                  "    impl TestStruct {",
+                  "        fn end_object<W>(&mut self, writer: &mut W) -> std::io::Result<()>",
+                  "        where",
+                  "            W: ?Sized + std::io::Write,",
+                  "        {",
+                  "            self.current_indent -= 1;",
+                  "",
+                  "            if self.has_value {",
+                  "                writer.write_all(b\"\\n\")?;",
+                  "                self.indent(writer)?;",
+                  "            }",
+                  "",
+                  "            writer.write_all(b\"}\")",
+                  "        }",
+                  "",
+                  "        fn indent<W>(&self, writer: &mut W) -> std::io::Result<()>",
+                  "        where",
+                  "            W: ?Sized + std::io::Write,",
+                  "        {",
+                  "            // Now return successfully",
+                  "            writer.write_all(b\"  \") // Example indent",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut writer = TestWriter { buffer: Vec::new() };",
+                  "    let mut test_struct = TestStruct {",
+                  "        current_indent: 1,",
+                  "        indent: 2,",
+                  "        has_value: true,",
+                  "    };",
+                  "",
+                  "    let result = test_struct.end_object(&mut writer);",
+                  "    assert!(result.is_ok()); // expects Ok",
+                  "    assert_eq!(writer.buffer, b\"\\n  }\"); // Check the correct output",
+                  "",
+                  "    Ok(())",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling proc-macro2 v1.0.95\n   Compiling serde v1.0.219\n   Compiling syn v1.0.109\n   Compiling libc v0.2.172\n   Compiling target-triple v0.1.4\n   Compiling serde_json v1.0.140\n   Compiling ref-cast v1.0.24\n   Compiling rustversion v1.0.20\n   Compiling serde_json v1.0.140 (/home/abezbm/rust-utgen-test-crates-new/json)\n   Compiling psm v0.1.26\n   Compiling stacker v0.1.21\n   Compiling quote v1.0.40\n   Compiling syn v2.0.101\n   Compiling serde_derive v1.0.219\n   Compiling ref-cast-impl v1.0.24\n   Compiling automod v1.0.15\n   Compiling ntest_test_cases v0.9.3\n   Compiling ntest_timeout v0.9.3\n   Compiling ntest v0.9.3\n   Compiling toml_datetime v0.6.9\n   Compiling serde_spanned v0.6.8\n   Compiling serde_stacker v0.1.12\n   Compiling serde_bytes v0.11.17\n   Compiling toml_edit v0.22.26\n   Compiling toml v0.8.22\n   Compiling trybuild v1.0.104\nwarning: unused import: `ntest::timeout`\n    --> src/ser.rs:2281:8\n     |\n2281 |    use ntest::timeout;\n     |        ^^^^^^^^^^^^^^\n     |\n     = note: `#[warn(unused_imports)]` on by default\n\nerror[E0046]: not all trait items implemented, missing: `flush`\n    --> src/ser.rs:2287:5\n     |\n2287 |     impl std::io::Write for TestWriter {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `flush` in implementation\n     |\n     = help: implement the missing item: `fn flush(&mut self) -> std::result::Result<(), std::io::Error> { todo!() }`\n\nerror[E0046]: not all trait items implemented, missing: `flush`\n    --> src/ser.rs:2345:5\n     |\n2345 |     impl std::io::Write for TestWriter {\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ missing `flush` in implementation\n     |\n     = help: implement the missing item: `fn flush(&mut self) -> std::result::Result<(), std::io::Error> { todo!() }`\n\nerror[E0308]: mismatched types\n    --> src/ser.rs:2393:5\n     |\n2339 | fn test_end_object_01()\n     |                        - help: a return type might be missing here: `-> _`\n...\n2393 |     Ok(())\n     |     ^^^^^^ expected `()`, found `Result<(), _>`\n     |\n     = note: expected unit type `()`\n                     found enum `std::result::Result<(), _>`\n\nwarning: unused variable: `writer`\n    --> src/ser.rs:2315:29\n     |\n2315 |         fn indent<W>(&self, writer: &mut W) -> std::io::Result<()>\n     |                             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_writer`\n     |\n     = note: `#[warn(unused_variables)]` on by default\n\nSome errors have detailed explanations: E0046, E0308.\nFor more information about an error, try `rustc --explain E0046`.\nwarning: `serde_json` (lib test) generated 2 warnings\nerror: could not compile `serde_json` (lib test) due to 3 previous errors; 2 warnings emitted\n"
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 4,
+      "prompt_conds": [
+        "// constraint: self.has_value is false\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [
+            "use std::io;",
+            "use std::io::Cursor;"
+          ],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    use std::io::{self, Cursor};",
+                  "",
+                  "    struct TestWriter {",
+                  "        buffer: Cursor<Vec<u8>>,",
+                  "    }",
+                  "",
+                  "    impl TestWriter {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                buffer: Cursor::new(Vec::new()),",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn get_result(self) -> Vec<u8> {",
+                  "            self.buffer.into_inner()",
+                  "        }",
+                  "    }",
+                  "",
+                  "    struct Serializer {",
+                  "        current_indent: i32,",
+                  "        indent: i32,",
+                  "        has_value: bool,",
+                  "    }",
+                  "",
+                  "    impl Serializer {",
+                  "        fn new() -> Self {",
+                  "            Self {",
+                  "                current_indent: 0,",
+                  "                indent: 2,",
+                  "                has_value: false,",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn end_object<W>(&mut self, writer: &mut W) -> io::Result<()>",
+                  "        where",
+                  "            W: ?Sized + io::Write,",
+                  "        {",
+                  "            self.current_indent -= 1;",
+                  "",
+                  "            if self.has_value {",
+                  "                writer.write_all(b\"\\n\")?;",
+                  "                self.indent(writer, self.current_indent, self.indent)?;",
+                  "            }",
+                  "",
+                  "            writer.write_all(b\"}\")",
+                  "        }",
+                  "",
+                  "        fn indent<W>(&self, writer: &mut W, current_indent: i32, indent: i32) -> io::Result<()>",
+                  "        where",
+                  "            W: ?Sized + io::Write,",
+                  "        {",
+                  "            // Implementation of indentation logic here",
+                  "            Ok(())",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let mut serializer = Serializer::new();",
+                  "    let mut writer = TestWriter::new();",
+                  "",
+                  "    let result = serializer.end_object(&mut writer.buffer);",
+                  "    ",
+                  "    assert!(result.is_ok());",
+                  "    assert_eq!(writer.get_result(), b\"}\");",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

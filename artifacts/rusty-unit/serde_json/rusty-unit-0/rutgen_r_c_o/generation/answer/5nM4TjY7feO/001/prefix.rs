@@ -1,0 +1,236 @@
+// Answer 0
+
+#[test]
+fn test_peek_or_null_failure_case_1() {
+    struct MockRead {
+        fail: bool,
+    }
+
+    impl<'de> Read<'de> for MockRead {
+        const should_early_return_if_failed: bool = false;
+
+        fn next(&mut self) -> Result<Option<u8>> {
+            Ok(None)
+        }
+
+        fn peek(&mut self) -> Result<Option<u8>> {
+            if self.fail {
+                Err(Error::new(ErrorCode::InvalidValue))
+            } else {
+                Ok(Some(b'a'))
+            }
+        }
+
+        fn discard(&mut self) {}
+
+        fn position(&self) -> Position {
+            Position::default()
+        }
+
+        fn peek_position(&self) -> Position {
+            Position::default()
+        }
+
+        fn byte_offset(&self) -> usize {
+            0
+        }
+
+        fn parse_str<'s>(&'s mut self, _: &'s mut Vec<u8>) -> Result<Reference<'de, 's, str>> {
+            unimplemented!()
+        }
+
+        fn parse_str_raw<'s>(&'s mut self, _: &'s mut Vec<u8>) -> Result<Reference<'de, 's, [u8]>> {
+            unimplemented!()
+        }
+
+        fn ignore_str(&mut self) -> Result<()> {
+            unimplemented!()
+        }
+
+        fn decode_hex_escape(&mut self) -> Result<u16> {
+            unimplemented!()
+        }
+
+        #[cfg(feature = "raw_value")]
+        fn begin_raw_buffering(&mut self) {
+            unimplemented!()
+        }
+
+        #[cfg(feature = "raw_value")]
+        fn end_raw_buffering<V>(&mut self, _: V) -> Result<V::Value>
+        where
+            V: Visitor<'de>,
+        {
+            unimplemented!()
+        }
+
+        fn set_failed(&mut self, _: &mut bool) {
+            unimplemented!()
+        }
+    }
+
+    let mut deserializer = Deserializer {
+        read: MockRead { fail: true },
+        scratch: Vec::new(),
+        remaining_depth: 0,
+    };
+
+    let _ = deserializer.peek_or_null();
+}
+
+#[test]
+fn test_peek_or_null_failure_case_2() {
+    struct MockRead {
+        fail: bool,
+    }
+
+    impl<'de> Read<'de> for MockRead {
+        const should_early_return_if_failed: bool = false;
+
+        fn next(&mut self) -> Result<Option<u8>> {
+            Ok(None)
+        }
+
+        fn peek(&mut self) -> Result<Option<u8>> {
+            if self.fail {
+                Err(Error::new(ErrorCode::ExpectedValue))
+            } else {
+                Ok(Some(b'b'))
+            }
+        }
+
+        fn discard(&mut self) {}
+
+        fn position(&self) -> Position {
+            Position::default()
+        }
+
+        fn peek_position(&self) -> Position {
+            Position::default()
+        }
+
+        fn byte_offset(&self) -> usize {
+            0
+        }
+
+        fn parse_str<'s>(&'s mut self, _: &'s mut Vec<u8>) -> Result<Reference<'de, 's, str>> {
+            unimplemented!()
+        }
+
+        fn parse_str_raw<'s>(&'s mut self, _: &'s mut Vec<u8>) -> Result<Reference<'de, 's, [u8]>> {
+            unimplemented!()
+        }
+
+        fn ignore_str(&mut self) -> Result<()> {
+            unimplemented!()
+        }
+
+        fn decode_hex_escape(&mut self) -> Result<u16> {
+            unimplemented!()
+        }
+
+        #[cfg(feature = "raw_value")]
+        fn begin_raw_buffering(&mut self) {
+            unimplemented!()
+        }
+
+        #[cfg(feature = "raw_value")]
+        fn end_raw_buffering<V>(&mut self, _: V) -> Result<V::Value>
+        where
+            V: Visitor<'de>,
+        {
+            unimplemented!()
+        }
+
+        fn set_failed(&mut self, _: &mut bool) {
+            unimplemented!()
+        }
+    }
+
+    let mut deserializer = Deserializer {
+        read: MockRead { fail: true },
+        scratch: Vec::new(),
+        remaining_depth: 0,
+    };
+
+    let _ = deserializer.peek_or_null();
+}
+
+#[test]
+fn test_peek_or_null_failure_case_3() {
+    struct MockRead {
+        fail: bool,
+    }
+
+    impl<'de> Read<'de> for MockRead {
+        const should_early_return_if_failed: bool = false;
+
+        fn next(&mut self) -> Result<Option<u8>> {
+            Ok(None)
+        }
+
+        fn peek(&mut self) -> Result<Option<u8>> {
+            if self.fail {
+                Err(Error::new(ErrorCode::InvalidType))
+            } else {
+                Ok(Some(b'c'))
+            }
+        }
+
+        fn discard(&mut self) {}
+
+        fn position(&self) -> Position {
+            Position::default()
+        }
+
+        fn peek_position(&self) -> Position {
+            Position::default()
+        }
+
+        fn byte_offset(&self) -> usize {
+            0
+        }
+
+        fn parse_str<'s>(&'s mut self, _: &'s mut Vec<u8>) -> Result<Reference<'de, 's, str>> {
+            unimplemented!()
+        }
+
+        fn parse_str_raw<'s>(&'s mut self, _: &'s mut Vec<u8>) -> Result<Reference<'de, 's, [u8]>> {
+            unimplemented!()
+        }
+
+        fn ignore_str(&mut self) -> Result<()> {
+            unimplemented!()
+        }
+
+        fn decode_hex_escape(&mut self) -> Result<u16> {
+            unimplemented!()
+        }
+
+        #[cfg(feature = "raw_value")]
+        fn begin_raw_buffering(&mut self) {
+            unimplemented!()
+        }
+
+        #[cfg(feature = "raw_value")]
+        fn end_raw_buffering<V>(&mut self, _: V) -> Result<V::Value>
+        where
+            V: Visitor<'de>,
+        {
+            unimplemented!()
+        }
+
+        fn set_failed(&mut self, _: &mut bool) {
+            unimplemented!()
+        }
+    }
+
+    let mut deserializer = Deserializer {
+        read: MockRead { fail: true },
+        scratch: Vec::new(),
+        remaining_depth: 0,
+    };
+
+    let _ = deserializer.peek_or_null();
+}
+

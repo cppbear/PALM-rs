@@ -1,0 +1,364 @@
+{
+  "name": "serde::ser::iterator_len_hint",
+  "name_with_impl": "serde::ser::iterator_len_hint",
+  "mod_info": {
+    "name": "ser",
+    "loc": "serde/src/lib.rs:312:1:312:13"
+  },
+  "visible": false,
+  "loc": "serde/src/ser/mod.rs:1945:1:1953:2",
+  "fn_tests": [
+    {
+      "chain_id": 1,
+      "prompt_conds": [
+        "// constraint: iter.size_hint() matches _ is true\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestIter {",
+                  "        count: usize,",
+                  "        limit: usize,",
+                  "    }",
+                  "",
+                  "    impl Iterator for TestIter {",
+                  "        type Item = usize;",
+                  "",
+                  "        fn next(&mut self) -> Option<Self::Item> {",
+                  "            if self.count < self.limit {",
+                  "                self.count += 1;",
+                  "                Some(self.count)",
+                  "            } else {",
+                  "                None",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (self.count, None) // This ensures that the match arm evaluates to None",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let iter = TestIter { count: 0, limit: 5 };",
+                  "    let result = iterator_len_hint(&iter);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct EmptyIter;",
+                  "",
+                  "    impl Iterator for EmptyIter {",
+                  "        type Item = usize;",
+                  "",
+                  "        fn next(&mut self) -> Option<Self::Item> {",
+                  "            None",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (0, Some(5)) // This ensures that the match arm evaluates to None",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let empty_iter = EmptyIter;",
+                  "    let result = iterator_len_hint(&empty_iter);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct VaryingSizeIter {",
+                  "        count: usize,",
+                  "    }",
+                  "",
+                  "    impl Iterator for VaryingSizeIter {",
+                  "        type Item = usize;",
+                  "",
+                  "        fn next(&mut self) -> Option<Self::Item> {",
+                  "            if self.count < 5 {",
+                  "                self.count += 1;",
+                  "                Some(self.count)",
+                  "            } else {",
+                  "                None",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (self.count, Some(10)) // This also ensures that the match arm evaluates to None",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let varying_size_iter = VaryingSizeIter { count: 0 };",
+                  "    let result = iterator_len_hint(&varying_size_iter);",
+                  "    assert_eq!(result, None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 2,
+      "prompt_conds": [
+        "// constraint: iter.size_hint() matches (lo, Some(hi)) is true\n",
+        "// constraint: lo == hi is true\n",
+        "// expected return value/type: Some(lo)\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestIterator {",
+                  "        current: usize,",
+                  "        limit: usize,",
+                  "    }",
+                  "",
+                  "    impl Iterator for TestIterator {",
+                  "        type Item = usize;",
+                  "",
+                  "        fn next(&mut self) -> Option<Self::Item> {",
+                  "            if self.current < self.limit {",
+                  "                self.current += 1;",
+                  "                Some(self.current - 1)",
+                  "            } else {",
+                  "                None",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (self.limit, Some(self.limit))",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let iter = TestIterator { current: 0, limit: 5 };",
+                  "    let result = iterator_len_hint(&iter);",
+                  "    assert_eq!(result, Some(5));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestIterator {",
+                  "        current: usize,",
+                  "        limit: usize,",
+                  "    }",
+                  "",
+                  "    impl Iterator for TestIterator {",
+                  "        type Item = usize;",
+                  "",
+                  "        fn next(&mut self) -> Option<Self::Item> {",
+                  "            if self.current < self.limit {",
+                  "                self.current += 1;",
+                  "                Some(self.current - 1)",
+                  "            } else {",
+                  "                None",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (0, Some(0))",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let iter = TestIterator { current: 0, limit: 0 };",
+                  "    let result = iterator_len_hint(&iter);",
+                  "    assert_eq!(result, Some(0));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 3,
+      "prompt_conds": [
+        "// constraint: iter.size_hint() matches (lo, Some(hi)) is true\n",
+        "// constraint: lo == hi is false\n",
+        "// expected return value/type: None\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestIterator {",
+                  "        items: Vec<i32>,",
+                  "        index: usize,",
+                  "    }",
+                  "",
+                  "    impl Iterator for TestIterator {",
+                  "        type Item = i32;",
+                  "",
+                  "        fn next(&mut self) -> Option<Self::Item> {",
+                  "            if self.index < self.items.len() {",
+                  "                let item = self.items[self.index];",
+                  "                self.index += 1;",
+                  "                Some(item)",
+                  "            } else {",
+                  "                None",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (self.items.len() - self.index, Some(self.items.len() + 1)) // lo != hi",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let iter = TestIterator { items: vec![1, 2, 3], index: 0 };",
+                  "    assert_eq!(iterator_len_hint(&iter), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct AnotherTestIterator {",
+                  "        items: Vec<i32>,",
+                  "        index: usize,",
+                  "    }",
+                  "",
+                  "    impl Iterator for AnotherTestIterator {",
+                  "        type Item = i32;",
+                  "",
+                  "        fn next(&mut self) -> Option<Self::Item> {",
+                  "            if self.index < self.items.len() {",
+                  "                let item = self.items[self.index];",
+                  "                self.index += 1;",
+                  "                Some(item)",
+                  "            } else {",
+                  "                None",
+                  "            }",
+                  "        }",
+                  "",
+                  "        fn size_hint(&self) -> (usize, Option<usize>) {",
+                  "            (self.items.len(), Some(self.items.len() - 1)) // lo != hi",
+                  "        }",
+                  "    }",
+                  "",
+                  "    let iter = AnotherTestIterator { items: vec![10, 20, 30, 40], index: 0 };",
+                  "    assert_eq!(iterator_len_hint(&iter), None);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

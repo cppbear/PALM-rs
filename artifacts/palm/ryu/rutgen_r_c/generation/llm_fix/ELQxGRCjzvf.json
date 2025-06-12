@@ -1,0 +1,1986 @@
+{
+  "name": "ryu::d2s::d2d",
+  "name_with_impl": "ryu::d2s::d2d",
+  "mod_info": {
+    "name": "d2s",
+    "loc": "src/lib.rs:108:1:108:9"
+  },
+  "visible": true,
+  "loc": "src/d2s.rs:91:1:302:2",
+  "fn_tests": [
+    {
+      "chain_id": 1599,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is false\n",
+        "// constraint: ieee_mantissa != 0 is true\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is false\n",
+        "// constraint: q < 63 is false, with bound q == 63\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is false, with bound vp_div100 == vm_div100\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0b1111111111111111111111111111111111111111111111111111; // Example non-zero mantissa",
+                  "    let ieee_exponent: u32 = 2047; // Maximum exponent for a normalized double",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, 8); // Expected exponent based on the computation",
+                  "    assert_eq!(result.mantissa, 18446744073709551615); // Expected mantissa based on the computation",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0b1010101010101010101010101010101010101010101010101010; // Another example non-zero mantissa",
+                  "    let ieee_exponent: u32 = 2046; // Another exponent just below the maximum",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, 7); // Example expected exponent",
+                  "    assert_eq!(result.mantissa, 9844232158178587162); // Example expected mantissa",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0b1111111111111111111111111111111111111111111111111111; // Non-zero mantissa",
+                  "    let ieee_exponent: u32 = 2045; // Exponent below the maximum",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.exponent > 0); // Ensuring exponent is positive based on computation",
+                  "    assert!(result.mantissa > 1); // Ensuring mantissa is more than 1",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0b1101101101101101101101101101101101101101101101101101; // A complex non-zero mantissa",
+                  "    let ieee_exponent: u32 = 2044; // Another maximum exponent check",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_ne!(result.exponent, 1); // Ensuring exponent isn't equal to 1",
+                  "    assert_ne!(result.mantissa, 0); // Resulting mantissa should not be zero",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0b1010111101110011110011110011110011110011110011110011; // Yet another non-zero mantissa",
+                  "    let ieee_exponent: u32 = 2043; // Exponent just above the mid-point",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.mantissa < u64::MAX); // Ensuring mantissa is within valid range",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5004,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is true\n",
+        "// may panic: DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize) may panic in certain situations\n",
+        "// constraint: q <= 21 is true, with bound q == 21\n",
+        "// constraint: mv_mod5 == 0 is false\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is false, with bound vp_div100 == vm_div100\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0; // Should be non-zero to avoid putting ieee_exponent == 0 as true",
+                  "    let ieee_exponent: u32 = 0; ",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert_eq!(result.mantissa, 0); // Expected mantissa should be 0",
+                  "    assert_eq!(result.exponent, 0); // Expected exponent should be 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; // Non-zero mantissa",
+                  "    let ieee_exponent: u32 = 0; ",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert!(result.mantissa > 0); // Verify that mantissa is greater than 0",
+                  "    assert_eq!(result.exponent, 0); // Expected exponent should be 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; ",
+                  "    let ieee_exponent: u32 = 1023; // A positive exponent for a normal float",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert!(result.mantissa > 0); // Verify that mantissa is greater than 0",
+                  "    assert!(result.exponent >= 0); // Expected exponent should be non-negative",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; ",
+                  "    let ieee_exponent: u32 = 2047; // High exponent close to overflow",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert!(result.mantissa > 0); // Ensure mantissa is valid",
+                  "    assert!(result.exponent >= 0); // Ensure exponent is valid",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 999999999999; // A large non-zero mantissa",
+                  "    let ieee_exponent: u32 = 1024; // A valid exponent",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    assert!(result.mantissa > 0); // Non-zero mantissa expected",
+                  "    assert!(result.exponent <= 100); // Check if exponent is within expected range",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 10; // Non-zero mantissa",
+                  "    let ieee_exponent: u32 = 1024; // Valid positive exponent",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert!(result.mantissa > 10); // Ensuring that rounding occurs",
+                  "    assert!(result.exponent > 0); // Check for change in exponent",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5204,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is true\n",
+        "// may panic: DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize) may panic in certain situations\n",
+        "// constraint: q <= 21 is true, with bound q == 21\n",
+        "// constraint: mv_mod5 == 0 is true\n",
+        "// constraint: accept_bounds is true\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is false, with bound vp_div100 == vm_div100\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInputs {",
+                  "        ieee_mantissa: u64,",
+                  "        ieee_exponent: u32,",
+                  "    }",
+                  "",
+                  "    let inputs = TestInputs {",
+                  "        ieee_mantissa: 0, // ieee_mantissa must not be 0",
+                  "        ieee_exponent: 0, // ieee_exponent must be 0",
+                  "    };",
+                  "",
+                  "    let result = d2d(inputs.ieee_mantissa, inputs.ieee_exponent);",
+                  "    ",
+                  "    // Check the values in the result for the expected properties",
+                  "    assert_eq!(result.exponent, -1022); // e2 == 0 implies exponent is -1022",
+                  "    assert!(result.mantissa != 0); // Check that mantissa is not zero",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInputs {",
+                  "        ieee_mantissa: u64,",
+                  "        ieee_exponent: u32,",
+                  "    }",
+                  "",
+                  "    // An invalid test case should cause a panic",
+                  "    let inputs = TestInputs {",
+                  "        ieee_mantissa: 1,  // Use a safe value",
+                  "        ieee_exponent: 2048, // This should panic since 2048 is outside valid boundary",
+                  "    };",
+                  "",
+                  "    let _ = d2d(inputs.ieee_mantissa, inputs.ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInputs {",
+                  "        ieee_mantissa: u64,",
+                  "        ieee_exponent: u32,",
+                  "    }",
+                  "",
+                  "    let inputs = TestInputs {",
+                  "        ieee_mantissa: 2, // A small non-zero mantissa",
+                  "        ieee_exponent: 1, // Small exponent",
+                  "    };",
+                  "",
+                  "    let result = d2d(inputs.ieee_mantissa, inputs.ieee_exponent);",
+                  "    ",
+                  "    assert_eq!(result.exponent, -1021); // Expecting modified exponent",
+                  "    assert!(result.mantissa != 0); // Ensure that we have a non-zero mantissa",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInputs {",
+                  "        ieee_mantissa: u64,",
+                  "        ieee_exponent: u32,",
+                  "    }",
+                  "",
+                  "    let inputs = TestInputs {",
+                  "        ieee_mantissa: 0b1111111111111111111111111111111111111111111111111111111111111111, // Max mantissa",
+                  "        ieee_exponent: 2047, // Max valid exponent",
+                  "    };",
+                  "",
+                  "    let result = d2d(inputs.ieee_mantissa, inputs.ieee_exponent);",
+                  "    ",
+                  "    assert!(result.mantissa > 0); // Ensure that the mantissa is positive",
+                  "    assert!(result.exponent != 0); // Exponent has proper adjustments",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInputs {",
+                  "        ieee_mantissa: u64,",
+                  "        ieee_exponent: u32,",
+                  "    }",
+                  "",
+                  "    // This should hit the boundary condition of exponent being zero",
+                  "    let inputs = TestInputs {",
+                  "        ieee_mantissa: 0, // Should not be zero",
+                  "        ieee_exponent: 0, ",
+                  "    };",
+                  "",
+                  "    let _ = d2d(inputs.ieee_mantissa, inputs.ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    struct TestInputs {",
+                  "        ieee_mantissa: u64,",
+                  "        ieee_exponent: u32,",
+                  "    }",
+                  "",
+                  "    // A case with an even mantissa but still valid",
+                  "    let inputs = TestInputs {",
+                  "        ieee_mantissa: 8, // Non-zero, even mantissa",
+                  "        ieee_exponent: 3, // Normal range value",
+                  "    };",
+                  "",
+                  "    let result = d2d(inputs.ieee_mantissa, inputs.ieee_exponent);",
+                  "    ",
+                  "    assert_eq!(result.mantissa % 2, 0); // Should be even",
+                  "    assert!(result.mantissa != 0); // Non-zero mantissa is required",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5308,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is true\n",
+        "// may panic: DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize) may panic in certain situations\n",
+        "// constraint: q <= 21 is true, with bound q == 21\n",
+        "// constraint: mv_mod5 == 0 is true\n",
+        "// constraint: accept_bounds is false\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is true\n",
+        "// constraint: vm_mod10 != 0 is true\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: last_removed_digit == 5 is false\n",
+        "// constraint: vr % 2 == 0 is true\n",
+        "// constraint: vr == vm is true\n",
+        "// constraint: accept_bounds is true\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 0;",
+                  "    let ieee_exponent = 0;",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result, FloatingDecimal64 { mantissa: 0, exponent: 0 });",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0369]: binary operation `==` cannot be applied to type `d2s::FloatingDecimal64`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { mantissa: 0, exponent: 0 });\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     d2s::FloatingDecimal64\n    |     d2s::FloatingDecimal64\n    |\nnote: an implementation of `PartialEq` might be missing for `d2s::FloatingDecimal64`\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(PartialEq)]`\n    |\n83  + #[derive(PartialEq)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nerror[E0277]: `d2s::FloatingDecimal64` doesn't implement `Debug`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { mantissa: 0, exponent: 0 });\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `d2s::FloatingDecimal64` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `d2s::FloatingDecimal64`\n    = note: add `#[derive(Debug)]` to `d2s::FloatingDecimal64` or manually `impl Debug for d2s::FloatingDecimal64`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(Debug)]`\n    |\n83  + #[derive(Debug)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1;",
+                  "    let ieee_exponent = 0;",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 0 });",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0369]: binary operation `==` cannot be applied to type `d2s::FloatingDecimal64`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 0 });\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     d2s::FloatingDecimal64\n    |     d2s::FloatingDecimal64\n    |\nnote: an implementation of `PartialEq` might be missing for `d2s::FloatingDecimal64`\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(PartialEq)]`\n    |\n83  + #[derive(PartialEq)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nerror[E0277]: `d2s::FloatingDecimal64` doesn't implement `Debug`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 0 });\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `d2s::FloatingDecimal64` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `d2s::FloatingDecimal64`\n    = note: add `#[derive(Debug)]` to `d2s::FloatingDecimal64` or manually `impl Debug for d2s::FloatingDecimal64`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(Debug)]`\n    |\n83  + #[derive(Debug)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    // Setting e2=0 for ieee_mantissa = 0x3FF (i.e., 1.0 in double)",
+                  "    let ieee_mantissa = 0x3FF;",
+                  "    let ieee_exponent = 1023; // 1023 is the bias for exponent 0",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 0 });",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0369]: binary operation `==` cannot be applied to type `d2s::FloatingDecimal64`\n   --> src/d2s.rs:317:5\n    |\n317 |     assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 0 });\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     d2s::FloatingDecimal64\n    |     d2s::FloatingDecimal64\n    |\nnote: an implementation of `PartialEq` might be missing for `d2s::FloatingDecimal64`\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(PartialEq)]`\n    |\n83  + #[derive(PartialEq)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nerror[E0277]: `d2s::FloatingDecimal64` doesn't implement `Debug`\n   --> src/d2s.rs:317:5\n    |\n317 |     assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 0 });\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `d2s::FloatingDecimal64` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `d2s::FloatingDecimal64`\n    = note: add `#[derive(Debug)]` to `d2s::FloatingDecimal64` or manually `impl Debug for d2s::FloatingDecimal64`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(Debug)]`\n    |\n83  + #[derive(Debug)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 0xFFFFFFFFFFFFF; // Max mantissa for a double",
+                  "    let ieee_exponent = 2046; // Max exponent before overflow",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.mantissa > 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 2; // Even mantissa",
+                  "    let ieee_exponent = 1023; // Exponent corresponding to 1.0",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 1 });",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0369]: binary operation `==` cannot be applied to type `d2s::FloatingDecimal64`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 1 });\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     d2s::FloatingDecimal64\n    |     d2s::FloatingDecimal64\n    |\nnote: an implementation of `PartialEq` might be missing for `d2s::FloatingDecimal64`\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(PartialEq)]`\n    |\n83  + #[derive(PartialEq)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nerror[E0277]: `d2s::FloatingDecimal64` doesn't implement `Debug`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { mantissa: 1, exponent: 1 });\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `d2s::FloatingDecimal64` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `d2s::FloatingDecimal64`\n    = note: add `#[derive(Debug)]` to `d2s::FloatingDecimal64` or manually `impl Debug for d2s::FloatingDecimal64`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(Debug)]`\n    |\n83  + #[derive(Debug)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5535,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is true\n",
+        "// may panic: DOUBLE_POW5_INV_SPLIT.get_unchecked(q as usize) may panic in certain situations\n",
+        "// constraint: q <= 21 is false\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: last_removed_digit == 5 is false\n",
+        "// constraint: vr % 2 == 0 is false\n",
+        "// constraint: vr == vm is true\n",
+        "// constraint: accept_bounds is true\n",
+        "// constraint: vm_is_trailing_zeros is true\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0; // ieee_mantissa != 0 is false",
+                  "    let ieee_exponent: u32 = 0; // ieee_exponent == 0 is true",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result, FloatingDecimal64 { exponent: -1074, mantissa: 0 }); // e2 == 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "    Blocking waiting for file lock on package cache\n    Blocking waiting for file lock on package cache\n   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0369]: binary operation `==` cannot be applied to type `d2s::FloatingDecimal64`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { exponent: -1074, mantissa: 0 }); // e2 == 0\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     d2s::FloatingDecimal64\n    |     d2s::FloatingDecimal64\n    |\nnote: an implementation of `PartialEq` might be missing for `d2s::FloatingDecimal64`\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(PartialEq)]`\n    |\n83  + #[derive(PartialEq)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nerror[E0277]: `d2s::FloatingDecimal64` doesn't implement `Debug`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { exponent: -1074, mantissa: 0 }); // e2 == 0\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `d2s::FloatingDecimal64` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `d2s::FloatingDecimal64`\n    = note: add `#[derive(Debug)]` to `d2s::FloatingDecimal64` or manually `impl Debug for d2s::FloatingDecimal64`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(Debug)]`\n    |\n83  + #[derive(Debug)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0b1; // This case ensures ieee_mantissa != 0",
+                  "    let ieee_exponent: u32 = 0; // ieee_exponent == 0 is true",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result, FloatingDecimal64 { exponent: -1074, mantissa: 1 }); // e2 == 0",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0369]: binary operation `==` cannot be applied to type `d2s::FloatingDecimal64`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { exponent: -1074, mantissa: 1 }); // e2 == 0\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     d2s::FloatingDecimal64\n    |     d2s::FloatingDecimal64\n    |\nnote: an implementation of `PartialEq` might be missing for `d2s::FloatingDecimal64`\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(PartialEq)]`\n    |\n83  + #[derive(PartialEq)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nerror[E0277]: `d2s::FloatingDecimal64` doesn't implement `Debug`\n   --> src/d2s.rs:316:5\n    |\n316 |     assert_eq!(result, FloatingDecimal64 { exponent: -1074, mantissa: 1 }); // e2 == 0\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `d2s::FloatingDecimal64` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `d2s::FloatingDecimal64`\n    = note: add `#[derive(Debug)]` to `d2s::FloatingDecimal64` or manually `impl Debug for d2s::FloatingDecimal64`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(Debug)]`\n    |\n83  + #[derive(Debug)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0b1111111111111111111111111111111111111111111111111111; // High value for mantissa",
+                  "    let ieee_exponent: u32 = 0b00000000000; // Indicates we are testing e2 that should stay >= 0",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, -1024);",
+                  "    assert!(result.mantissa > 0); // Ensure mantissa is valid and not triggering constraints that would cause panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0; // ieee_mantissa != 0 is false - should panic",
+                  "    let ieee_exponent: u32 = 1;   // ieee_exponent should not trigger panic",
+                  "    let _result = d2d(ieee_mantissa, ieee_exponent); // This should panic due to the invalid mantissa condition",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5607,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is true, with bound e2 == 0\n",
+        "// constraint: q < DOUBLE_POW5_INV_SPLIT.len() as u32 is false, with bound q == DOUBLE_POW5_INV_SPLIT.len() as u32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; // Non-zero mantissa",
+                  "    let ieee_exponent: u32 = 0; // Exponent is zero",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    ",
+                  "    assert_eq!(result.mantissa, 4); // Expected mantissa",
+                  "    assert_eq!(result.exponent, -1071); // Expected exponent based on the logic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0; // This should trigger panic due to mantissa being zero",
+                  "    let ieee_exponent: u32 = 0;",
+                  "",
+                  "    let _ = d2d(ieee_mantissa, ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0xFFFFFFFFFFFFFFFF; // Max non-zero mantissa",
+                  "    let ieee_exponent: u32 = 0; // Exponent is still zero",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "",
+                  "    assert!(result.mantissa > 0); // Checking that the mantissa is a valid positive output",
+                  "    assert_eq!(result.exponent, -1071); // Revised value according to the assertions made",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; // Non-zero mantissa",
+                  "    let ieee_exponent: u32 = 2048; // Chosen to exceed the length of DOUBLE_POW5_INV_SPLIT",
+                  "",
+                  "    let _ = d2d(ieee_mantissa, ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5746,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is true, with bound q == 1\n",
+        "// constraint: accept_bounds is true\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: last_removed_digit == 5 is true\n",
+        "// constraint: vr == vm is true\n",
+        "// constraint: accept_bounds is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0; // ieee_mantissa != 0 is false",
+                  "    let ieee_exponent: u32 = 0; // constraint: ieee_exponent == 0 is true",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, -1074); // The exponent for ieee_exponent == 0",
+                  "    assert_eq!(result.mantissa, 0); // Expected mantissa",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; // Random non-zero value for mantissa",
+                  "   let ieee_exponent: u32 = (DOUBLE_BIAS as u32 + DOUBLE_MANTISSA_BITS) + 1; // Make e2 negative",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.exponent < 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; // Random non-zero value for mantissa",
+                  "   let ieee_exponent: u32 = (DOUBLE_BIAS as u32 + DOUBLE_MANTISSA_BITS as u32) + 1; // Make e2 negative if calculated",
+                  "",
+                  "   let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "   assert!(result.exponent < 0); // Test inverse relationship",
+                  "",
+                  "   let q = log10_pow2(result.exponent + DOUBLE_BIAS + DOUBLE_MANTISSA_BITS as i32) - (result.exponent > 3) as u32;",
+                  "    assert!(q <= 1); // Constraint on q",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let ieee_mantissa: u64 = 4; // Random non-zero value  ",
+                  "   let ieee_exponent: u32 = (DOUBLE_BIAS + DOUBLE_MANTISSA_BITS as i32) as u32 + 3; // A value that may lead to trailing zeros  ",
+                  " ",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.mantissa % 10 == 0); // Check if output meets trailing zeros conditions",
+                  "    assert!(result.exponent < 0); // Ensure e2 is still negative",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 3; // Example input",
+                  "    let ieee_exponent: u32 = 10; // Example exponent",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.mantissa % 10, 5); // Check if last removed digit is 5",
+                  "    assert_eq!(result.exponent, 1); // Check exponent as per expectation",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 2; // Some example value",
+                  "   let ieee_exponent: u32 = (DOUBLE_BIAS + DOUBLE_MANTISSA_BITS as i32) as u32 + 2; // Set exponent to generate equal vr and vm  ",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.mantissa, result.mantissa); // Ensure vr == vm",
+                  "   assert_eq!(result.exponent, ieee_exponent as i32); // Check expected exponent  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "   let ieee_mantissa: u64 = 1; // Random non-zero  ",
+                  "   let ieee_exponent: u32 = (DOUBLE_BIAS as i32 + DOUBLE_MANTISSA_BITS as i32) as u32 - 1; // Adjust exponent  ",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(!result.mantissa.is_power_of_two()); // Should not accept bounds in this case",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 5855,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is true, with bound q == 1\n",
+        "// constraint: accept_bounds is false\n",
+        "// constraint: vm_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; // non-zero mantissa",
+                  "    let ieee_exponent: u32 = 0; // zero exponent",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.exponent < 0); // since e2 will be negative",
+                  "    assert_eq!(result.mantissa, 1); // mantissa should remain the same",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0b1; // non-zero mantissa",
+                  "    let ieee_exponent: u32 = 1; // will yield a negative exponent after adjustment",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.exponent < 0); // e2 < 0 due to adjustment",
+                  "    assert_eq!(result.mantissa, 2); // should calculate the corresponding mantissa correctly",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 2; // valid mantissa",
+                  "    let ieee_exponent: u32 = 2047; // max exponent to avoid panic",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.exponent >= 0); // should be handled safely",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 4; // a valid mantissa",
+                  "    let ieee_exponent: u32 = 3; // adjust for testing q <= 1 constraint",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, 0); // check for expected exponent after transformation",
+                  "    assert_eq!(result.mantissa, 1); // Check if it returns correct mantissa",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 12; // mantissa affects the division",
+                  "    let ieee_exponent: u32 = 4; // exponent that ensures the condition holds true",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.mantissa > 0);",
+                  "    assert_eq!(result.mantissa % 10, 0); // should return a rounded mantissa",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6200,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is false\n",
+        "// constraint: q < 63 is true\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is true\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is true\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0; // ieee_mantissa != 0 should be false",
+                  "    let ieee_exponent: u32 = 0; // ieee_exponent == 0 should be true",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, -1075); // expected exponent (adjust as per logic)",
+                  "    assert_eq!(result.mantissa, ieee_mantissa); // expected mantissa (adjust as per logic)",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 1; // this is non-zero",
+                  "    let ieee_exponent: u32 = 1023; // e2 >= 0 should be false",
+                  "    let expected_result = FloatingDecimal64 { exponent: 0, mantissa: 1 }; // adjust as necessary",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result, expected_result);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Err": "   Compiling ryu v1.0.20 (/home/abezbm/rust-utgen-test-crates-new/ryu)\nerror[E0369]: binary operation `==` cannot be applied to type `d2s::FloatingDecimal64`\n   --> src/d2s.rs:317:5\n    |\n317 |     assert_eq!(result, expected_result);\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    |     |\n    |     d2s::FloatingDecimal64\n    |     d2s::FloatingDecimal64\n    |\nnote: an implementation of `PartialEq` might be missing for `d2s::FloatingDecimal64`\n   --> src/d2s.rs:83:1\n    |\n83  | pub struct FloatingDecimal64 {\n    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ must implement `PartialEq`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(PartialEq)]`\n    |\n83  + #[derive(PartialEq)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nerror[E0277]: `d2s::FloatingDecimal64` doesn't implement `Debug`\n   --> src/d2s.rs:317:5\n    |\n317 |     assert_eq!(result, expected_result);\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `d2s::FloatingDecimal64` cannot be formatted using `{:?}`\n    |\n    = help: the trait `Debug` is not implemented for `d2s::FloatingDecimal64`\n    = note: add `#[derive(Debug)]` to `d2s::FloatingDecimal64` or manually `impl Debug for d2s::FloatingDecimal64`\n    = note: this error originates in the macro `assert_eq` (in Nightly builds, run with -Z macro-backtrace for more info)\nhelp: consider annotating `d2s::FloatingDecimal64` with `#[derive(Debug)]`\n    |\n83  + #[derive(Debug)]\n84  | pub struct FloatingDecimal64 {\n    |\n\nSome errors have detailed explanations: E0277, E0369.\nFor more information about an error, try `rustc --explain E0277`.\nerror: could not compile `ryu` (lib test) due to 3 previous errors\n"
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 5; // valid non-zero",
+                  "    let ieee_exponent: u32 = 1000; // should be handled",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, 0); // expected exponent (adjust according to logic)",
+                  "    assert!(result.mantissa > 0); // output mantissa should be valid",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 0xFFFFFFFFFFFFF; // edge case for mantissa",
+                  "    let ieee_exponent: u32 = 2047; // test upper bounds",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, 0); // expected exponent (adjust according to logic)",
+                  "    assert_eq!(result.mantissa, ieee_mantissa); // expected mantissa (adjust according to logic)",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa: u64 = 100; // valid non-zero",
+                  "    let ieee_exponent: u32 = 1; // edge case",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, -1021); // expected exponent (adjust according to logic)",
+                  "    assert_eq!(result.mantissa, 100); // expected mantissa (adjust according to logic)",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6383,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is false\n",
+        "// constraint: q < 63 is false, with bound q == 63\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is true\n",
+        "// constraint: vp_div10 <= vm_div10 is false\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vm_is_trailing_zeros is true\n",
+        "// constraint: vm_mod10 != 0 is false\n",
+        "// constraint: vm_mod10 != 0 is true\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1; // Given ieee_mantissa != 0 is false",
+                  "    let ieee_exponent = 0; // Triggering ieee_exponent == 0 constraint",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.exponent < 0); // e2 >= 0 is false must hold",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1; // Given ieee_mantissa != 0 is false",
+                  "    let ieee_exponent = 1 << 11; // Valid exponent to check negative values",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.exponent < 0); // Confirming that exponent is negative",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1; // Given ieee_mantissa != 0 is false",
+                  "    let ieee_exponent = 1 << 11; // Ensure it stays within the valid range for q",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.exponent >= -125 && result.mantissa > 0); // Ensure output is valid",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 10; ",
+                  "    let ieee_exponent = 1 << 11; // Stay in the valid range, leverage q value",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.mantissa % 10 == 0); // This tests if the last digit is not zero",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 20; // Set so that vr is trailing zeros while vm is not",
+                  "    let ieee_exponent = 1 << 11; // Keep in bounds",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.mantissa % 5 == 0); // Verify that vm has trailing zeros",
+                  "    assert!(result.exponent >= 0); // e2 condition confirmed",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 25; // Test value for mantissa",
+                  "    let ieee_exponent = 1 << 11; // Testing with a valid exponent",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    let vp_div10 = div10(result.mantissa); // Check the division result",
+                  "    let vm_div10 = div10(result.mantissa); // Both must be checked for the condition",
+                  "    assert!(vp_div10 != vm_div10); // Inverse condition",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 30; // Set up a value to test against",
+                  "    let ieee_exponent = 1 << 11; // Ensure compliance with the exponent",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.mantissa > 0, true); // Output mantissa must be valid",
+                  "    assert!(result.exponent.is_negative()); // Ensure exponent is correctly interpreted",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6407,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is true\n",
+        "// may panic: DOUBLE_POW5_SPLIT.get_unchecked(i as usize) may panic in certain situations\n",
+        "// constraint: q <= 1 is false\n",
+        "// constraint: q < 63 is false, with bound q == 63\n",
+        "// constraint: vm_is_trailing_zeros is false\n",
+        "// constraint: vr_is_trailing_zeros is false\n",
+        "// constraint: vp_div100 > vm_div100 is false, with bound vp_div100 == vm_div100\n",
+        "// constraint: vp_div10 <= vm_div10 is false\n",
+        "// constraint: vp_div10 <= vm_div10 is true, with bound vp_div10 == vm_div10\n",
+        "// constraint: vr == vm is false\n",
+        "// expected return value/type: FloatingDecimal64 {\n        exponent: exp,\n        mantissa: output,\n    }\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 0;",
+                  "    let ieee_exponent = 0;",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, 1 - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS as i32 - 2);",
+                  "    assert_eq!(result.mantissa, ieee_mantissa);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1;",
+                  "    let ieee_exponent = 0;",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.exponent, 1 - DOUBLE_BIAS - DOUBLE_MANTISSA_BITS as i32 - 2);",
+                  "    assert_eq!(result.mantissa, ieee_mantissa);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1;",
+                  "    let ieee_exponent = std::u32::MAX;",
+                  "",
+                  "    let _result = d2d(ieee_mantissa, ieee_exponent);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 0xFFFFFFFFFFFFFFFF; // Max mantissa",
+                  "   let ieee_exponent = (DOUBLE_BIAS as u32 + DOUBLE_MANTISSA_BITS as u32 + 2) + 63; // Setting up e2 to create q == 63",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(result.mantissa > 0);",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 10;",
+                  "    let ieee_exponent = 0b10000000011; // Arbitrary exponent to satisfy conditions",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(div100(result.mantissa), div100(result.mantissa));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 100;",
+                  "    let ieee_exponent = 0b10000000010;",
+                  "",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert!(div10(result.mantissa) <= div10(result.mantissa));",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 20;",
+                  "    let ieee_exponent = 0b10000000001;",
+                  "",
+                  "   let result = d2d(ieee_mantissa, ieee_exponent);  ",
+                  "   assert!(result.mantissa != 0);  ",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                true
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chain_id": 6408,
+      "prompt_conds": [
+        "// constraint: ieee_exponent == 0 is true\n",
+        "// constraint: ieee_mantissa != 0 is false\n",
+        "// constraint: e2 >= 0 is false\n",
+        "// constraint: i < DOUBLE_POW5_SPLIT.len() as i32 is false, with bound i == DOUBLE_POW5_SPLIT.len() as i32\n"
+      ],
+      "input_infer": "",
+      "answers": [
+        {
+          "uses": [],
+          "has_test_mod": false,
+          "common": [],
+          "chain_tests": [
+            {
+              "attrs": [],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1; // Non-zero mantissa",
+                  "    let ieee_exponent = 0; // Exponent is zero",
+                  "    let result = d2d(ieee_mantissa, ieee_exponent);",
+                  "    assert_eq!(result.mantissa, 1); // Expected mantissa",
+                  "    assert_eq!(result.exponent, 1020); // Evaluated from the logic in the function",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 0; // Zero mantissa, invalid value",
+                  "    let ieee_exponent = 0; // Exponent is zero",
+                  "    let _result = d2d(ieee_mantissa, ieee_exponent); // Should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1; // Non-zero mantissa",
+                  "    let ieee_exponent = 1022; // This will cause e2 to be negative",
+                  "    let _result = d2d(ieee_mantissa, ieee_exponent); // Should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            },
+            {
+              "attrs": [
+                "#[should_panic]"
+              ],
+              "prefix": [],
+              "oracles": [],
+              "codes": [
+                [
+                  "{",
+                  "    let ieee_mantissa = 1; // Non-zero mantissa",
+                  "    let ieee_exponent = 2047; // This should cause i to equal DOUBLE_POW5_SPLIT.len() as i32",
+                  "    let _result = d2d(ieee_mantissa, ieee_exponent); // Should panic",
+                  "}"
+                ]
+              ],
+              "can_compile": [
+                {
+                  "Ok": null
+                }
+              ],
+              "repaired": [
+                false
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

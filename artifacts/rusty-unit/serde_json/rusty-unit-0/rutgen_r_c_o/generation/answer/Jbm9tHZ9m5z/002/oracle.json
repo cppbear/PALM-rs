@@ -1,0 +1,824 @@
+[
+  {
+    "uses": [],
+    "has_test_mod": false,
+    "common": [
+      "struct SimpleFormatter;",
+      "",
+      "impl io::Write for SimpleFormatter {",
+      "    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {",
+      "        Ok(buf.len())",
+      "    }",
+      "",
+      "    fn flush(&mut self) -> io::Result<()> {",
+      "        Ok(())",
+      "    }",
+      "}",
+      "",
+      "impl Formatter for SimpleFormatter {",
+      "    fn write_string_fragment(&mut self, writer: &mut dyn io::Write, fragment: &str) -> io::Result<()> {",
+      "        writer.write_all(fragment.as_bytes())?;",
+      "        Ok(())",
+      "    }",
+      "",
+      "    fn write_char_escape(&mut self, writer: &mut dyn io::Write, escape: CharEscape) -> io::Result<()> {",
+      "        let escaped = match escape {",
+      "            CharEscape::Quote => b\"\\\\\\\"\",",
+      "            CharEscape::ReverseSolidus => b\"\\\\\\\\\",",
+      "            CharEscape::Solidus => b\"\\\\/\",",
+      "            CharEscape::Backspace => b\"\\\\b\",",
+      "            CharEscape::FormFeed => b\"\\\\f\",",
+      "            CharEscape::LineFeed => b\"\\\\n\",",
+      "            CharEscape::CarriageReturn => b\"\\\\r\",",
+      "            CharEscape::Tab => b\"\\\\t\",",
+      "            CharEscape::AsciiControl(byte) => format!(\"\\\\u{:04x}\", byte).as_bytes(),",
+      "        };",
+      "        writer.write_all(escaped)?;",
+      "        Ok(())",
+      "    }",
+      "}"
+    ],
+    "chain_tests": [
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut writer = Vec::new();",
+          "    let formatter = SimpleFormatter;",
+          "    let value = \"Hello, World!\\nThis is a test string with a tab\\tcharacter.\";",
+          "    format_escaped_str_contents(&mut writer, &formatter, value);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Hello, World!\\nThis is a test string with a tab\\tcharacter.\";",
+            "    assert!(format_escaped_str_contents(&mut writer, &formatter, value).is_ok());"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Hello, World!\\nThis is a test string with a tab\\tcharacter.\";",
+            "    assert_eq!(writer, b\"Hello, World!\\\\nThis is a test string with a tab\\\\tcharacter.\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Hello, World!\\nThis is a test string with a tab\\tcharacter.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Hello, World!\\nThis is a test string with a tab\\tcharacter.\";",
+            "    assert!(format_escaped_str_contents(&mut writer, &formatter, value).is_ok());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Hello, World!\\nThis is a test string with a tab\\tcharacter.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Hello, World!\\nThis is a test string with a tab\\tcharacter.\";",
+            "    assert_eq!(writer, b\"Hello, World!\\\\nThis is a test string with a tab\\\\tcharacter.\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut writer = Vec::new();",
+          "    let formatter = SimpleFormatter;",
+          "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+          "    format_escaped_str_contents(&mut writer, &formatter, value);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    assert_eq!(writer, b\"This \\\\\\\"string\\\\\\\" contains escaped quotes.\");"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    let value_empty = \"\";",
+            "    let result_empty = format_escaped_str_contents(&mut writer, &formatter, value_empty);",
+            "    assert!(result_empty.is_ok() && writer.is_empty());"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    let value_empty = \"\";",
+            "    let result_empty = format_escaped_str_contents(&mut writer, &formatter, value_empty);",
+            "    let value_all_escaped = \"A string with \\\\t tab, \\\\n newline, \\\\\\\" quote.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_all_escaped).unwrap();",
+            "    assert_eq!(writer, b\"A string with \\\\t tab, \\\\n newline, \\\\\\\\\" quote.\");"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    let value_empty = \"\";",
+            "    let result_empty = format_escaped_str_contents(&mut writer, &formatter, value_empty);",
+            "    let value_all_escaped = \"A string with \\\\t tab, \\\\n newline, \\\\\\\" quote.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_all_escaped).unwrap();",
+            "    let value_with_control_chars = \"Control: \\u{0007}\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_with_control_chars).unwrap();",
+            "    assert_eq!(writer, b\"Control: \\\\u0007\");"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    let value_empty = \"\";",
+            "    let result_empty = format_escaped_str_contents(&mut writer, &formatter, value_empty);",
+            "    let value_all_escaped = \"A string with \\\\t tab, \\\\n newline, \\\\\\\" quote.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_all_escaped).unwrap();",
+            "    let value_with_control_chars = \"Control: \\u{0007}\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_with_control_chars).unwrap();",
+            "    let value_only_quotes = \"\\\"\\\"\\\"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_only_quotes).unwrap();",
+            "    assert_eq!(writer, b\"\\\\\\\"\\\\\\\"\\\\\\\"\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    assert_eq!(writer, b\"This \\\\\\\"string\\\\\\\" contains escaped quotes.\");",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    let value_empty = \"\";",
+            "    let result_empty = format_escaped_str_contents(&mut writer, &formatter, value_empty);",
+            "    assert!(result_empty.is_ok() && writer.is_empty());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    let value_empty = \"\";",
+            "    let result_empty = format_escaped_str_contents(&mut writer, &formatter, value_empty);",
+            "    let value_all_escaped = \"A string with \\\\t tab, \\\\n newline, \\\\\\\" quote.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_all_escaped).unwrap();",
+            "    assert_eq!(writer, b\"A string with \\\\t tab, \\\\n newline, \\\\\\\\\" quote.\");",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    let value_empty = \"\";",
+            "    let result_empty = format_escaped_str_contents(&mut writer, &formatter, value_empty);",
+            "    let value_all_escaped = \"A string with \\\\t tab, \\\\n newline, \\\\\\\" quote.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_all_escaped).unwrap();",
+            "    let value_with_control_chars = \"Control: \\u{0007}\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_with_control_chars).unwrap();",
+            "    assert_eq!(writer, b\"Control: \\\\u0007\");",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This \\\"string\\\" contains escaped quotes.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value).unwrap();",
+            "    let value_empty = \"\";",
+            "    let result_empty = format_escaped_str_contents(&mut writer, &formatter, value_empty);",
+            "    let value_all_escaped = \"A string with \\\\t tab, \\\\n newline, \\\\\\\" quote.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_all_escaped).unwrap();",
+            "    let value_with_control_chars = \"Control: \\u{0007}\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_with_control_chars).unwrap();",
+            "    let value_only_quotes = \"\\\"\\\"\\\"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value_only_quotes).unwrap();",
+            "    assert_eq!(writer, b\"\\\\\\\"\\\\\\\"\\\\\\\"\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut writer = Vec::new();",
+          "    let formatter = SimpleFormatter;",
+          "    let value = \"This string contains a backslash \\\\ character.\";",
+          "    format_escaped_str_contents(&mut writer, &formatter, value);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This string contains a backslash \\\\ character.\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This string contains a backslash \\\\ character.\";",
+            "    assert_eq!(writer, b\"This string contains a backslash \\\\\\\\ character.\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This string contains a backslash \\\\ character.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This string contains a backslash \\\\ character.\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This string contains a backslash \\\\ character.\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"This string contains a backslash \\\\ character.\";",
+            "    assert_eq!(writer, b\"This string contains a backslash \\\\\\\\ character.\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut writer = Vec::new();",
+          "    let formatter = SimpleFormatter;",
+          "    let value = \"Control chars: \\x00\\x01\\x02\";",
+          "    format_escaped_str_contents(&mut writer, &formatter, value);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert_eq!(escape, UU);"
+          ],
+          [
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert_eq!(char_escape, CharEscape::AsciiControl(0));"
+          ],
+          [
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert!(value[start..].is_empty());"
+          ],
+          [
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert!(start < bytes.len());"
+          ],
+          [
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert!(bytes.len() == 23);"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Control chars: \\x00\\x01\\x02\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert_eq!(escape, UU);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Control chars: \\x00\\x01\\x02\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert_eq!(char_escape, CharEscape::AsciiControl(0));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Control chars: \\x00\\x01\\x02\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert!(value[start..].is_empty());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Control chars: \\x00\\x01\\x02\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert!(start < bytes.len());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"Control chars: \\x00\\x01\\x02\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let bytes = value.as_bytes();",
+            "    let escape = ESCAPE[byte as usize];",
+            "    let char_escape = CharEscape::from_escape_table(escape, byte);",
+            "    assert!(bytes.len() == 23);",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut writer = Vec::new();",
+          "    let formatter = SimpleFormatter;",
+          "    let value = \"\";",
+          "    format_escaped_str_contents(&mut writer, &formatter, value);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    assert!(writer.is_empty());"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    assert_eq!(writer, b\"Hello, World!\");"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    let value = \"Newline\\nTab\\tQuote\\\"\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    let value = \"Newline\\nTab\\tQuote\\\"\";",
+            "    assert_eq!(writer, b\"Hello, World!Newline\\\\nTab\\\\tQuote\\\\\\\"\");"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    let value = \"Newline\\nTab\\tQuote\\\"\";",
+            "    writer.clear();",
+            "    let value = \"Backspace\\bFormFeed\\fCarriageReturn\\r\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));"
+          ],
+          [
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    let value = \"Newline\\nTab\\tQuote\\\"\";",
+            "    writer.clear();",
+            "    let value = \"Backspace\\bFormFeed\\fCarriageReturn\\r\";",
+            "    assert_eq!(writer, b\"Hello, World!Newline\\\\nTab\\\\tQuote\\\\\\\"Backspace\\\\bFormFeed\\\\fCarriageReturn\\\\r\");"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    assert!(writer.is_empty());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    assert_eq!(writer, b\"Hello, World!\");",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    let value = \"Newline\\nTab\\tQuote\\\"\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    let value = \"Newline\\nTab\\tQuote\\\"\";",
+            "    assert_eq!(writer, b\"Hello, World!Newline\\\\nTab\\\\tQuote\\\\\\\"\");",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    let value = \"Newline\\nTab\\tQuote\\\"\";",
+            "    writer.clear();",
+            "    let value = \"Backspace\\bFormFeed\\fCarriageReturn\\r\";",
+            "    assert_eq!(format_escaped_str_contents(&mut writer, &formatter, value), Ok(()));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    format_escaped_str_contents(&mut writer, &formatter, value);",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"\";",
+            "    let value = \"Hello, World!\";",
+            "    let value = \"Newline\\nTab\\tQuote\\\"\";",
+            "    writer.clear();",
+            "    let value = \"Backspace\\bFormFeed\\fCarriageReturn\\r\";",
+            "    assert_eq!(writer, b\"Hello, World!Newline\\\\nTab\\\\tQuote\\\\\\\"Backspace\\\\bFormFeed\\\\fCarriageReturn\\\\r\");",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "attrs": [],
+        "prefix": [
+          "{",
+          "    let mut writer = Vec::new();",
+          "    let formatter = SimpleFormatter;",
+          "    let value = \"A\".repeat(255);",
+          "    format_escaped_str_contents(&mut writer, &formatter, &value);",
+          "}"
+        ],
+        "oracles": [
+          [
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    assert!(escape == 0);"
+          ],
+          [
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    assert_eq!(writer.len(), 255);"
+          ],
+          [
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    assert_eq!(String::from_utf8(writer).unwrap(), \"A\".repeat(255));"
+          ],
+          [
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    let start = 0;",
+            "    assert!(start < bytes.len());"
+          ],
+          [
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    let start = 0;",
+            "    assert!(bytes.iter().enumerate().all(|(_, &byte)| ESCAPE[byte as usize] != 0));"
+          ]
+        ],
+        "codes": [
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"A\".repeat(255);",
+            "    format_escaped_str_contents(&mut writer, &formatter, &value);",
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    assert!(escape == 0);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"A\".repeat(255);",
+            "    format_escaped_str_contents(&mut writer, &formatter, &value);",
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    assert_eq!(writer.len(), 255);",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"A\".repeat(255);",
+            "    format_escaped_str_contents(&mut writer, &formatter, &value);",
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    assert_eq!(String::from_utf8(writer).unwrap(), \"A\".repeat(255));",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"A\".repeat(255);",
+            "    format_escaped_str_contents(&mut writer, &formatter, &value);",
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    let start = 0;",
+            "    assert!(start < bytes.len());",
+            "}"
+          ],
+          [
+            "{",
+            "    let mut writer = Vec::new();",
+            "    let formatter = SimpleFormatter;",
+            "    let value = \"A\".repeat(255);",
+            "    format_escaped_str_contents(&mut writer, &formatter, &value);",
+            "    let bytes = \"A\".repeat(255).as_bytes();",
+            "    let escape = ESCAPE[bytes[0] as usize];",
+            "    let start = 0;",
+            "    assert!(bytes.iter().enumerate().all(|(_, &byte)| ESCAPE[byte as usize] != 0));",
+            "}"
+          ]
+        ],
+        "can_compile": [
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          },
+          {
+            "Ok": null
+          }
+        ],
+        "repaired": [
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ]
+  }
+]

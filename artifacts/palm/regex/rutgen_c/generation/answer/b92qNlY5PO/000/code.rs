@@ -1,0 +1,122 @@
+// Answer 0
+
+#[test]
+fn test_cmd_literals_prefixes_with_all_literals() {
+    let args = Args {
+        cmd_ast: false,
+        cmd_hir: false,
+        cmd_prefixes: true,
+        cmd_suffixes: false,
+        cmd_anchors: false,
+        cmd_captures: false,
+        cmd_compile: false,
+        cmd_utf8_ranges: false,
+        arg_pattern: String::from("pattern"),
+        arg_patterns: vec![String::from("pattern1"), String::from("pattern2")],
+        arg_class: String::from("class"),
+        flag_size_limit: 10485760,
+        flag_bytes: false,
+        flag_dfa: false,
+        flag_dfa_reverse: false,
+        flag_all_literals: true,
+        flag_literal_limit: 250,
+        flag_class_limit: 10,
+        flag_lcp: false,
+        flag_lcs: false,
+        flag_searcher: false,
+    };
+    
+    let result = cmd_literals(&args);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_cmd_literals_suffixes_without_all_literals() {
+    let args = Args {
+        cmd_ast: false,
+        cmd_hir: false,
+        cmd_prefixes: false,
+        cmd_suffixes: true,
+        cmd_anchors: false,
+        cmd_captures: false,
+        cmd_compile: false,
+        cmd_utf8_ranges: false,
+        arg_pattern: String::from("pattern"),
+        arg_patterns: vec![String::from("pattern1"), String::from("pattern2")],
+        arg_class: String::from("class"),
+        flag_size_limit: 10485760,
+        flag_bytes: false,
+        flag_dfa: false,
+        flag_dfa_reverse: false,
+        flag_all_literals: false,
+        flag_literal_limit: 250,
+        flag_class_limit: 10,
+        flag_lcp: false,
+        flag_lcs: false,
+        flag_searcher: false,
+    };
+
+    let result = cmd_literals(&args);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_cmd_literals_with_longest_common_prefix() {
+    let args = Args {
+        cmd_ast: false,
+        cmd_hir: false,
+        cmd_prefixes: false,
+        cmd_suffixes: false,
+        cmd_anchors: false,
+        cmd_captures: false,
+        cmd_compile: false,
+        cmd_utf8_ranges: false,
+        arg_pattern: String::from("pattern"),
+        arg_patterns: vec![String::from("prefix1"), String::from("prefix2")],
+        arg_class: String::from("class"),
+        flag_size_limit: 10485760,
+        flag_bytes: false,
+        flag_dfa: false,
+        flag_dfa_reverse: false,
+        flag_all_literals: false,
+        flag_literal_limit: 250,
+        flag_class_limit: 10,
+        flag_lcp: true,
+        flag_lcs: false,
+        flag_searcher: false,
+    };
+
+    let result = cmd_literals(&args);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_cmd_literals_with_longest_common_suffix() {
+    let args = Args {
+        cmd_ast: false,
+        cmd_hir: false,
+        cmd_prefixes: false,
+        cmd_suffixes: false,
+        cmd_anchors: false,
+        cmd_captures: false,
+        cmd_compile: false,
+        cmd_utf8_ranges: false,
+        arg_pattern: String::from("pattern"),
+        arg_patterns: vec![String::from("suffix1"), String::from("suffix2")],
+        arg_class: String::from("class"),
+        flag_size_limit: 10485760,
+        flag_bytes: false,
+        flag_dfa: false,
+        flag_dfa_reverse: false,
+        flag_all_literals: false,
+        flag_literal_limit: 250,
+        flag_class_limit: 10,
+        flag_lcp: false,
+        flag_lcs: true,
+        flag_searcher: false,
+    };
+
+    let result = cmd_literals(&args);
+    assert!(result.is_ok());
+}
+

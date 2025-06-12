@@ -1,0 +1,2 @@
+cd /home/rumono/fastrand
+fuzz-target-generator --edition=2018 --crate-type lib --crate-name fastrand src/lib.rs -o /home/rumono/fastrand/target/doc --cfg 'feature="alloc"' --cfg 'feature="default"' --cfg 'feature="std"' --check-cfg 'cfg(docsrs)' --check-cfg 'cfg(feature, values("alloc", "default", "getrandom", "js", "std"))' --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat -C metadata=a04925d829383e80 -L dependency=/home/rumono/fastrand/target/debug/deps --crate-version 2.3.0
