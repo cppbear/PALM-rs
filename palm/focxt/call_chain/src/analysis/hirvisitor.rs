@@ -1,6 +1,5 @@
 use super::exporter::ModInfo;
 use super::sourceinfo::SourceInfo;
-use rand::Rng;
 use regex::Regex;
 use rustc_ast::token::CommentKind;
 use rustc_ast::AttrKind;
@@ -15,7 +14,6 @@ use rustc_middle::ty;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::symbol::sym;
 use serde::{Deserialize, Serialize};
-use std::hash::{Hash, Hasher};
 use syn::parse_str;
 use twox_hash::XxHash3_64;
 
@@ -24,10 +22,7 @@ fn is_valid_code(code: &str) -> bool {
 }
 
 fn encoded_name(s: &str) -> String {
-    let seed = rand::rng().random::<u64>();
-    let mut hasher = XxHash3_64::with_seed(seed);
-    s.hash(&mut hasher);
-    base62::encode(hasher.finish())
+    base62::encode(XxHash3_64::oneshot(s.as_bytes()))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -163,7 +158,12 @@ impl<'tcx> Visitor<'tcx> for HirVisitor<'tcx> {
         }
 
         let hir = self.hir_map.body(b);
-        let mir = self.tcx.mir_built(id).borrow();
+        let steal_mir = self.tcx.mir_built(id);
+        if steal_mir.is_stolen() {
+            error!("Skip because MIR has been stolen");
+            return;
+        }
+        let mir = steal_mir.borrow();
 
         // check visibility
         let visible = self.is_accessible_from_crate(def_id, &fn_source);

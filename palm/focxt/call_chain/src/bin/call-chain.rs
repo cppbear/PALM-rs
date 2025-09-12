@@ -41,7 +41,7 @@ fn main() {
         // If this environment variable is set, we behave just like the real rustc
         if env::var_os("CALL_CHAIN_BE_RUSTC").is_some() {
             let early_diag_ctxt: EarlyDiagCtxt = EarlyDiagCtxt::new(
-                ErrorOutputType::HumanReadable(HumanReadableErrorType::Default(ColorConfig::Auto)),
+                ErrorOutputType::HumanReadable(HumanReadableErrorType::Default, ColorConfig::Auto),
             );
             rustc_driver::init_rustc_env_logger(&early_diag_ctxt);
             // We cannot use `rustc_driver::main` as we need to adjust the CLI arguments.

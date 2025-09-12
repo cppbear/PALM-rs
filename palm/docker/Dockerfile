@@ -36,8 +36,8 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master
     && . "$HOME/.cargo/env" \
     # Set mirror for crates.io
     # ...
-    && rustup install nightly-2024-07-21 \
-    && rustup component add --toolchain nightly-2024-07-21 rust-src rustc-dev llvm-tools-preview \
+    && rustup install nightly-2024-08-10 \
+    && rustup component add --toolchain nightly-2024-08-10 rust-src rustc-dev llvm-tools-preview \
     && host=$(rustc -vV | grep '^host:' | cut -d' ' -f2); \
     curl --proto '=https' --tlsv1.2 -fsSL \
     "https://github.com/taiki-e/cargo-llvm-cov/releases/download/v0.6.16/cargo-llvm-cov-$host.tar.gz" \

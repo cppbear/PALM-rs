@@ -119,7 +119,7 @@ impl BrInfoCallbacks {
         let mut name_map = BTreeMap::new();
         for mut block in ret {
             // info!("Start analysis for {}", block.id);
-            info!("Start analysis for {}", block.name);
+            info!("Start analysis for {} with encoded name {}", block.name, block.encoded_name);
             block.mir_out(&self.crate_dir);
             block.dump_cfg_to_dot(&self.crate_dir);
             let result = block.iterative_dfs();

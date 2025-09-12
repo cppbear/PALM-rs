@@ -3,7 +3,6 @@ use super::condition::Condition;
 use super::exporter::ModInfo;
 use super::sourceinfo::SourceInfo;
 use base62;
-use rand::Rng;
 use regex::Regex;
 use rustc_ast::token::CommentKind;
 use rustc_ast::AttrKind;
@@ -17,7 +16,6 @@ use rustc_middle::ty::TyCtxt;
 use rustc_span::symbol::sym;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
-use std::hash::{Hash, Hasher};
 use std::io::Write;
 use std::path::PathBuf;
 use syn::parse_str;
@@ -28,10 +26,7 @@ fn is_valid_code(code: &str) -> bool {
 }
 
 fn encoded_name(s: &str) -> String {
-    let seed = rand::rng().random::<u64>();
-    let mut hasher = XxHash3_64::with_seed(seed);
-    s.hash(&mut hasher);
-    base62::encode(hasher.finish())
+    base62::encode(XxHash3_64::oneshot(s.as_bytes()))
 }
 
 pub struct VisitorData<'tcx> {
@@ -176,7 +171,12 @@ impl<'tcx> Visitor<'tcx> for HirVisitor<'tcx> {
         file.write_all(code.as_bytes()).unwrap();
 
         let hir = self.hir_map.body(b);
-        let mir = self.tcx.mir_built(id).borrow();
+        let steal_mir = self.tcx.mir_built(id);
+        if steal_mir.is_stolen() {
+            error!("Skip because MIR has been stolen");
+            return;
+        }
+        let mir = steal_mir.borrow();
 
         // write HIR to file
         let file_path = dir_path.join("hir.txt");

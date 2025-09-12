@@ -371,11 +371,11 @@ impl<'a> FnBlocks<'a> {
         if let Some(pat_sources) = arm_source {
             // Span of Terminator points to a arm pattern
             // warn!("Span of Terminator for Enum points to an arm pattern, this is NOT common. Check {:?}", block_name);
-            assert!(iflet);
-            // if !iflet {
-            //     assert_eq!(pat_sources.len(), 1);
-            // }
             // println!("pat sources: {:?}", pat_sources);
+            // assert!(iflet);
+            if !iflet {
+                assert_eq!(pat_sources.len(), 1);
+            }
             let mut discr_map = BTreeMap::new();
             for pat_source in pat_sources {
                 let arm = match_cond.arms.get(pat_source).unwrap();

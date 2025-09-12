@@ -12,7 +12,7 @@ Navigate to the directory of the project or subproject you want to analyze. In t
 
 ```toml
 [toolchain]
-channel = "nightly-2024-07-21"
+channel = "nightly-2024-08-10"
 components = ["rust-src", "rustc-dev", "llvm-tools-preview"]
 ```
 
