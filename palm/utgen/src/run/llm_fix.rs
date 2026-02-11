@@ -39,7 +39,7 @@ static FIX_TIMEOUT: u64 = 28800;
 
 async fn get_fixes_from_llm(prompt: &String, n: i32) -> Result<Vec<String>, Box<dyn Error + Send>> {
     let llm = LLM::new().unwrap();
-    let answers = llm.get_answer(&prompt, n as u8, true).await;
+    let answers = llm.get_answer(&prompt, n as u8, false).await;
     answers
 }
 
