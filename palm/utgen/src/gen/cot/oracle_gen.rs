@@ -34,7 +34,7 @@ pub async fn gen_oracle(
             };
             sleep(Duration::from_secs(random_secs)).await;
         }
-        let result = llm.fetch_answer(Some(&system_pt), &user_pt, 1, true).await;
+        let result = llm.fetch_answer(Some(&system_pt), &user_pt, 1, false).await;
         if result.is_ok() {
             answers = Some(result.unwrap());
             break;
